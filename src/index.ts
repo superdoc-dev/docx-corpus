@@ -21,9 +21,11 @@ Options
   --verbose         Show detailed logs for debugging
 
 Environment Variables
-  CDX_CONCURRENCY   Parallel CDX index downloads (default: 1)
-  WARC_CONCURRENCY  Parallel WARC file downloads (default: 10)
-  RATE_LIMIT_RPS    Max requests per second (default: 10)
+  CDX_CONCURRENCY   Parallel CDX index downloads (default: 3)
+  WARC_CONCURRENCY  Parallel WARC file downloads (default: 50)
+  RATE_LIMIT_RPS    Initial requests per second (default: 100)
+  MAX_RPS           Max RPS for adaptive rate limiting (default: 200)
+  MIN_RPS           Min RPS floor (default: 10)
 
 Examples
   bun run scrape --batch-size 500
@@ -50,6 +52,7 @@ async function main() {
   switch (command) {
     case "scrape":
       await scrape(config, flags.batchSize || 100, flags.verbose);
+      process.exit(0); // Force exit to clean up any lingering async operations
       break;
     case "status":
       await status(config);

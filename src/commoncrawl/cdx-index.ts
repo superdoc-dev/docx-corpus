@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { gunzipSync, spawn } from "bun";
 
 const CC_DATA_URL = "https://data.commoncrawl.org";
+const USER_AGENT =
+  "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
 export const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -60,7 +62,9 @@ export type FileProgressCallback = (progress: FileProgress) => void;
  */
 export async function getCdxPaths(crawlId: string): Promise<string[]> {
   const url = `${CC_DATA_URL}/crawl-data/${crawlId}/cc-index.paths.gz`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT },
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch CDX paths: ${response.status}`);
@@ -118,11 +122,16 @@ export async function* streamCdxFile(
   }
 
   // Get content length first
-  const headRes = await fetch(url, { method: "HEAD" });
+  const headRes = await fetch(url, {
+    method: "HEAD",
+    headers: { "User-Agent": USER_AGENT },
+  });
   const bytesTotal = parseInt(headRes.headers.get("content-length") || "0", 10);
 
   // Start download
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT },
+  });
   if (!response.ok || !response.body) {
     throw new Error(`Failed to fetch CDX: ${response.status}`);
   }

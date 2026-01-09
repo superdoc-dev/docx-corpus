@@ -111,10 +111,15 @@ export async function* streamAllCdxFilesParallel(
       yield record;
     }
   } finally {
-    // Signal workers to stop and wait for cleanup
+    // Signal workers to stop
     stopped = true;
     queue.close();
-    await Promise.all(workerPromises);
+
+    // Wait for workers with timeout to avoid hanging
+    const cleanup = Promise.all(workerPromises);
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+    await Promise.race([cleanup, timeout]);
+
     activeFiles.clear();
   }
 }

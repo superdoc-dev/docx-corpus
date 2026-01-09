@@ -3,6 +3,8 @@ import type { RateLimiter } from "../rate-limiter";
 import type { CdxRecord } from "./cdx-index";
 
 const WARC_BASE_URL = "https://data.commoncrawl.org";
+const USER_AGENT =
+  "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
 
 export interface WarcResult {
   content: Uint8Array;
@@ -50,6 +52,7 @@ export async function fetchWarcRecord(
       const response = await fetch(url, {
         headers: {
           Range: `bytes=${offset}-${endOffset}`,
+          "User-Agent": USER_AGENT,
         },
         signal: controller.signal,
       });
