@@ -82,6 +82,25 @@ bun run status
 bun start crawls
 ```
 
+### Docker
+
+Run the CLI in a container:
+
+```bash
+# Build and start the container
+docker-compose up -d --build
+
+# Run CLI commands
+docker exec docx-corpus bun run scrape --limit 100
+docker exec docx-corpus bun run status
+docker exec docx-corpus bun run crawls
+
+# Stop the container
+docker-compose down
+```
+
+The container mounts `./corpus` for persistent storage. Pass environment variables via `docker run -e` or export them before running.
+
 ### Storage Options
 
 **Local storage** (default):

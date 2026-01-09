@@ -1,0 +1,8 @@
+node_modules/
+dist/
+corpus/
+.git/
+.github/
+*.md
+.env
+.env.*

@@ -1,0 +1,6 @@
+services:
+  docx-corpus:
+    build: .
+    container_name: docx-corpus
+    volumes:
+      - ./corpus:/app/corpus
