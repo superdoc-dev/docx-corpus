@@ -6,6 +6,7 @@
     "start": "bun run src/index.ts",
     "scrape": "bun run src/index.ts scrape",
     "status": "bun run src/index.ts status",
+    "crawls": "bun run src/index.ts crawls",
     "lint": "biome check",
     "format": "biome format --write",
     "typecheck": "tsc --noEmit",
