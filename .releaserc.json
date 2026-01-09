@@ -1,0 +1,20 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "bun run build && node -e \"const p=require('./package.json');p.version='${nextRelease.version}';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\\n')\""
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["package.json"],
+        "message": "chore(release): v${nextRelease.version}"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}

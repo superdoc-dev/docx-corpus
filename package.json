@@ -1,0 +1,30 @@
+{
+  "name": "docx-corpus",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "scrape": "bun run src/index.ts scrape",
+    "status": "bun run src/index.ts status",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "release": "semantic-release",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.965.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.11",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@types/bun": "latest",
+    "husky": "^9.1.7",
+    "semantic-release": "^25.0.2",
+    "typescript": "^5.9.3"
+  }
+}
