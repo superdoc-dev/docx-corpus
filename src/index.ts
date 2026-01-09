@@ -34,6 +34,7 @@ Commands
 Options
   --limit <n>      Maximum documents to download (default: 100)
   --crawl <id>     Common Crawl index ID (default: latest)
+  --keep-index     Cache CDX index files locally for faster reruns
 
 Examples
   bun run scrape --limit 500
@@ -59,7 +60,7 @@ async function main() {
 
   switch (command) {
     case "scrape":
-      await scrape(config, flags.limit || 100);
+      await scrape(config, flags.limit || 100, flags.keepIndex);
       break;
     case "status":
       await status(config);
@@ -171,7 +172,11 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
   });
 }
 
-async function scrape(config: ReturnType<typeof loadConfig>, limit: number) {
+async function scrape(
+  config: ReturnType<typeof loadConfig>,
+  limit: number,
+  keepIndex?: boolean,
+) {
   const startTime = Date.now();
   const useCloud = hasCloudflareCredentials(config);
 
@@ -192,6 +197,8 @@ async function scrape(config: ReturnType<typeof loadConfig>, limit: number) {
       : `local (${config.storage.localPath})`,
   );
   keyValue("Crawl", crawlId);
+  keyValue("Workers", config.download.concurrency);
+  if (keepIndex) keyValue("Index cache", "enabled");
   blank();
 
   // Initialize storage
@@ -228,12 +235,15 @@ async function scrape(config: ReturnType<typeof loadConfig>, limit: number) {
   const updateProgress = () => {
     const cdxLine = `  CDX:   [${cdxProgress.currentFile}/${cdxProgress.totalFiles}] ${cdxProgress.currentFileName}`;
     const bar = progressBar(stats.completed, limit);
-    const filesLine = `  Files: ${bar} ${stats.completed}/${limit} (${concurrency} workers)`;
+    const filesLine = `  Files: ${bar} ${stats.completed}/${limit}`;
     writeTwoLineProgress(cdxLine, filesLine);
   };
 
   const streamOptions = {
     limit,
+    cacheDir: keepIndex
+      ? `${config.storage.localPath}/cache/cdx/${crawlId}`
+      : undefined,
     onProgress: (progress: {
       currentFileName: string;
       totalFiles: number;
@@ -333,6 +343,7 @@ async function showCrawls() {
 function parseFlags(args: string[]): {
   limit?: number;
   crawl?: string;
+  keepIndex?: boolean;
 } {
   const flags: any = {};
 
@@ -343,6 +354,8 @@ function parseFlags(args: string[]): {
       flags.limit = parseInt(args[++i], 10);
     } else if (arg === "--crawl" && args[i + 1]) {
       flags.crawl = args[++i];
+    } else if (arg === "--keep-index") {
+      flags.keepIndex = true;
     }
   }
 

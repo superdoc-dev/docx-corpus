@@ -1,3 +1,4 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { gunzipSync, spawn } from "bun";
 
 const CC_DATA_URL = "https://data.commoncrawl.org";
@@ -47,8 +48,25 @@ export async function getCdxPaths(crawlId: string): Promise<string[]> {
  */
 export async function* streamCdxFile(
   cdxPath: string,
+  options?: { cacheDir?: string },
 ): AsyncGenerator<CdxRecord> {
+  const filename = cdxPath.split("/").pop() || cdxPath;
+  const cacheDir = options?.cacheDir;
+  const cacheFile = cacheDir ? `${cacheDir}/${filename}.txt` : null;
+
+  // Check cache first
+  if (cacheFile && existsSync(cacheFile)) {
+    const lines = readFileSync(cacheFile, "utf-8").split("\n");
+    for (const line of lines) {
+      if (line.trim()) {
+        yield JSON.parse(line) as CdxRecord;
+      }
+    }
+    return;
+  }
+
   const url = `${CC_DATA_URL}/${cdxPath}`;
+  const records: CdxRecord[] = [];
 
   // Use curl + gunzip to properly handle multi-member gzip and stream
   const proc = spawn({
@@ -60,53 +78,71 @@ export async function* streamCdxFile(
   const reader = proc.stdout.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let fullyConsumed = false;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
+      buffer += decoder.decode(value, { stream: true });
 
-    // Process complete lines
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || ""; // Keep incomplete line in buffer
+      // Process complete lines
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // Keep incomplete line in buffer
 
-    for (const line of lines) {
-      if (!line.trim()) continue;
+      for (const line of lines) {
+        if (!line.trim()) continue;
 
-      // Parse CDX line: "surt timestamp {json}"
-      const jsonStart = line.indexOf("{");
-      if (jsonStart === -1) continue;
+        // Parse CDX line: "surt timestamp {json}"
+        const jsonStart = line.indexOf("{");
+        if (jsonStart === -1) continue;
 
-      try {
-        const record = JSON.parse(line.slice(jsonStart)) as CdxRecord;
+        try {
+          const record = JSON.parse(line.slice(jsonStart)) as CdxRecord;
 
-        // Only yield actual .docx files (not redirects)
-        if (record.mime === DOCX_MIME && record.status === "200") {
-          yield record;
+          // Only yield actual .docx files (not redirects)
+          if (record.mime === DOCX_MIME && record.status === "200") {
+            if (cacheFile) records.push(record);
+            yield record;
+          }
+        } catch {
+          // Skip malformed lines
         }
-      } catch {
-        // Skip malformed lines
       }
     }
-  }
 
-  // Process any remaining buffer
-  if (buffer.trim()) {
-    const jsonStart = buffer.indexOf("{");
-    if (jsonStart !== -1) {
-      try {
-        const record = JSON.parse(buffer.slice(jsonStart)) as CdxRecord;
-        if (record.mime === DOCX_MIME && record.status === "200") {
-          yield record;
+    // Process any remaining buffer
+    if (buffer.trim()) {
+      const jsonStart = buffer.indexOf("{");
+      if (jsonStart !== -1) {
+        try {
+          const record = JSON.parse(buffer.slice(jsonStart)) as CdxRecord;
+          if (record.mime === DOCX_MIME && record.status === "200") {
+            if (cacheFile) records.push(record);
+            yield record;
+          }
+        } catch {
+          // Skip
         }
-      } catch {
-        // Skip
       }
     }
-  }
 
-  await proc.exited;
+    fullyConsumed = true;
+  } finally {
+    // Kill subprocess if generator abandoned early
+    proc.kill();
+    await proc.exited;
+
+    // Only cache if we fully consumed the file (not abandoned mid-stream)
+    if (fullyConsumed && cacheFile && cacheDir && records.length > 0) {
+      mkdirSync(cacheDir, { recursive: true });
+      writeFileSync(
+        cacheFile,
+        records.map((r) => JSON.stringify(r)).join("\n"),
+      );
+    }
+  }
 }
 
 /**
@@ -118,9 +154,15 @@ export async function* streamAllCdxFiles(
     limit?: number;
     maxFiles?: number;
     onProgress?: ProgressCallback;
+    cacheDir?: string;
   } = {},
 ): AsyncGenerator<CdxRecord> {
-  const { limit = Infinity, maxFiles = Infinity, onProgress } = options;
+  const {
+    limit = Infinity,
+    maxFiles = Infinity,
+    onProgress,
+    cacheDir,
+  } = options;
 
   const paths = await getCdxPaths(crawlId);
 
@@ -140,7 +182,7 @@ export async function* streamAllCdxFiles(
       found: yielded,
     });
 
-    for await (const record of streamCdxFile(path)) {
+    for await (const record of streamCdxFile(path, { cacheDir })) {
       if (yielded >= limit) break;
 
       yield record;
