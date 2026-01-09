@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +14,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
@@ -27,7 +32,10 @@
       padding: 2rem;
     }
 
-    .logo { height: 120px; margin-bottom: 1.5rem; }
+    .logo {
+      height: 180px;
+      margin-bottom: 1.5rem;
+    }
 
     .tagline {
       color: #9CA3AF;
@@ -49,7 +57,9 @@
       font-weight: 600;
     }
 
-    .links a:hover { text-decoration: underline; }
+    .links a:hover {
+      text-decoration: underline;
+    }
 
     .files-note {
       margin-top: 2rem;
@@ -76,14 +86,23 @@
       text-decoration: none;
     }
 
-    footer a:hover { text-decoration: underline; }
+    footer a:hover {
+      text-decoration: underline;
+    }
 
     @media (prefers-color-scheme: dark) {
-      body { background: #18181B; color: #E5E5E5; }
-      .files-note code { background: #27272A; }
+      body {
+        background: #18181B;
+        color: #E5E5E5;
+      }
+
+      .files-note code {
+        background: #27272A;
+      }
     }
   </style>
 </head>
+
 <body>
   <img src="/public/logo.png" alt="docx-corpus" class="logo">
   <p class="tagline">
@@ -100,4 +119,5 @@
     Built by 🦋 <a href="https://superdoc.dev">SuperDoc</a>
   </footer>
 </body>
+
 </html>
