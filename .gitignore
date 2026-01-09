@@ -12,6 +12,9 @@ dist/
 corpus/
 dev/
 
+# Tests
+coverage/
+
 # IDE
 .idea/
 .vscode/
