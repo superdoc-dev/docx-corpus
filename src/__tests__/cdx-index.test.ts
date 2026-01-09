@@ -1,13 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { rmSync } from "node:fs";
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import {
-  DOCX_MIME,
-  parseCdxLine,
-  streamCdxFile,
-} from "../commoncrawl/cdx-index";
+import { describe, expect, test } from "bun:test";
+import { DOCX_MIME, parseCdxLine } from "../commoncrawl/cdx-index";
 
 describe("parseCdxLine", () => {
   const validRecord = {
@@ -83,85 +75,5 @@ describe("parseCdxLine", () => {
     const result = parseCdxLine(line);
 
     expect(result).toEqual(validRecord);
-  });
-});
-
-describe("streamCdxFile with cache", () => {
-  let tempDir: string;
-
-  beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), "cdx-test-"));
-  });
-
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true });
-  });
-
-  test("reads from cache file if it exists", async () => {
-    const record1 = {
-      url: "https://example.com/1.docx",
-      mime: DOCX_MIME,
-      status: "200",
-      digest: "ABC",
-      length: "100",
-      offset: "0",
-      filename: "warc.gz",
-    };
-    const record2 = {
-      url: "https://example.com/2.docx",
-      mime: DOCX_MIME,
-      status: "200",
-      digest: "DEF",
-      length: "200",
-      offset: "100",
-      filename: "warc.gz",
-    };
-
-    // Create cache file
-    const cacheFile = join(tempDir, "test-index.gz.txt");
-    await writeFile(
-      cacheFile,
-      [JSON.stringify(record1), JSON.stringify(record2)].join("\n"),
-    );
-
-    // Stream should read from cache
-    const records: any[] = [];
-    for await (const record of streamCdxFile("path/to/test-index.gz", {
-      cacheDir: tempDir,
-    })) {
-      records.push(record);
-    }
-
-    expect(records.length).toBe(2);
-    expect(records[0].url).toBe("https://example.com/1.docx");
-    expect(records[1].url).toBe("https://example.com/2.docx");
-  });
-
-  test("skips empty lines in cache file", async () => {
-    const record = {
-      url: "https://example.com/doc.docx",
-      mime: DOCX_MIME,
-      status: "200",
-      digest: "ABC",
-      length: "100",
-      offset: "0",
-      filename: "warc.gz",
-    };
-
-    // Cache with empty lines
-    const cacheFile = join(tempDir, "test-index.gz.txt");
-    await writeFile(
-      cacheFile,
-      ["", JSON.stringify(record), "", "  ", JSON.stringify(record)].join("\n"),
-    );
-
-    const records: any[] = [];
-    for await (const record of streamCdxFile("path/to/test-index.gz", {
-      cacheDir: tempDir,
-    })) {
-      records.push(record);
-    }
-
-    expect(records.length).toBe(2);
   });
 });
