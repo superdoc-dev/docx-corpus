@@ -4,3 +4,7 @@ services:
     container_name: docx-corpus
     volumes:
       - ./corpus:/app/corpus
+    deploy:
+      resources:
+        limits:
+          memory: ${MEMORY_LIMIT:-8G}

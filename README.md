@@ -101,7 +101,13 @@ docker exec docx-corpus bun run crawls
 docker-compose down
 ```
 
-The container mounts `./corpus` for persistent storage. Pass environment variables via `docker run -e` or export them before running.
+The container mounts `./corpus` for persistent storage and defaults to 8GB memory limit. Adjust memory for higher concurrency:
+
+```bash
+MEMORY_LIMIT=16G docker-compose up -d --build
+```
+
+Pass environment variables via `docker run -e` or add them to your `.env` file.
 
 ### Storage Options
 
