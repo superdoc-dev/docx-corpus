@@ -300,11 +300,16 @@ async function scrape(
   blank();
 
   // Generate manifest
-  const manifest = await generateManifest(config.storage.localPath);
+  const cloudflareConfig = useCloud ? config.cloudflare : undefined;
+  const manifest = await generateManifest(
+    config.storage.localPath,
+    cloudflareConfig,
+  );
   if (manifest) {
     section("Manifest");
     keyValue("Documents", manifest.count);
     keyValue("File", "manifest.txt");
+    if (manifest.uploaded) keyValue("Uploaded", "R2");
     blank();
   }
 

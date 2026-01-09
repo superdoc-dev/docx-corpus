@@ -1,9 +1,12 @@
 import { Database } from "bun:sqlite";
 import { join } from "node:path";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import type { Config } from "./config";
 
 export async function generateManifest(
   localPath: string,
-): Promise<{ count: number; path: string } | null> {
+  cloudflareConfig?: Config["cloudflare"],
+): Promise<{ count: number; path: string; uploaded: boolean } | null> {
   const dbPath = join(localPath, "corpus.db");
 
   const db = new Database(dbPath, { readonly: true });
@@ -22,22 +25,55 @@ export async function generateManifest(
   const content = `${rows.map((r) => r.id).join("\n")}\n`;
   await Bun.write(path, content);
 
-  return { count: rows.length, path };
+  // Upload to R2 if credentials are configured
+  let uploaded = false;
+  if (cloudflareConfig?.accountId && cloudflareConfig?.r2AccessKeyId) {
+    const client = new S3Client({
+      region: "auto",
+      endpoint: `https://${cloudflareConfig.accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: cloudflareConfig.r2AccessKeyId,
+        secretAccessKey: cloudflareConfig.r2SecretAccessKey,
+      },
+    });
+
+    await client.send(
+      new PutObjectCommand({
+        Bucket: cloudflareConfig.r2BucketName,
+        Key: "manifest.txt",
+        Body: content,
+        ContentType: "text/plain",
+      }),
+    );
+    uploaded = true;
+  }
+
+  return { count: rows.length, path, uploaded };
 }
 
 // CLI entry point
 if (import.meta.main) {
   (async () => {
-    const { loadConfig } = await import("./config");
+    const { loadConfig, hasCloudflareCredentials } = await import("./config");
     const config = loadConfig();
 
-    const result = await generateManifest(config.storage.localPath);
+    const cloudflareConfig = hasCloudflareCredentials(config)
+      ? config.cloudflare
+      : undefined;
+
+    const result = await generateManifest(
+      config.storage.localPath,
+      cloudflareConfig,
+    );
 
     if (!result) {
       console.log("No uploaded documents found.");
       process.exit(0);
     }
 
-    console.log(`Generated ${result.path} with ${result.count} documents`);
+    const uploadStatus = result.uploaded ? " (uploaded to R2)" : "";
+    console.log(
+      `Generated ${result.path} with ${result.count} documents${uploadStatus}`,
+    );
   })();
 }
