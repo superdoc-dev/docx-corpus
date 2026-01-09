@@ -158,6 +158,9 @@ bun run format
 # Type check
 bun run typecheck
 
+# Run tests
+bun run test
+
 # Build
 bun run build
 ```

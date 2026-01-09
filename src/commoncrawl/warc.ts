@@ -75,7 +75,7 @@ export async function fetchWarcRecord(
  * <body bytes>
  * ```
  */
-function parseWarcRecord(data: Uint8Array): WarcResult {
+export function parseWarcRecord(data: Uint8Array): WarcResult {
   const decoder = new TextDecoder("utf-8", { fatal: false });
 
   // Find the double CRLF that separates WARC headers from HTTP response
@@ -127,7 +127,7 @@ function parseWarcRecord(data: Uint8Array): WarcResult {
 /**
  * Find a byte pattern in a Uint8Array
  */
-function findPattern(data: Uint8Array, pattern: number[]): number {
+export function findPattern(data: Uint8Array, pattern: number[]): number {
   outer: for (let i = 0; i <= data.length - pattern.length; i++) {
     for (let j = 0; j < pattern.length; j++) {
       if (data[i + j] !== pattern[j]) {

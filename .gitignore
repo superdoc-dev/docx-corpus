@@ -10,6 +10,7 @@ dist/
 
 # Local corpus cache
 corpus/
+dev/
 
 # IDE
 .idea/

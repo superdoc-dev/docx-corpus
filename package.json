@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "release": "semantic-release",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "bun test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.965.0",
