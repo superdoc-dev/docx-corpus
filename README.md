@@ -88,6 +88,7 @@ bun start crawls
 Files are saved to `./corpus/documents/`
 
 **Cloud storage** (Cloudflare R2):
+
 ```bash
 export CLOUDFLARE_ACCOUNT_ID=xxx
 export R2_ACCESS_KEY_ID=xxx
@@ -118,12 +119,12 @@ COMMONCRAWL_RATE_LIMIT_RPS=10
 
 ## Corpus Statistics
 
-| Metric | Description |
-|--------|-------------|
-| Sources | Entire public web via Common Crawl |
-| Deduplication | SHA-256 content hash |
-| Validation | ZIP structure + Word XML verification |
-| Storage | Content-addressed (hash as filename) |
+| Metric        | Description                           |
+| ------------- | ------------------------------------- |
+| Sources       | Entire public web via Common Crawl    |
+| Deduplication | SHA-256 content hash                  |
+| Validation    | ZIP structure + Word XML verification |
+| Storage       | Content-addressed (hash as filename)  |
 
 ## Development
 
@@ -148,3 +149,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT
+
+---
+
+Built by 🦋[SuperDoc](https://superdoc.dev)
