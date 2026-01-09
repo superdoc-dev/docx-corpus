@@ -1,5 +1,4 @@
 import {
-  GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -8,8 +7,6 @@ import type { Config } from "../config";
 
 export interface R2Storage {
   save(hash: string, content: Uint8Array): Promise<boolean>;
-  exists(hash: string): Promise<boolean>;
-  get(hash: string): Promise<Uint8Array | null>;
 }
 
 export function createR2Storage(config: Config["cloudflare"]): R2Storage {
@@ -56,50 +53,6 @@ export function createR2Storage(config: Config["cloudflare"]): R2Storage {
       );
 
       return true;
-    },
-
-    async exists(hash: string): Promise<boolean> {
-      const key = `documents/${hash}.docx`;
-
-      try {
-        await client.send(
-          new HeadObjectCommand({
-            Bucket: bucket,
-            Key: key,
-          }),
-        );
-        return true;
-      } catch (err: any) {
-        if (err.name === "NotFound" || err.$metadata?.httpStatusCode === 404) {
-          return false;
-        }
-        throw err;
-      }
-    },
-
-    async get(hash: string): Promise<Uint8Array | null> {
-      const key = `documents/${hash}.docx`;
-
-      try {
-        const response = await client.send(
-          new GetObjectCommand({
-            Bucket: bucket,
-            Key: key,
-          }),
-        );
-
-        if (!response.Body) {
-          return null;
-        }
-
-        const bytes = await response.Body.transformToByteArray();
-        return new Uint8Array(bytes);
-      } catch (err: any) {
-        if (err.name === "NotFound" || err.$metadata?.httpStatusCode === 404) {
-          return null;
-        }
-        throw err;
-      }
     },
   };
 }

@@ -15,10 +15,6 @@ export function keyValue(key: string, value: string | number, indent = 2) {
   console.log(`${padding}${key.padEnd(10)} ${value}`);
 }
 
-export function divider(char = "─", length = 40) {
-  console.log(char.repeat(length));
-}
-
 export function blank() {
   console.log();
 }
@@ -31,15 +27,6 @@ export function progressBar(
   const filled = Math.round((current / total) * width);
   const empty = width - filled;
   return "━".repeat(filled) + "░".repeat(empty);
-}
-
-export function clearLine() {
-  process.stdout.write("\r\x1b[K");
-}
-
-export function writeProgress(message: string) {
-  clearLine();
-  process.stdout.write(message);
 }
 
 export function clearLines(count: number) {

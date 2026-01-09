@@ -19,7 +19,6 @@ export interface StreamProgress {
   totalFiles: number;
   currentFile: number;
   currentFileName: string;
-  found: number;
 }
 
 export type ProgressCallback = (progress: StreamProgress) => void;
@@ -152,17 +151,11 @@ export async function* streamAllCdxFiles(
   crawlId: string,
   options: {
     limit?: number;
-    maxFiles?: number;
     onProgress?: ProgressCallback;
     cacheDir?: string;
   } = {},
 ): AsyncGenerator<CdxRecord> {
-  const {
-    limit = Infinity,
-    maxFiles = Infinity,
-    onProgress,
-    cacheDir,
-  } = options;
+  const { limit = Infinity, onProgress, cacheDir } = options;
 
   const paths = await getCdxPaths(crawlId);
 
@@ -170,7 +163,7 @@ export async function* streamAllCdxFiles(
   let filesProcessed = 0;
 
   for (const path of paths) {
-    if (yielded >= limit || filesProcessed >= maxFiles) break;
+    if (yielded >= limit) break;
 
     filesProcessed++;
     const filename = path.split("/").pop() || path;
@@ -179,7 +172,6 @@ export async function* streamAllCdxFiles(
       totalFiles: paths.length,
       currentFile: filesProcessed,
       currentFileName: filename,
-      found: yielded,
     });
 
     for await (const record of streamCdxFile(path, { cacheDir })) {

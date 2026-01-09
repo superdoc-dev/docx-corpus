@@ -82,7 +82,7 @@ interface ProcessContext {
     | ReturnType<typeof createR2Storage>;
   config: ReturnType<typeof loadConfig>;
   crawlId: string;
-  stats: { saved: number; skipped: number; failed: number; discovered: number };
+  stats: { saved: number; skipped: number; failed: number };
 }
 
 async function processRecord(record: CdxRecord, ctx: ProcessContext) {
@@ -216,7 +216,6 @@ async function scrape(
     skipped: 0,
     failed: 0,
     discovered: 0,
-    completed: 0,
   };
 
   // CDX progress state
@@ -233,9 +232,10 @@ async function scrape(
 
   // Combined progress update function
   const updateProgress = () => {
+    const completed = stats.saved + stats.skipped + stats.failed;
     const cdxLine = `  CDX:   [${cdxProgress.currentFile}/${cdxProgress.totalFiles}] ${cdxProgress.currentFileName}`;
-    const bar = progressBar(stats.completed, limit);
-    const filesLine = `  Files: ${bar} ${stats.completed}/${limit}`;
+    const bar = progressBar(completed, limit);
+    const filesLine = `  Files: ${bar} ${completed}/${limit}`;
     writeTwoLineProgress(cdxLine, filesLine);
   };
 
@@ -275,7 +275,6 @@ async function scrape(
         crawlId,
         stats,
       });
-      stats.completed++;
       updateProgress();
     });
 

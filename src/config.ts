@@ -2,8 +2,6 @@ export interface Config {
   download: {
     concurrency: number;
     timeoutMs: number;
-    retries: number;
-    retryDelayMs: number;
     maxFileSizeMb: number;
   };
   commonCrawl: {
@@ -28,8 +26,6 @@ export function loadConfig(): Config {
     download: {
       concurrency: parseInt(env.DOWNLOAD_CONCURRENCY || "", 10) || 10,
       timeoutMs: parseInt(env.DOWNLOAD_TIMEOUT_MS || "", 10) || 30000,
-      retries: parseInt(env.DOWNLOAD_RETRIES || "", 10) || 3,
-      retryDelayMs: parseInt(env.DOWNLOAD_RETRY_DELAY_MS || "", 10) || 1000,
       maxFileSizeMb: parseInt(env.MAX_FILE_SIZE_MB || "", 10) || 50,
     },
     commonCrawl: {
