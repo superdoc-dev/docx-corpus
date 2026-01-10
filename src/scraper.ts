@@ -210,7 +210,7 @@ export async function scrape(
           : 0;
       const bar = progressBar(progress.bytesDownloaded, Math.max(progress.bytesTotal, 1), 10);
       const shortName = filename.length > 20 ? `${filename.slice(0, 17)}...` : filename.padEnd(20);
-      lines.push(`    ${shortName} ${bar} ${pct}% (${progress.recordsFound} found)`);
+      lines.push(`    ${shortName} ${bar} ${pct}%`);
     });
 
     // WARC progress line with throughput metrics

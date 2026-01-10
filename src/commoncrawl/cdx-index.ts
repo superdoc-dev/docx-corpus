@@ -119,22 +119,46 @@ export async function* streamCdxFile(
 
   const url = `${CC_DATA_URL}/${cdxPath}`;
   const records: CdxRecord[] = [];
+  const maxRetries = 5;
 
   if (verbose) {
     console.log(`  [verbose] Fetching: ${url}`);
   }
 
-  // Rate limit before fetch
-  await rateLimiter?.acquire();
+  // Fetch with retry logic for rate limiting
+  let response: Response | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    await rateLimiter?.acquire();
 
-  // Start download
-  const response = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (!response.ok || !response.body) {
-    rateLimiter?.reportError(response.status);
-    throw new Error(`Failed to fetch CDX: ${response.status}`);
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+    });
+
+    if (res.ok && res.body) {
+      response = res;
+      break;
+    }
+
+    // Handle rate limiting errors with retry
+    if (res.status === 403 || res.status === 429 || res.status === 503) {
+      rateLimiter?.reportError(res.status);
+      if (attempt < maxRetries) {
+        const delay = 2 ** attempt * 1000; // 1s, 2s, 4s, 8s, 16s
+        if (verbose) {
+          console.log(`  [verbose] Rate limited (${res.status}), retrying in ${delay / 1000}s...`);
+        }
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+    }
+
+    throw new Error(`Failed to fetch CDX: ${res.status}`);
   }
+
+  if (!response || !response.body) {
+    throw new Error("Failed to fetch CDX: no response");
+  }
+
   const bytesTotal = parseInt(response.headers.get("content-length") || "0", 10);
 
   // Spawn gunzip to handle multi-member gzip
