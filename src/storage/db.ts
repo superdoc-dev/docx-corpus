@@ -2,12 +2,7 @@ import { Database } from "bun:sqlite";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-export type DocumentStatus =
-  | "pending"
-  | "downloading"
-  | "validating"
-  | "uploaded"
-  | "failed";
+export type DocumentStatus = "pending" | "downloading" | "validating" | "uploaded" | "failed";
 
 export interface DocumentRecord {
   id: string; // SHA-256 hash
@@ -32,10 +27,7 @@ export interface DbClient {
   getDocument(id: string): Promise<DocumentRecord | null>;
   getDocumentByUrl(url: string): Promise<DocumentRecord | null>;
   getPendingDocuments(limit: number): Promise<DocumentRecord[]>;
-  getDocumentsByStatus(
-    status: DocumentStatus,
-    limit?: number,
-  ): Promise<DocumentRecord[]>;
+  getDocumentsByStatus(status: DocumentStatus, limit?: number): Promise<DocumentRecord[]>;
   getStats(): Promise<{ status: string; count: number }[]>;
   getAllDocuments(limit?: number): Promise<DocumentRecord[]>;
 }
@@ -94,16 +86,11 @@ export async function createDb(basePath: string): Promise<DbClient> {
 
         if (updates.length > 0) {
           values.push(doc.id);
-          db.run(
-            `UPDATE documents SET ${updates.join(", ")} WHERE id = ?`,
-            values,
-          );
+          db.run(`UPDATE documents SET ${updates.join(", ")} WHERE id = ?`, values);
         }
       } else {
         // Insert
-        const columns = Object.keys(doc).filter(
-          (k) => doc[k as keyof typeof doc] !== undefined,
-        );
+        const columns = Object.keys(doc).filter((k) => doc[k as keyof typeof doc] !== undefined);
         const placeholders = columns.map(() => "?").join(", ");
         const values = columns.map((k) => {
           const val = doc[k as keyof typeof doc];
@@ -111,10 +98,7 @@ export async function createDb(basePath: string): Promise<DbClient> {
           return v as string | number | null;
         });
 
-        db.run(
-          `INSERT INTO documents (${columns.join(", ")}) VALUES (${placeholders})`,
-          values,
-        );
+        db.run(`INSERT INTO documents (${columns.join(", ")}) VALUES (${placeholders})`, values);
       }
     },
 
@@ -123,9 +107,7 @@ export async function createDb(basePath: string): Promise<DbClient> {
     },
 
     async getDocumentByUrl(url: string) {
-      const row = db
-        .query("SELECT * FROM documents WHERE source_url = ?")
-        .get(url) as any;
+      const row = db.query("SELECT * FROM documents WHERE source_url = ?").get(url) as any;
       return row ? normalizeRow(row) : null;
     },
 
@@ -145,17 +127,13 @@ export async function createDb(basePath: string): Promise<DbClient> {
 
     async getStats() {
       const rows = db
-        .query(
-          "SELECT status, COUNT(*) as count FROM documents GROUP BY status",
-        )
+        .query("SELECT status, COUNT(*) as count FROM documents GROUP BY status")
         .all() as any[];
       return rows;
     },
 
     async getAllDocuments(limit = 1000) {
-      const rows = db
-        .query("SELECT * FROM documents LIMIT ?")
-        .all(limit) as any[];
+      const rows = db.query("SELECT * FROM documents LIMIT ?").all(limit) as any[];
       return rows.map(normalizeRow);
     },
   };
@@ -164,7 +142,6 @@ export async function createDb(basePath: string): Promise<DbClient> {
 function normalizeRow(row: any): DocumentRecord {
   return {
     ...row,
-    is_valid_docx:
-      row.is_valid_docx === 1 ? true : row.is_valid_docx === 0 ? false : null,
+    is_valid_docx: row.is_valid_docx === 1 ? true : row.is_valid_docx === 0 ? false : null,
   };
 }

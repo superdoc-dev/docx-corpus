@@ -11,9 +11,9 @@ export async function generateManifest(
 
   const db = new Database(dbPath, { readonly: true });
 
-  const rows = db
-    .query("SELECT id FROM documents WHERE status = 'uploaded' ORDER BY id")
-    .all() as { id: string }[];
+  const rows = db.query("SELECT id FROM documents WHERE status = 'uploaded' ORDER BY id").all() as {
+    id: string;
+  }[];
 
   db.close();
 
@@ -57,14 +57,9 @@ if (import.meta.main) {
     const { loadConfig, hasCloudflareCredentials } = await import("./config");
     const config = loadConfig();
 
-    const cloudflareConfig = hasCloudflareCredentials(config)
-      ? config.cloudflare
-      : undefined;
+    const cloudflareConfig = hasCloudflareCredentials(config) ? config.cloudflare : undefined;
 
-    const result = await generateManifest(
-      config.storage.localPath,
-      cloudflareConfig,
-    );
+    const result = await generateManifest(config.storage.localPath, cloudflareConfig);
 
     if (!result) {
       console.log("No uploaded documents found.");
@@ -72,8 +67,6 @@ if (import.meta.main) {
     }
 
     const uploadStatus = result.uploaded ? " (uploaded to R2)" : "";
-    console.log(
-      `Generated ${result.path} with ${result.count} documents${uploadStatus}`,
-    );
+    console.log(`Generated ${result.path} with ${result.count} documents${uploadStatus}`);
   })();
 }

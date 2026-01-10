@@ -3,8 +3,7 @@ import type { RateLimiter } from "../rate-limiter";
 import type { CdxRecord } from "./cdx-index";
 
 const WARC_BASE_URL = "https://data.commoncrawl.org";
-const USER_AGENT =
-  "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
+const USER_AGENT = "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
 
 export interface WarcResult {
   content: Uint8Array;
@@ -97,11 +96,7 @@ export async function fetchWarcRecord(
       clearTimeout(timeoutId);
 
       // Don't retry on non-retryable errors
-      if (
-        err instanceof HttpError &&
-        err.status !== 503 &&
-        err.status !== 429
-      ) {
+      if (err instanceof HttpError && err.status !== 503 && err.status !== 429) {
         throw err;
       }
 
@@ -116,9 +111,7 @@ export async function fetchWarcRecord(
     }
   }
 
-  throw new Error(
-    "Unexpected: exhausted retries without returning or throwing",
-  );
+  throw new Error("Unexpected: exhausted retries without returning or throwing");
 }
 
 /**

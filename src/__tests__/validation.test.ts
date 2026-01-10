@@ -82,9 +82,7 @@ describe("validateDocx", () => {
 
   test("handles binary data with embedded null bytes", () => {
     const zipMagic = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
-    const textPart = new TextEncoder().encode(
-      "[Content_Types].xml word/document.xml",
-    );
+    const textPart = new TextEncoder().encode("[Content_Types].xml word/document.xml");
     const data = new Uint8Array(150);
     data.set(zipMagic, 0);
     // Insert some null bytes
@@ -102,28 +100,20 @@ describe("extractFilename", () => {
   });
 
   test("extracts filename from URL with path", () => {
-    expect(extractFilename("https://example.com/files/reports/doc.docx")).toBe(
-      "doc.docx",
-    );
+    expect(extractFilename("https://example.com/files/reports/doc.docx")).toBe("doc.docx");
   });
 
   test("decodes URL-encoded filename", () => {
-    expect(extractFilename("https://example.com/my%20doc.docx")).toBe(
-      "my doc.docx",
-    );
+    expect(extractFilename("https://example.com/my%20doc.docx")).toBe("my doc.docx");
   });
 
   test("decodes complex URL encoding", () => {
-    expect(extractFilename("https://example.com/file%26name%3D1.docx")).toBe(
-      "file&name=1.docx",
-    );
+    expect(extractFilename("https://example.com/file%26name%3D1.docx")).toBe("file&name=1.docx");
   });
 
   test("handles URL with query parameters", () => {
     // URL.pathname strips query params, so only the filename is returned
-    expect(extractFilename("https://example.com/doc.docx?v=1")).toBe(
-      "doc.docx",
-    );
+    expect(extractFilename("https://example.com/doc.docx?v=1")).toBe("doc.docx");
   });
 
   test("returns unknown.docx for URL without path", () => {
@@ -170,9 +160,7 @@ describe("computeHash", () => {
     const data = new Uint8Array(0);
     const hash = await computeHash(data);
     // SHA-256 of empty string is known
-    expect(hash).toBe(
-      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    );
+    expect(hash).toBe("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   });
 
   test("handles binary data with null bytes", async () => {

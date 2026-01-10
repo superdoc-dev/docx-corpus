@@ -23,9 +23,7 @@ import { computeHash, extractFilename, validateDocx } from "./validation";
 
 interface ProcessContext {
   db: Awaited<ReturnType<typeof createDb>>;
-  storage:
-    | ReturnType<typeof createLocalStorage>
-    | ReturnType<typeof createR2Storage>;
+  storage: ReturnType<typeof createLocalStorage> | ReturnType<typeof createR2Storage>;
   config: Config;
   crawlId: string;
   stats: { saved: number; skipped: number; failed: number };
@@ -134,9 +132,7 @@ export async function scrape(
   keyValue("Batch size", `${batchSize} documents`);
   keyValue(
     "Storage",
-    useCloud
-      ? `R2 (${config.cloudflare.r2BucketName})`
-      : `local (${config.storage.localPath})`,
+    useCloud ? `R2 (${config.cloudflare.r2BucketName})` : `local (${config.storage.localPath})`,
   );
   keyValue("Crawl", crawlId);
   keyValue("CDX workers", config.crawl.cdxConcurrency);
@@ -201,18 +197,9 @@ export async function scrape(
         progress.bytesTotal > 0
           ? Math.round((progress.bytesDownloaded / progress.bytesTotal) * 100)
           : 0;
-      const bar = progressBar(
-        progress.bytesDownloaded,
-        Math.max(progress.bytesTotal, 1),
-        10,
-      );
-      const shortName =
-        filename.length > 20
-          ? `${filename.slice(0, 17)}...`
-          : filename.padEnd(20);
-      lines.push(
-        `    ${shortName} ${bar} ${pct}% (${progress.recordsFound} found)`,
-      );
+      const bar = progressBar(progress.bytesDownloaded, Math.max(progress.bytesTotal, 1), 10);
+      const shortName = filename.length > 20 ? `${filename.slice(0, 17)}...` : filename.padEnd(20);
+      lines.push(`    ${shortName} ${bar} ${pct}% (${progress.recordsFound} found)`);
     });
 
     // WARC progress line with throughput metrics
@@ -239,16 +226,12 @@ export async function scrape(
     if (stats.failed > 0) extras.push(`${stats.failed} fail`);
     if (errorCount > 0) extras.push(`${errorCount} retried`);
     const extrasText = extras.length > 0 ? ` (${extras.join(" · ")})` : "";
-    lines.push(
-      `  WARC: ${warcBar} ${savedDisplay}/${batchSize} saved${extrasText}`,
-    );
+    lines.push(`  WARC: ${warcBar} ${savedDisplay}/${batchSize} saved${extrasText}`);
 
     prevLineCount = writeMultiLineProgress(lines, prevLineCount);
   };
 
-  const cacheDir = noCache
-    ? undefined
-    : `${config.storage.localPath}/cdx-cache`;
+  const cacheDir = noCache ? undefined : `${config.storage.localPath}/cdx-cache`;
 
   const streamOptions = {
     verbose,
@@ -284,10 +267,7 @@ export async function scrape(
 
   const tasks: Set<Promise<void>> = new Set();
 
-  for await (const record of streamAllCdxFilesParallel(
-    crawlId,
-    streamOptions,
-  )) {
+  for await (const record of streamAllCdxFilesParallel(crawlId, streamOptions)) {
     // Stop when we have enough saved files
     if (stats.saved >= batchSize) break;
 
@@ -331,10 +311,7 @@ export async function scrape(
 
   // Generate manifest
   const cloudflareConfig = useCloud ? config.cloudflare : undefined;
-  const manifest = await generateManifest(
-    config.storage.localPath,
-    cloudflareConfig,
-  );
+  const manifest = await generateManifest(config.storage.localPath, cloudflareConfig);
   if (manifest) {
     section("Manifest");
     keyValue("Documents", manifest.count);

@@ -1,8 +1,4 @@
-import {
-  HeadObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
+import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import type { Config } from "../config";
 
 export interface R2Storage {
@@ -47,8 +43,7 @@ export function createR2Storage(config: Config["cloudflare"]): R2Storage {
           Bucket: bucket,
           Key: key,
           Body: content,
-          ContentType:
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         }),
       );
 

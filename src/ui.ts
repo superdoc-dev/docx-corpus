@@ -19,11 +19,7 @@ export function blank() {
   console.log();
 }
 
-export function progressBar(
-  current: number,
-  total: number,
-  width = 20,
-): string {
+export function progressBar(current: number, total: number, width = 20): string {
   const ratio = total > 0 ? Math.min(current / total, 1) : 0;
   const filled = Math.round(ratio * width);
   const empty = width - filled;
@@ -45,11 +41,7 @@ export function writeTwoLineProgress(line1: string, line2: string) {
   process.stdout.write(`${line1}\n${line2}`);
 }
 
-export function writeThreeLineProgress(
-  line1: string,
-  line2: string,
-  line3: string,
-) {
+export function writeThreeLineProgress(line1: string, line2: string, line3: string) {
   clearLines(3);
   process.stdout.write(`${line1}\n${line2}\n${line3}`);
 }

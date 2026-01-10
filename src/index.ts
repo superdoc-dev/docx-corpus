@@ -52,12 +52,7 @@ async function main() {
 
   switch (command) {
     case "scrape":
-      await scrape(
-        config,
-        flags.batchSize || 100,
-        flags.verbose,
-        flags.noCache,
-      );
+      await scrape(config, flags.batchSize || 100, flags.verbose, flags.noCache);
       process.exit(0); // Force exit to clean up any lingering async operations
       break;
     case "status":

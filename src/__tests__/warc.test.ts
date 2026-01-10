@@ -51,8 +51,7 @@ describe("parseWarcRecord", () => {
     body?: Uint8Array | string;
   }): Uint8Array {
     const { httpStatus = 200, contentType = "text/plain", body = "" } = options;
-    const bodyBytes =
-      typeof body === "string" ? new TextEncoder().encode(body) : body;
+    const bodyBytes = typeof body === "string" ? new TextEncoder().encode(body) : body;
 
     // WARC header ends with \r\n\r\n
     const warcHeader = `WARC/1.0\r\nWARC-Type: response\r\nContent-Length: 100\r\n\r\n`;
@@ -138,9 +137,7 @@ describe("parseWarcRecord", () => {
 
   test("throws when WARC header separator missing", () => {
     // No \r\n\r\n after WARC headers
-    const malformed = new TextEncoder().encode(
-      "WARC/1.0\r\nWARC-Type: response\r\n",
-    );
+    const malformed = new TextEncoder().encode("WARC/1.0\r\nWARC-Type: response\r\n");
 
     expect(() => parseWarcRecord(malformed)).toThrow(
       "Invalid WARC record: no WARC header separator found",
@@ -149,15 +146,11 @@ describe("parseWarcRecord", () => {
 
   test("throws when HTTP header separator missing", () => {
     // Has WARC separator but no HTTP separator
-    const warcPart = new TextEncoder().encode(
-      "WARC/1.0\r\nWARC-Type: response\r\n",
-    );
+    const warcPart = new TextEncoder().encode("WARC/1.0\r\nWARC-Type: response\r\n");
     const separator = new Uint8Array([13, 10, 13, 10]);
     const httpPart = new TextEncoder().encode("HTTP/1.1 200 OK\r\n");
 
-    const data = new Uint8Array(
-      warcPart.length + separator.length + httpPart.length,
-    );
+    const data = new Uint8Array(warcPart.length + separator.length + httpPart.length);
     data.set(warcPart, 0);
     data.set(separator, warcPart.length);
     data.set(httpPart, warcPart.length + separator.length);

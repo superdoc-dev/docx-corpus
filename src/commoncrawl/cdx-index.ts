@@ -2,10 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { gunzipSync, spawn } from "bun";
 
 const CC_DATA_URL = "https://data.commoncrawl.org";
-const USER_AGENT =
-  "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
-export const DOCX_MIME =
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const USER_AGENT = "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
+export const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 /**
  * Parse a CDX line and extract the record if it's a valid .docx
@@ -224,10 +222,7 @@ export async function* streamCdxFile(
     // Cache if fully consumed
     if (fullyConsumed && cacheFile && cacheDir && records.length > 0) {
       mkdirSync(cacheDir, { recursive: true });
-      writeFileSync(
-        cacheFile,
-        records.map((r) => JSON.stringify(r)).join("\n"),
-      );
+      writeFileSync(cacheFile, records.map((r) => JSON.stringify(r)).join("\n"));
     }
   }
 }
