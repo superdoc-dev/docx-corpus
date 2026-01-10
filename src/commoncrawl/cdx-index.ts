@@ -242,6 +242,13 @@ export async function* streamCdxFile(
 
     // Cache if fully consumed (even empty files, so we don't re-download)
     if (fullyConsumed && cacheFile) {
+      // REMOVE LATER
+      if (verbose) {
+        const mem = process.memoryUsage();
+        console.log(
+          `  [mem] ${filename}: ${records.length} records cached, heap=${Math.round(mem.heapUsed / 1024 / 1024)}MB`,
+        );
+      }
       await Bun.write(cacheFile, records.map((r) => JSON.stringify(r)).join("\n"));
     }
   }

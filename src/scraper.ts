@@ -280,6 +280,16 @@ export async function scrape(
     if (stats.saved >= batchSize) break;
 
     stats.discovered++;
+
+    // Log memory usage periodically
+    // REMOVE LATER
+    if (verbose && stats.discovered % 1000 === 0) {
+      const mem = process.memoryUsage();
+      console.log(
+        `\n  [mem] discovered=${stats.discovered} tasks=${tasks.size} heap=${Math.round(mem.heapUsed / 1024 / 1024)}MB rss=${Math.round(mem.rss / 1024 / 1024)}MB`,
+      );
+    }
+
     updateProgress();
 
     // Queue parallel download
