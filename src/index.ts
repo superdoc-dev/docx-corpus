@@ -18,6 +18,7 @@ Commands
 Options
   --batch-size <n>  Documents to save per run (default: 100)
   --crawl <id>      Common Crawl index ID (default: latest)
+  --no-cache        Disable CDX index caching (re-download all)
   --verbose         Show detailed logs for debugging
 
 Environment Variables
@@ -51,7 +52,12 @@ async function main() {
 
   switch (command) {
     case "scrape":
-      await scrape(config, flags.batchSize || 100, flags.verbose);
+      await scrape(
+        config,
+        flags.batchSize || 100,
+        flags.verbose,
+        flags.noCache,
+      );
       process.exit(0); // Force exit to clean up any lingering async operations
       break;
     case "status":
@@ -112,11 +118,13 @@ function parseFlags(args: string[]): {
   batchSize?: number;
   crawl?: string;
   verbose?: boolean;
+  noCache?: boolean;
 } {
   const flags: {
     batchSize?: number;
     crawl?: string;
     verbose?: boolean;
+    noCache?: boolean;
   } = {};
 
   for (let i = 0; i < args.length; i++) {
@@ -128,6 +136,8 @@ function parseFlags(args: string[]): {
       flags.crawl = args[++i];
     } else if (arg === "--verbose" || arg === "-v") {
       flags.verbose = true;
+    } else if (arg === "--no-cache") {
+      flags.noCache = true;
     }
   }
 

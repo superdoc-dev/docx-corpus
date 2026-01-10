@@ -117,6 +117,7 @@ export async function scrape(
   config: Config,
   batchSize: number,
   verbose?: boolean,
+  noCache?: boolean,
 ) {
   const startTime = Date.now();
   const useCloud = hasCloudflareCredentials(config);
@@ -140,6 +141,7 @@ export async function scrape(
   keyValue("Crawl", crawlId);
   keyValue("CDX workers", config.crawl.cdxConcurrency);
   keyValue("WARC workers", config.crawl.warcConcurrency);
+  keyValue("CDX cache", noCache ? "disabled" : "enabled");
   if (verbose) keyValue("Verbose", "enabled");
   blank();
 
@@ -244,10 +246,15 @@ export async function scrape(
     prevLineCount = writeMultiLineProgress(lines, prevLineCount);
   };
 
+  const cacheDir = noCache
+    ? undefined
+    : `${config.storage.localPath}/cdx-cache`;
+
   const streamOptions = {
     verbose,
     concurrency: config.crawl.cdxConcurrency,
     queueSize: config.crawl.cdxQueueSize,
+    cacheDir,
     onProgress: (progress: {
       totalFiles: number;
       completedFiles: number;
