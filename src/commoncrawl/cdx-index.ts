@@ -245,8 +245,8 @@ export async function* streamCdxFile(
       // REMOVE LATER
       if (verbose) {
         const mem = process.memoryUsage();
-        console.log(
-          `  [mem] ${filename}: ${records.length} records cached, heap=${Math.round(mem.heapUsed / 1024 / 1024)}MB`,
+        console.error(
+          `[mem] ${filename}: ${records.length} records cached, heap=${Math.round(mem.heapUsed / 1024 / 1024)}MB`,
         );
       }
       await Bun.write(cacheFile, records.map((r) => JSON.stringify(r)).join("\n"));
