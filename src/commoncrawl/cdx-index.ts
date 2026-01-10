@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { gunzipSync, spawn } from "bun";
+import type { RateLimiter } from "../rate-limiter";
 
 const CC_DATA_URL = "https://data.commoncrawl.org";
 const USER_AGENT = "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
@@ -85,12 +86,14 @@ export async function* streamCdxFile(
     cacheDir?: string;
     verbose?: boolean;
     onFileProgress?: FileProgressCallback;
+    rateLimiter?: RateLimiter;
   },
 ): AsyncGenerator<CdxRecord> {
   const filename = cdxPath.split("/").pop() || cdxPath;
   const cacheDir = options?.cacheDir;
   const verbose = options?.verbose;
   const onFileProgress = options?.onFileProgress;
+  const rateLimiter = options?.rateLimiter;
   const cacheFile = cacheDir ? `${cacheDir}/${filename}.txt` : null;
 
   // Check cache first
@@ -119,7 +122,10 @@ export async function* streamCdxFile(
     console.log(`  [verbose] Fetching: ${url}`);
   }
 
-  // Get content length first
+  // Rate limit before fetch
+  await rateLimiter?.acquire();
+
+  // Get content length
   const headRes = await fetch(url, {
     method: "HEAD",
     headers: { "User-Agent": USER_AGENT },

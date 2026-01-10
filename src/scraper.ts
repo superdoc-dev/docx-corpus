@@ -176,10 +176,15 @@ export async function scrape(
 
   // Parallel download setup
   const downloadLimit = pLimit(config.crawl.warcConcurrency);
-  const rateLimiter = createRateLimiter({
-    initialRps: config.crawl.rateLimitRps,
-    minRps: config.crawl.minRps,
-    maxRps: config.crawl.maxRps,
+  const warcRateLimiter = createRateLimiter({
+    initialRps: config.crawl.warcRateLimitRps,
+    minRps: config.crawl.warcMinRps,
+    maxRps: config.crawl.warcMaxRps,
+  });
+  const cdxRateLimiter = createRateLimiter({
+    initialRps: config.crawl.cdxRateLimitRps,
+    minRps: config.crawl.cdxMinRps,
+    maxRps: config.crawl.cdxMaxRps,
   });
 
   // Track throughput
@@ -219,12 +224,10 @@ export async function scrape(
       docsAtLastUpdate = stats.saved;
     }
 
-    const currentRps = rateLimiter.getCurrentRps();
-    const { errorCount } = rateLimiter.getStats();
+    const { errorCount } = warcRateLimiter.getStats();
 
     const extras: string[] = [];
     if (docsPerSec > 0) extras.push(`${docsPerSec.toFixed(1)}/s`);
-    extras.push(`${currentRps} RPS`);
     if (stats.skipped > 0) extras.push(`${stats.skipped} dup`);
     if (stats.failed > 0) extras.push(`${stats.failed} fail`);
     if (errorCount > 0) extras.push(`${errorCount} retried`);
@@ -246,6 +249,7 @@ export async function scrape(
     concurrency: config.crawl.cdxConcurrency,
     queueSize: config.crawl.cdxQueueSize,
     cacheDir,
+    rateLimiter: cdxRateLimiter,
     onProgress: (progress: {
       totalFiles: number;
       completedFiles: number;
@@ -284,14 +288,14 @@ export async function scrape(
 
     // Queue parallel download
     const task = downloadLimit(async () => {
-      await rateLimiter.acquire();
+      await warcRateLimiter.acquire();
       await processRecord(record, {
         db,
         storage,
         config,
         crawlId,
         stats,
-        rateLimiter,
+        rateLimiter: warcRateLimiter,
         force,
       });
       updateProgress();

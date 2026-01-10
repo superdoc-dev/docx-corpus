@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 
 const CDX_BASE_URL = "https://index.commoncrawl.org";
 const CACHE_FILE = "crawls.json";

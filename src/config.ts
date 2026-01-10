@@ -2,10 +2,13 @@ export interface Config {
   crawl: {
     id: string;
     cdxConcurrency: number;
+    cdxRateLimitRps: number;
+    cdxMaxRps: number;
+    cdxMinRps: number;
     warcConcurrency: number;
-    rateLimitRps: number;
-    maxRps: number;
-    minRps: number;
+    warcRateLimitRps: number;
+    warcMaxRps: number;
+    warcMinRps: number;
     timeoutMs: number;
     cdxQueueSize: number;
   };
@@ -27,12 +30,15 @@ export function loadConfig(): Config {
     crawl: {
       id: env.CRAWL_ID || "CC-MAIN-2025-51",
       cdxConcurrency: parseInt(env.CDX_CONCURRENCY || "", 10) || 3,
-      warcConcurrency: parseInt(env.WARC_CONCURRENCY || "", 10) || 50,
-      rateLimitRps: parseInt(env.RATE_LIMIT_RPS || "", 10) || 100,
-      maxRps: parseInt(env.MAX_RPS || "", 10) || 200,
-      minRps: parseInt(env.MIN_RPS || "", 10) || 10,
-      timeoutMs: parseInt(env.TIMEOUT_MS || "", 10) || 45000,
+      cdxRateLimitRps: parseInt(env.CDX_RATE_LIMIT_RPS || "", 10) || 5,
+      cdxMaxRps: parseInt(env.CDX_MAX_RPS || "", 10) || 10,
+      cdxMinRps: parseInt(env.CDX_MIN_RPS || "", 10) || 1,
       cdxQueueSize: parseInt(env.CDX_QUEUE_SIZE || "", 10) || 2000,
+      warcConcurrency: parseInt(env.WARC_CONCURRENCY || "", 10) || 50,
+      warcRateLimitRps: parseInt(env.WARC_RATE_LIMIT_RPS || "", 10) || 50,
+      warcMaxRps: parseInt(env.WARC_MAX_RPS || "", 10) || 100,
+      warcMinRps: parseInt(env.WARC_MIN_RPS || "", 10) || 10,
+      timeoutMs: parseInt(env.TIMEOUT_MS || "", 10) || 45000,
     },
     storage: {
       localPath: env.STORAGE_PATH || "./corpus",

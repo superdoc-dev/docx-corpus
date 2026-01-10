@@ -23,11 +23,10 @@ Options
   --verbose     Show detailed logs for debugging
 
 Environment Variables
-  CDX_CONCURRENCY   Parallel CDX index downloads (default: 3)
-  WARC_CONCURRENCY  Parallel WARC file downloads (default: 50)
-  RATE_LIMIT_RPS    Initial requests per second (default: 100)
-  MAX_RPS           Max RPS for adaptive rate limiting (default: 200)
-  MIN_RPS           Min RPS floor (default: 10)
+  CDX_CONCURRENCY      Parallel CDX index downloads (default: 3)
+  CDX_RATE_LIMIT_RPS   CDX requests per second (default: 5)
+  WARC_CONCURRENCY     Parallel WARC file downloads (default: 50)
+  WARC_RATE_LIMIT_RPS  WARC requests per second (default: 50)
 
 Examples
   bun run scrape --batch 500

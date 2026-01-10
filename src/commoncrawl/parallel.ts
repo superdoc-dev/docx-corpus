@@ -1,3 +1,4 @@
+import type { RateLimiter } from "../rate-limiter";
 import { AsyncQueue } from "../utils/async-queue";
 import { type CdxRecord, type FileProgress, getCdxPaths, streamCdxFile } from "./cdx-index";
 
@@ -15,6 +16,7 @@ export interface ParallelStreamOptions {
   onProgress?: ParallelProgressCallback;
   cacheDir?: string;
   verbose?: boolean;
+  rateLimiter?: RateLimiter;
 }
 
 /**
@@ -25,7 +27,14 @@ export async function* streamAllCdxFilesParallel(
   crawlId: string,
   options: ParallelStreamOptions = {},
 ): AsyncGenerator<CdxRecord> {
-  const { concurrency = 10, queueSize = 2000, onProgress, cacheDir, verbose } = options;
+  const {
+    concurrency = 10,
+    queueSize = 2000,
+    onProgress,
+    cacheDir,
+    verbose,
+    rateLimiter,
+  } = options;
 
   const paths = await getCdxPaths(crawlId);
   const queue = new AsyncQueue<CdxRecord>(queueSize);
@@ -67,6 +76,7 @@ export async function* streamAllCdxFilesParallel(
       for await (const record of streamCdxFile(path, {
         cacheDir,
         verbose,
+        rateLimiter,
         onFileProgress: (progress) => {
           if (stopped) return;
           activeFiles.set(filename, progress);
