@@ -2,9 +2,7 @@ export interface Config {
   crawl: {
     id: string;
     cdxConcurrency: number;
-    cdxRateLimitRps: number;
-    cdxMaxRps: number;
-    cdxMinRps: number;
+    cdxIntervalMs: number;
     warcConcurrency: number;
     warcRateLimitRps: number;
     warcMaxRps: number;
@@ -29,10 +27,8 @@ export function loadConfig(): Config {
   return {
     crawl: {
       id: env.CRAWL_ID || "CC-MAIN-2025-51",
-      cdxConcurrency: parseInt(env.CDX_CONCURRENCY || "", 10) || 3,
-      cdxRateLimitRps: parseInt(env.CDX_RATE_LIMIT_RPS || "", 10) || 5,
-      cdxMaxRps: parseInt(env.CDX_MAX_RPS || "", 10) || 10,
-      cdxMinRps: parseInt(env.CDX_MIN_RPS || "", 10) || 1,
+      cdxConcurrency: parseInt(env.CDX_CONCURRENCY || "", 10) || 1,
+      cdxIntervalMs: parseInt(env.CDX_INTERVAL_MS || "", 10) || 2000,
       cdxQueueSize: parseInt(env.CDX_QUEUE_SIZE || "", 10) || 2000,
       warcConcurrency: parseInt(env.WARC_CONCURRENCY || "", 10) || 50,
       warcRateLimitRps: parseInt(env.WARC_RATE_LIMIT_RPS || "", 10) || 50,

@@ -1,5 +1,4 @@
 import { gunzipSync, spawn } from "bun";
-import type { RateLimiter } from "../rate-limiter";
 
 const CC_DATA_URL = "https://data.commoncrawl.org";
 const USER_AGENT = "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";
@@ -85,14 +84,12 @@ export async function* streamCdxFile(
     cacheDir?: string;
     verbose?: boolean;
     onFileProgress?: FileProgressCallback;
-    rateLimiter?: RateLimiter;
   },
 ): AsyncGenerator<CdxRecord> {
   const filename = cdxPath.split("/").pop() || cdxPath;
   const cacheDir = options?.cacheDir;
   const verbose = options?.verbose;
   const onFileProgress = options?.onFileProgress;
-  const rateLimiter = options?.rateLimiter;
   const cacheFile = cacheDir ? `${cacheDir}/${filename}.txt` : null;
 
   // Check cache first
@@ -125,11 +122,9 @@ export async function* streamCdxFile(
     console.log(`  [verbose] Fetching: ${url}`);
   }
 
-  // Fetch with retry logic for rate limiting
+  // Fetch with retry logic for rate limiting errors
   let response: Response | null = null;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    await rateLimiter?.acquire();
-
     const res = await fetch(url, {
       headers: { "User-Agent": USER_AGENT },
     });
@@ -139,9 +134,8 @@ export async function* streamCdxFile(
       break;
     }
 
-    // Handle rate limiting errors with retry
+    // Retry on rate limiting errors
     if (res.status === 403 || res.status === 429 || res.status === 503) {
-      rateLimiter?.reportError(res.status);
       if (attempt < maxRetries) {
         const delay = 2 ** attempt * 1000; // 1s, 2s, 4s, 8s, 16s
         if (verbose) {
@@ -240,7 +234,6 @@ export async function* streamCdxFile(
     }
 
     fullyConsumed = true;
-    rateLimiter?.reportSuccess();
   } finally {
     downloadAborted = true;
     downloadReader.cancel().catch(() => {});

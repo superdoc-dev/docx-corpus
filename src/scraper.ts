@@ -182,11 +182,6 @@ export async function scrape(
     minRps: config.crawl.warcMinRps,
     maxRps: config.crawl.warcMaxRps,
   });
-  const cdxRateLimiter = createRateLimiter({
-    initialRps: config.crawl.cdxRateLimitRps,
-    minRps: config.crawl.cdxMinRps,
-    maxRps: config.crawl.cdxMaxRps,
-  });
 
   // Track throughput
   let lastThroughputUpdate = Date.now();
@@ -248,9 +243,9 @@ export async function scrape(
   const streamOptions = {
     verbose,
     concurrency: config.crawl.cdxConcurrency,
+    intervalMs: config.crawl.cdxIntervalMs,
     queueSize: config.crawl.cdxQueueSize,
     cacheDir,
-    rateLimiter: cdxRateLimiter,
     onProgress: (progress: {
       totalFiles: number;
       completedFiles: number;

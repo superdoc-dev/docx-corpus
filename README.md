@@ -148,21 +148,19 @@ STORAGE_PATH=./corpus
 CRAWL_ID=CC-MAIN-2025-51
 
 # Performance tuning
-CDX_CONCURRENCY=3           # Parallel CDX index downloads
-CDX_RATE_LIMIT_RPS=5        # CDX requests per second
+CDX_CONCURRENCY=1           # Parallel CDX index downloads
+CDX_INTERVAL_MS=2000        # Minimum ms between CDX requests
 CDX_QUEUE_SIZE=2000         # CDX record buffer size
 WARC_CONCURRENCY=50         # Parallel WARC file downloads
 WARC_RATE_LIMIT_RPS=100     # WARC requests per second
 TIMEOUT_MS=45000            # Request timeout in ms
 ```
 
-### Adaptive Rate Limiting
+### Rate Limiting
 
-The scraper uses adaptive rate limiting that automatically adjusts to Common Crawl's server load:
-
-- **On 503/429 errors**: RPS reduces by 20% and retries with exponential backoff
-- **On success streaks**: RPS gradually increases by 5% (up to MAX_RPS)
-- **Progress display**: Shows current RPS, docs/sec throughput, and retry count
+- **CDX requests**: Fixed interval between requests (default 2 seconds) to avoid Common Crawl rate limits
+- **WARC requests**: Adaptive rate limiting that adjusts to server load
+- **On 503/429/403 errors**: Retries with exponential backoff (1s, 2s, 4s, 8s, 16s)
 
 ## Corpus Statistics
 
