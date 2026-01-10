@@ -16,7 +16,7 @@ Commands
   crawls    List available Common Crawl indexes
 
 Options
-  --batch <n>   Documents to save per run (default: 100)
+  --batch <n>   Limit to n documents (default: all)
   --crawl <id>  Common Crawl index ID (default: latest)
   --no-cache    Disable CDX index caching (re-download all)
   --force       Re-process URLs already in database
@@ -53,14 +53,14 @@ async function main() {
 
   switch (command) {
     case "scrape":
-      await scrape(config, flags.batchSize || 100, flags.verbose, flags.noCache, flags.force);
+      await scrape(config, flags.batchSize ?? Infinity, flags.verbose, flags.noCache, flags.force);
       process.exit(0); // Force exit to clean up any lingering async operations
       break;
     case "status":
       await status(config);
       break;
     case "crawls":
-      await showCrawls();
+      await showCrawls(config);
       break;
     default:
       console.error(`Unknown command: ${command}`);
@@ -90,11 +90,12 @@ async function status(config: ReturnType<typeof loadConfig>) {
   keyValue("Total", total);
 }
 
-async function showCrawls() {
+async function showCrawls(config: ReturnType<typeof loadConfig>) {
   header();
 
   section("Fetching available crawls...");
-  const crawls = await listCrawls();
+  const cacheDir = `${config.storage.localPath}/cdx-cache`;
+  const crawls = await listCrawls({ cacheDir });
 
   blank();
   section("Available Common Crawl indexes");

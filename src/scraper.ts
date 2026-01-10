@@ -127,9 +127,10 @@ export async function scrape(
   header();
 
   // Get crawl ID
+  const cacheDir = noCache ? undefined : `${config.storage.localPath}/cdx-cache`;
   let crawlId = config.crawl.id;
   if (!crawlId || crawlId === "latest") {
-    crawlId = await getLatestCrawl();
+    crawlId = await getLatestCrawl({ cacheDir, noCache });
   }
 
   section("Configuration");
@@ -239,8 +240,6 @@ export async function scrape(
 
     prevLineCount = writeMultiLineProgress(lines, prevLineCount);
   };
-
-  const cacheDir = noCache ? undefined : `${config.storage.localPath}/cdx-cache`;
 
   const streamOptions = {
     verbose,
