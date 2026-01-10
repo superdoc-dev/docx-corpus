@@ -127,20 +127,15 @@ export async function* streamCdxFile(
   // Rate limit before fetch
   await rateLimiter?.acquire();
 
-  // Get content length
-  const headRes = await fetch(url, {
-    method: "HEAD",
-    headers: { "User-Agent": USER_AGENT },
-  });
-  const bytesTotal = parseInt(headRes.headers.get("content-length") || "0", 10);
-
   // Start download
   const response = await fetch(url, {
     headers: { "User-Agent": USER_AGENT },
   });
   if (!response.ok || !response.body) {
+    rateLimiter?.reportError(response.status);
     throw new Error(`Failed to fetch CDX: ${response.status}`);
   }
+  const bytesTotal = parseInt(response.headers.get("content-length") || "0", 10);
 
   // Spawn gunzip to handle multi-member gzip
   const gunzip = spawn({
@@ -221,6 +216,7 @@ export async function* streamCdxFile(
     }
 
     fullyConsumed = true;
+    rateLimiter?.reportSuccess();
   } finally {
     downloadAborted = true;
     downloadReader.cancel().catch(() => {});

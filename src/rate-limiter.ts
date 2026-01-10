@@ -76,8 +76,8 @@ export function createRateLimiter(config: RateLimiterConfig | number): RateLimit
     errorCount++;
     successStreak = 0;
 
-    // Back off on rate limiting errors (503, 429)
-    if (status === 503 || status === 429) {
+    // Back off on rate limiting errors (503, 429, 403)
+    if (status === 503 || status === 429 || status === 403) {
       currentRps = Math.max(minRps, currentRps * backoffFactor);
     }
   }
