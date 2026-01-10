@@ -16,11 +16,11 @@ Commands
   crawls    List available Common Crawl indexes
 
 Options
-  --batch-size <n>  Documents to save per run (default: 100)
-  --crawl <id>      Common Crawl index ID (default: latest)
-  --no-cache        Disable CDX index caching (re-download all)
-  --force           Re-process URLs already in database
-  --verbose         Show detailed logs for debugging
+  --batch <n>   Documents to save per run (default: 100)
+  --crawl <id>  Common Crawl index ID (default: latest)
+  --no-cache    Disable CDX index caching (re-download all)
+  --force       Re-process URLs already in database
+  --verbose     Show detailed logs for debugging
 
 Environment Variables
   CDX_CONCURRENCY   Parallel CDX index downloads (default: 3)
@@ -30,7 +30,7 @@ Environment Variables
   MIN_RPS           Min RPS floor (default: 10)
 
 Examples
-  bun run scrape --batch-size 500
+  bun run scrape --batch 500
   bun run scrape --crawl CC-MAIN-2024-51
   bun run status
 `;
@@ -128,7 +128,7 @@ function parseFlags(args: string[]): {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
-    if (arg === "--batch-size" && args[i + 1]) {
+    if (arg === "--batch" && args[i + 1]) {
       flags.batchSize = parseInt(args[++i], 10);
     } else if (arg === "--crawl" && args[i + 1]) {
       flags.crawl = args[++i];
