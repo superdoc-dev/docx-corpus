@@ -28,16 +28,19 @@ interface ProcessContext {
   crawlId: string;
   stats: { saved: number; skipped: number; failed: number };
   rateLimiter: RateLimiter;
+  force?: boolean;
 }
 
 async function processRecord(record: CdxRecord, ctx: ProcessContext) {
-  const { db, storage, config, crawlId, stats, rateLimiter } = ctx;
+  const { db, storage, config, crawlId, stats, rateLimiter, force } = ctx;
 
-  // Check if already processed
-  const existingByUrl = await db.getDocumentByUrl(record.url);
-  if (existingByUrl && existingByUrl.status === "uploaded") {
-    stats.skipped++;
-    return;
+  // Check if already processed (skip if --force)
+  if (!force) {
+    const existingByUrl = await db.getDocumentByUrl(record.url);
+    if (existingByUrl && existingByUrl.status === "uploaded") {
+      stats.skipped++;
+      return;
+    }
   }
 
   // Download from WARC
@@ -116,6 +119,7 @@ export async function scrape(
   batchSize: number,
   verbose?: boolean,
   noCache?: boolean,
+  force?: boolean,
 ) {
   const startTime = Date.now();
   const useCloud = hasCloudflareCredentials(config);
@@ -138,6 +142,7 @@ export async function scrape(
   keyValue("CDX workers", config.crawl.cdxConcurrency);
   keyValue("WARC workers", config.crawl.warcConcurrency);
   keyValue("CDX cache", noCache ? "disabled" : "enabled");
+  if (force) keyValue("Force", "re-process all URLs");
   if (verbose) keyValue("Verbose", "enabled");
   blank();
 
@@ -284,6 +289,7 @@ export async function scrape(
         crawlId,
         stats,
         rateLimiter,
+        force,
       });
       updateProgress();
     }).finally(() => tasks.delete(task));
