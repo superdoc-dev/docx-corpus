@@ -45,8 +45,22 @@
       line-height: 1.6;
     }
 
+    .stat-badge {
+      margin-top: 1.5rem;
+      padding: 0.5rem 1.25rem;
+      background: #F3F4F6;
+      border-radius: 9999px;
+      font-size: 0.9375rem;
+      color: #6B7280;
+    }
+
+    .stat-badge #count {
+      font-weight: 600;
+      color: #2D2D2D;
+    }
+
     .links {
-      margin-top: 2rem;
+      margin-top: 1.5rem;
       display: flex;
       gap: 1.5rem;
     }
@@ -90,9 +104,33 @@
       text-decoration: underline;
     }
 
+    .takedown {
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: #9CA3AF;
+    }
+
+    .takedown a {
+      color: #9CA3AF;
+      text-decoration: none;
+    }
+
+    .takedown a:hover {
+      text-decoration: underline;
+    }
+
     @media (prefers-color-scheme: dark) {
       body {
         background: #18181B;
+        color: #E5E5E5;
+      }
+
+      .stat-badge {
+        background: #27272A;
+        color: #9CA3AF;
+      }
+
+      .stat-badge #count {
         color: #E5E5E5;
       }
 
@@ -108,6 +146,9 @@
   <p class="tagline">
     The largest public corpus of .docx files, scraped from Common Crawl for document processing research.
   </p>
+  <div class="stat-badge">
+    <span id="count">—</span> files
+  </div>
   <div class="links">
     <a href="https://github.com/superdoc-dev/docx-corpus">GitHub</a>
     <a href="/manifest.txt">manifest.txt</a>
@@ -115,12 +156,21 @@
   <p class="files-note">
     Download the manifest, then fetch files at <code>/documents/{hash}.docx</code>
   </p>
-  <p class="files-note">
-    Takedown requests: <a href="mailto:help@docxcorp.us">help@docxcorp.us</a>
-  </p>
+  <p class="takedown">Takedown requests: <a href="mailto:help@docxcorp.us">help@docxcorp.us</a></p>
   <footer>
     Built by 🦋 <a href="https://superdoc.dev">SuperDoc</a>
   </footer>
+  <script>
+    fetch('/manifest.txt')
+      .then(r => r.text())
+      .then(t => {
+        const count = t.trim().split('\n').length;
+        document.getElementById('count').textContent = count.toLocaleString();
+      })
+      .catch(() => {
+        document.getElementById('count').textContent = 'Thousands of';
+      });
+  </script>
 </body>
 
 </html>
