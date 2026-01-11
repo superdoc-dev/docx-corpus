@@ -22,31 +22,21 @@ Document rendering is hard. Microsoft Word has decades of edge cases, quirks, an
 ## How It Works
 
 ```
-Common Crawl (3B+ URLs per crawl)
-         │
-         ▼
-┌─────────────────────┐
-│   CDX Index         │  ← Filter for .docx URLs
-│   (gzipped text)    │
-└─────────────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│   WARC Records      │  ← Download actual files
-│   (archived web)    │
-└─────────────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│   Validation        │  ← Verify valid .docx
-│   (ZIP + XML check) │
-└─────────────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│   Storage           │  ← Local or Cloudflare R2
-│   (deduplicated)    │
-└─────────────────────┘
+┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+│   Common Crawl   │      │   cdx-filter     │      │     scraper      │
+│   (S3 bucket)    │ ───► │   (Lambda)       │ ───► │     (Bun)        │
+│                  │      │                  │      │                  │
+│  CDX indexes     │      │  Filters .docx   │      │  Downloads WARC  │
+│  WARC archives   │      │  Writes to R2    │      │  Validates docx  │
+└──────────────────┘      └──────────────────┘      └──────────────────┘
+                                   │                         │
+                                   ▼                         ▼
+                          ┌──────────────────┐      ┌──────────────────┐
+                          │   Cloudflare R2  │      │     Storage      │
+                          │                  │      │                  │
+                          │  cdx-filtered/   │      │  Local or R2     │
+                          │  *.jsonl         │      │  documents/      │
+                          └──────────────────┘      └──────────────────┘
 ```
 
 ### Why Common Crawl?
@@ -71,26 +61,46 @@ cd docx-corpus
 bun install
 ```
 
+## Project Structure
+
+```
+apps/
+  cdx-filter/     # AWS Lambda - filters CDX indexes for .docx URLs
+  scraper/        # Main CLI - downloads WARC records and validates .docx files
+```
+
+| App | Purpose | Runtime |
+|-----|---------|---------|
+| **cdx-filter** | Filter Common Crawl CDX indexes | AWS Lambda (Node.js) |
+| **scraper** | Download and validate .docx files | Local (Bun) |
+
 ## Usage
 
+### 1. Run Lambda to filter CDX indexes
+
+First, deploy and run the Lambda function to filter Common Crawl CDX indexes for .docx files. See [apps/cdx-filter/README.md](apps/cdx-filter/README.md) for detailed setup instructions.
+
 ```bash
-# Scrape all documents from the latest crawl
-bun run scrape
+cd apps/cdx-filter
+./invoke-all.sh CC-MAIN-2025-51
+```
+
+This reads CDX files directly from Common Crawl S3 (no rate limits) and stores filtered JSONL in your R2 bucket.
+
+### 2. Run the scraper
+
+```bash
+# Scrape all documents from a crawl
+bun run scrape --crawl CC-MAIN-2025-51
 
 # Limit to 500 documents
-bun run scrape --batch 500
+bun run scrape --crawl CC-MAIN-2025-51 --batch 500
 
 # Re-process URLs already in database
-bun run scrape --force
-
-# Disable CDX caching (re-download index files)
-bun run scrape --no-cache
+bun run scrape --crawl CC-MAIN-2025-51 --force
 
 # Check progress
 bun run status
-
-# List available crawls
-bun start crawls
 ```
 
 ### Docker
@@ -102,9 +112,8 @@ Run the CLI in a container:
 docker-compose up -d --build
 
 # Run CLI commands
-docker exec docx-corpus bun run scrape
+docker exec docx-corpus bun run scrape --crawl CC-MAIN-2025-51
 docker exec docx-corpus bun run status
-docker exec docx-corpus bun run crawls
 
 # Stop the container
 docker-compose down
@@ -120,16 +129,19 @@ Pass environment variables via `docker run -e` or add them to your `.env` file.
 
 ### Storage Options
 
-**Local storage** (default):
-Files are saved to `./corpus/documents/`
+R2 credentials are **required** to read pre-filtered CDX records from the Lambda output.
 
-**Cloud storage** (Cloudflare R2):
+**Local document storage** (default):
+Downloaded .docx files are saved to `./corpus/documents/`
+
+**Cloud document storage** (Cloudflare R2):
+Documents can also be uploaded to R2 alongside the CDX records:
 
 ```bash
 export CLOUDFLARE_ACCOUNT_ID=xxx
 export R2_ACCESS_KEY_ID=xxx
 export R2_SECRET_ACCESS_KEY=xxx
-bun run scrape --batch 1000
+bun run scrape --crawl CC-MAIN-2025-51 --batch 1000
 ```
 
 ## Configuration
@@ -137,7 +149,7 @@ bun run scrape --batch 1000
 All configuration via environment variables (`.env`):
 
 ```bash
-# Storage (optional - defaults to local)
+# Cloudflare R2 (required for both Lambda and scraper)
 CLOUDFLARE_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
@@ -148,9 +160,6 @@ STORAGE_PATH=./corpus
 CRAWL_ID=CC-MAIN-2025-51
 
 # Performance tuning
-CDX_CONCURRENCY=1           # Parallel CDX index downloads
-CDX_INTERVAL_MS=2000        # Minimum ms between CDX requests
-CDX_QUEUE_SIZE=2000         # CDX record buffer size
 WARC_CONCURRENCY=50         # Parallel WARC file downloads
 WARC_RATE_LIMIT_RPS=100     # WARC requests per second
 TIMEOUT_MS=45000            # Request timeout in ms
@@ -158,7 +167,6 @@ TIMEOUT_MS=45000            # Request timeout in ms
 
 ### Rate Limiting
 
-- **CDX requests**: Fixed interval between requests (default 2 seconds) to avoid Common Crawl rate limits
 - **WARC requests**: Adaptive rate limiting that adjusts to server load
 - **On 503/429/403 errors**: Retries with exponential backoff (1s, 2s, 4s, 8s, 16s)
 

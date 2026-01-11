@@ -1,6 +1,6 @@
 import { gunzipSync } from "bun";
 import type { RateLimiter } from "../rate-limiter";
-import type { CdxRecord } from "./cdx-index";
+import type { CdxRecord } from "./cdx-r2";
 
 const WARC_BASE_URL = "https://data.commoncrawl.org";
 const USER_AGENT = "docx-corpus/0.9 (https://github.com/superdoc-dev/docx-corpus)";

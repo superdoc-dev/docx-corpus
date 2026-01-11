@@ -1,4 +1,3 @@
-import { listCrawls } from "./commoncrawl/index";
 import { loadConfig } from "./config";
 import { scrape } from "./scraper";
 import { createDb } from "./storage/db";
@@ -13,24 +12,20 @@ Usage
 Commands
   scrape    Download .docx files from Common Crawl
   status    Show corpus statistics
-  crawls    List available Common Crawl indexes
 
 Options
   --batch <n>   Limit to n documents (default: all)
-  --crawl <id>  Common Crawl index ID (default: latest)
-  --no-cache    Disable CDX index caching (re-download all)
+  --crawl <id>  Common Crawl index ID (required, or set CRAWL_ID env var)
   --force       Re-process URLs already in database
   --verbose     Show detailed logs for debugging
 
 Environment Variables
-  CDX_CONCURRENCY      Parallel CDX index downloads (default: 3)
-  CDX_RATE_LIMIT_RPS   CDX requests per second (default: 5)
+  CRAWL_ID             Common Crawl index ID (e.g., CC-MAIN-2025-51)
   WARC_CONCURRENCY     Parallel WARC file downloads (default: 50)
   WARC_RATE_LIMIT_RPS  WARC requests per second (default: 50)
 
 Examples
-  bun run scrape --batch 500
-  bun run scrape --crawl CC-MAIN-2024-51
+  bun run scrape --crawl CC-MAIN-2025-51 --batch 500
   bun run status
 `;
 
@@ -52,14 +47,11 @@ async function main() {
 
   switch (command) {
     case "scrape":
-      await scrape(config, flags.batchSize ?? Infinity, flags.verbose, flags.noCache, flags.force);
+      await scrape(config, flags.batchSize ?? Infinity, flags.verbose, flags.force);
       process.exit(0); // Force exit to clean up any lingering async operations
       break;
     case "status":
       await status(config);
-      break;
-    case "crawls":
-      await showCrawls(config);
       break;
     default:
       console.error(`Unknown command: ${command}`);
@@ -89,39 +81,16 @@ async function status(config: ReturnType<typeof loadConfig>) {
   keyValue("Total", total);
 }
 
-async function showCrawls(config: ReturnType<typeof loadConfig>) {
-  header();
-
-  section("Fetching available crawls...");
-  const cacheDir = `${config.storage.localPath}/cdx-cache`;
-  const crawls = await listCrawls({ cacheDir });
-
-  blank();
-  section("Available Common Crawl indexes");
-  blank();
-
-  for (const crawl of crawls.slice(0, 20)) {
-    console.log(`  ${crawl}`);
-  }
-
-  if (crawls.length > 20) {
-    blank();
-    console.log(`  ... and ${crawls.length - 20} more`);
-  }
-}
-
 function parseFlags(args: string[]): {
   batchSize?: number;
   crawl?: string;
   verbose?: boolean;
-  noCache?: boolean;
   force?: boolean;
 } {
   const flags: {
     batchSize?: number;
     crawl?: string;
     verbose?: boolean;
-    noCache?: boolean;
     force?: boolean;
   } = {};
 
@@ -134,8 +103,6 @@ function parseFlags(args: string[]): {
       flags.crawl = args[++i];
     } else if (arg === "--verbose" || arg === "-v") {
       flags.verbose = true;
-    } else if (arg === "--no-cache") {
-      flags.noCache = true;
     } else if (arg === "--force" || arg === "-f") {
       flags.force = true;
     }

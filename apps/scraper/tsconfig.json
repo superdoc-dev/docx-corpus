@@ -5,5 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "types": ["bun-types"]
-  }
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -1,7 +1,5 @@
 import pLimit from "p-limit";
-import type { CdxRecord } from "./commoncrawl/cdx-index";
-import { getLatestCrawl } from "./commoncrawl/index";
-import { streamAllCdxFilesParallel } from "./commoncrawl/parallel";
+import { streamCdxFromR2, type CdxRecord } from "./commoncrawl/cdx-r2";
 import { fetchWarcRecord, type WarcResult } from "./commoncrawl/warc";
 import { type Config, hasCloudflareCredentials } from "./config";
 import { generateManifest } from "./manifest";
@@ -119,7 +117,6 @@ export async function scrape(
   config: Config,
   batchSize: number,
   verbose?: boolean,
-  noCache?: boolean,
   force?: boolean,
 ) {
   const startTime = Date.now();
@@ -127,11 +124,9 @@ export async function scrape(
 
   header();
 
-  // Get crawl ID
-  const cacheDir = noCache ? undefined : `${config.storage.localPath}/cdx-cache`;
-  let crawlId = config.crawl.id;
-  if (!crawlId || crawlId === "latest") {
-    crawlId = await getLatestCrawl({ cacheDir, noCache });
+  const crawlId = config.crawl.id;
+  if (!crawlId) {
+    throw new Error("CRAWL_ID must be specified");
   }
 
   section("Configuration");
@@ -141,9 +136,7 @@ export async function scrape(
     useCloud ? `R2 (${config.cloudflare.r2BucketName})` : `local (${config.storage.localPath})`,
   );
   keyValue("Crawl", crawlId);
-  keyValue("CDX workers", config.crawl.cdxConcurrency);
   keyValue("WARC workers", config.crawl.warcConcurrency);
-  keyValue("CDX cache", noCache ? "disabled" : "enabled");
   if (force) keyValue("Force", "re-process all URLs");
   if (verbose) keyValue("Verbose", "enabled");
   blank();
@@ -165,16 +158,6 @@ export async function scrape(
     discovered: 0,
   };
 
-  // CDX progress state
-  const cdxProgress = {
-    completedFiles: 0,
-    totalFiles: 0,
-    activeFiles: new Map<
-      string,
-      { bytesDownloaded: number; bytesTotal: number; recordsFound: number }
-    >(),
-  };
-
   // Parallel download setup
   const downloadLimit = pLimit(config.crawl.warcConcurrency);
   const warcRateLimiter = createRateLimiter({
@@ -190,26 +173,10 @@ export async function scrape(
   // Track line count for clearing
   let prevLineCount = 1;
 
-  // Combined progress update function
+  // Progress update function
   const updateProgress = () => {
     const lines: string[] = [];
 
-    // CDX header line
-    const cdxHeader = `  CDX: ${cdxProgress.completedFiles}/${cdxProgress.totalFiles} indexes`;
-    lines.push(cdxHeader);
-
-    // Per-file progress bars
-    cdxProgress.activeFiles.forEach((progress, filename) => {
-      const pct =
-        progress.bytesTotal > 0
-          ? Math.round((progress.bytesDownloaded / progress.bytesTotal) * 100)
-          : 0;
-      const bar = progressBar(progress.bytesDownloaded, Math.max(progress.bytesTotal, 1), 10);
-      const shortName = filename.length > 20 ? `${filename.slice(0, 17)}...` : filename.padEnd(20);
-      lines.push(`    ${shortName} ${bar} ${pct}%`);
-    });
-
-    // WARC progress line with throughput metrics
     // Calculate docs/sec
     const now = Date.now();
     const elapsed = (now - lastThroughputUpdate) / 1000;
@@ -240,55 +207,17 @@ export async function scrape(
     prevLineCount = writeMultiLineProgress(lines, prevLineCount);
   };
 
-  const streamOptions = {
-    verbose,
-    concurrency: config.crawl.cdxConcurrency,
-    intervalMs: config.crawl.cdxIntervalMs,
-    queueSize: config.crawl.cdxQueueSize,
-    cacheDir,
-    onProgress: (progress: {
-      totalFiles: number;
-      completedFiles: number;
-      activeFiles: Map<
-        string,
-        {
-          filename: string;
-          bytesDownloaded: number;
-          bytesTotal: number;
-          recordsFound: number;
-        }
-      >;
-    }) => {
-      cdxProgress.completedFiles = progress.completedFiles;
-      cdxProgress.totalFiles = progress.totalFiles;
-      cdxProgress.activeFiles.clear();
-      progress.activeFiles.forEach((value, key) => {
-        cdxProgress.activeFiles.set(key, value);
-      });
-      updateProgress();
-    },
-  };
-
   blank();
   section("Processing");
   updateProgress(); // Show initial state
 
   const tasks: Set<Promise<void>> = new Set();
 
-  for await (const record of streamAllCdxFilesParallel(crawlId, streamOptions)) {
+  for await (const record of streamCdxFromR2(config, crawlId)) {
     // Stop when we have enough saved files
     if (stats.saved >= batchSize) break;
 
     stats.discovered++;
-
-    // Log memory usage periodically
-    // REMOVE LATER
-    if (verbose && stats.discovered % 1000 === 0) {
-      const mem = process.memoryUsage();
-      const line = `${new Date().toISOString()} discovered=${stats.discovered} tasks=${tasks.size} heap=${Math.round(mem.heapUsed / 1024 / 1024)}MB rss=${Math.round(mem.rss / 1024 / 1024)}MB\n`;
-      require("fs").appendFileSync("mem.log", line);
-    }
-
     updateProgress();
 
     // Queue parallel download
