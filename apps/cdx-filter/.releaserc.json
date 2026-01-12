@@ -12,7 +12,7 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["apps/cdx-filter/package.json"],
+        "assets": ["package.json"],
         "message": "chore(release): cdx-filter v${nextRelease.version}"
       }
     ],
