@@ -1,6 +1,6 @@
 {
   "branches": ["main"],
-  "tagFormat": "scraper-v${version}",
+  "tagFormat": "cdx-filter-v${version}",
   "plugins": [
     "@semantic-release/commit-analyzer",
     [
@@ -12,10 +12,20 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["apps/scraper/package.json"],
-        "message": "chore(release): scraper v${nextRelease.version}"
+        "assets": ["apps/cdx-filter/package.json"],
+        "message": "chore(release): cdx-filter v${nextRelease.version}"
       }
     ],
-    "@semantic-release/github"
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "function.zip",
+            "label": "Lambda Function Package"
+          }
+        ]
+      }
+    ]
   ]
 }
