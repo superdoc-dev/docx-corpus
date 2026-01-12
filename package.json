@@ -10,6 +10,7 @@
     "typecheck": "bun run --cwd apps/scraper typecheck",
     "test": "bun run --cwd apps/scraper test",
     "build": "bun run --cwd apps/scraper build",
+    "release": "bun run --cwd apps/scraper release",
     "prepare": "husky"
   },
   "devDependencies": {
