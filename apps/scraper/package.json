@@ -1,6 +1,6 @@
 {
   "name": "@docx-corpus/scraper",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "type": "module",
   "scripts": {
     "start": "bun run index.ts",
