@@ -6,8 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "src/**"
-      - "package.json"
+      - "apps/scraper/**"
 
 jobs:
   release:
