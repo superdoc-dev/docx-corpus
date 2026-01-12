@@ -1,0 +1,28 @@
+{
+  "name": "@docx-corpus/scraper",
+  "version": "0.16.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run index.ts",
+    "scrape": "bun run index.ts scrape",
+    "status": "bun run index.ts status",
+    "manifest": "bun run manifest.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "bun build index.ts --outdir dist --target bun",
+    "release": "semantic-release",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.966.0",
+    "p-limit": "^7.2.0"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@types/bun": "latest",
+    "semantic-release": "^25.0.2",
+    "typescript": "^5.9.3"
+  }
+}

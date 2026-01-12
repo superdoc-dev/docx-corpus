@@ -11,7 +11,7 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["package.json"],
+        "assets": ["apps/scraper/package.json"],
         "message": "chore(release): v${nextRelease.version}"
       }
     ],

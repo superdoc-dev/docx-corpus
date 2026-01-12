@@ -108,12 +108,14 @@ bun run status
 Run the CLI in a container:
 
 ```bash
+cd apps/scraper
+
 # Build and start the container
 docker-compose up -d --build
 
 # Run CLI commands
-docker exec docx-corpus bun run scrape --crawl CC-MAIN-2025-51
-docker exec docx-corpus bun run status
+docker exec docx-corpus-scraper bun run scrape --crawl CC-MAIN-2025-51
+docker exec docx-corpus-scraper bun run status
 
 # Stop the container
 docker-compose down
@@ -125,7 +127,7 @@ The container mounts `./corpus` for persistent storage and defaults to 8GB memor
 MEMORY_LIMIT=16G docker-compose up -d --build
 ```
 
-Pass environment variables via `docker run -e` or add them to your `.env` file.
+Pass environment variables via `docker run -e` or add them to your `.env` file in `apps/scraper/`.
 
 ### Storage Options
 

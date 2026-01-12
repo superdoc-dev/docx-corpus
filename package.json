@@ -1,33 +1,19 @@
 {
   "name": "docx-corpus",
-  "version": "0.16.0",
-  "type": "module",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "start": "bun run apps/scraper/index.ts",
-    "scrape": "bun run apps/scraper/index.ts scrape",
-    "status": "bun run apps/scraper/index.ts status",
-    "manifest": "bun run apps/scraper/manifest.ts",
     "lint": "biome check",
     "format": "biome format --write",
-    "typecheck": "tsc --noEmit -p apps/scraper",
-    "build": "bun build apps/scraper/index.ts --outdir dist --target bun",
-    "release": "semantic-release",
-    "prepare": "husky",
-    "test": "bun test"
-  },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.965.0",
-    "p-limit": "^7.2.0"
+    "typecheck": "bun run --cwd apps/scraper typecheck",
+    "test": "bun run --cwd apps/scraper test",
+    "build": "bun run --cwd apps/scraper build",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
-    "@semantic-release/commit-analyzer": "^13.0.1",
-    "@semantic-release/exec": "^7.1.0",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^12.0.2",
-    "@types/bun": "latest",
-    "husky": "^9.1.7",
-    "semantic-release": "^25.0.2",
-    "typescript": "^5.9.3"
+    "husky": "^9.1.7"
   }
 }

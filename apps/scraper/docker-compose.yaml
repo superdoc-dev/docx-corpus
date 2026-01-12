@@ -1,9 +1,11 @@
 services:
-  docx-corpus:
+  scraper:
     build: .
-    container_name: docx-corpus
+    container_name: docx-corpus-scraper
     volumes:
       - ./corpus:/app/corpus
+    env_file:
+      - .env
     deploy:
       resources:
         limits:
