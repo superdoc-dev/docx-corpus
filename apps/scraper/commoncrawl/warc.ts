@@ -15,6 +15,7 @@ export interface WarcResult {
 export interface FetchOptions {
   timeoutMs?: number;
   maxRetries?: number;
+  maxBackoffMs?: number;
   rateLimiter?: RateLimiter;
 }
 
@@ -35,7 +36,7 @@ export async function fetchWarcRecord(
   record: CdxRecord,
   options: FetchOptions = {},
 ): Promise<WarcResult> {
-  const { timeoutMs = 45000, maxRetries = 3, rateLimiter } = options;
+  const { timeoutMs = 45000, maxRetries = 10, maxBackoffMs = 60000, rateLimiter } = options;
 
   const offset = parseInt(record.offset, 10);
   const length = parseInt(record.length, 10);
@@ -58,11 +59,21 @@ export async function fetchWarcRecord(
 
       clearTimeout(timeoutId);
 
+      // 403 = IP blocked for 24h, fail fast (unrecoverable)
+      if (response.status === 403) {
+        throw new HttpError(
+          403,
+          `WARC fetch blocked (403 Forbidden) - IP likely blocked for 24h. URL: ${record.url}`,
+        );
+      }
+
       // Handle rate limiting errors with retry
       if (response.status === 503 || response.status === 429) {
         rateLimiter?.reportError(response.status);
         if (attempt < maxRetries) {
-          const delay = 2 ** attempt * 1000; // 1s, 2s, 4s
+          const baseDelay = Math.min(2 ** attempt * 1000, maxBackoffMs);
+          const jitter = Math.random() * 0.3 * baseDelay; // 0-30% jitter
+          const delay = baseDelay + jitter;
           await new Promise((r) => setTimeout(r, delay));
           continue;
         }
@@ -102,7 +113,9 @@ export async function fetchWarcRecord(
 
       // Retry on network errors or timeout
       if (attempt < maxRetries) {
-        const delay = 2 ** attempt * 1000;
+        const baseDelay = Math.min(2 ** attempt * 1000, maxBackoffMs);
+        const jitter = Math.random() * 0.3 * baseDelay;
+        const delay = baseDelay + jitter;
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }

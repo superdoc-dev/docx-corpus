@@ -1,11 +1,13 @@
 export interface Config {
   crawl: {
     id: string;
-    warcConcurrency: number;
-    warcRateLimitRps: number;
-    warcMaxRps: number;
-    warcMinRps: number;
+    concurrency: number;
+    rateLimitRps: number;
+    maxRps: number;
+    minRps: number;
     timeoutMs: number;
+    maxRetries: number;
+    maxBackoffMs: number;
   };
   storage: {
     localPath: string;
@@ -24,11 +26,13 @@ export function loadConfig(): Config {
   return {
     crawl: {
       id: env.CRAWL_ID || "",
-      warcConcurrency: parseInt(env.WARC_CONCURRENCY || "", 10) || 50,
-      warcRateLimitRps: parseInt(env.WARC_RATE_LIMIT_RPS || "", 10) || 50,
-      warcMaxRps: parseInt(env.WARC_MAX_RPS || "", 10) || 100,
-      warcMinRps: parseInt(env.WARC_MIN_RPS || "", 10) || 10,
+      concurrency: parseInt(env.CONCURRENCY || "", 10) || 50,
+      rateLimitRps: parseInt(env.RATE_LIMIT_RPS || "", 10) || 50,
+      maxRps: parseInt(env.MAX_RPS || "", 10) || 100,
+      minRps: parseInt(env.MIN_RPS || "", 10) || 10,
       timeoutMs: parseInt(env.TIMEOUT_MS || "", 10) || 45000,
+      maxRetries: parseInt(env.MAX_RETRIES || "", 10) || 10,
+      maxBackoffMs: parseInt(env.MAX_BACKOFF_MS || "", 10) || 60000,
     },
     storage: {
       localPath: env.STORAGE_PATH || "./corpus",

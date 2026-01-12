@@ -160,15 +160,20 @@ STORAGE_PATH=./corpus
 CRAWL_ID=CC-MAIN-2025-51
 
 # Performance tuning
-WARC_CONCURRENCY=50         # Parallel WARC file downloads
-WARC_RATE_LIMIT_RPS=100     # WARC requests per second
+CONCURRENCY=50              # Parallel downloads
+RATE_LIMIT_RPS=50           # Requests per second (initial)
+MAX_RPS=100                 # Max requests per second
+MIN_RPS=10                  # Min requests per second
 TIMEOUT_MS=45000            # Request timeout in ms
+MAX_RETRIES=10              # Max retry attempts
+MAX_BACKOFF_MS=60000        # Max backoff delay (ms)
 ```
 
 ### Rate Limiting
 
 - **WARC requests**: Adaptive rate limiting that adjusts to server load
-- **On 503/429/403 errors**: Retries with exponential backoff (1s, 2s, 4s, 8s, 16s)
+- **On 503/429 errors**: Retries with exponential backoff + jitter (up to 60s)
+- **On 403 errors**: Fails immediately (indicates 24h IP block from Common Crawl)
 
 ## Corpus Statistics
 

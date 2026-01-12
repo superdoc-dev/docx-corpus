@@ -36,16 +36,6 @@ export function clearLines(count: number) {
   process.stdout.write("\r"); // Move to start of line
 }
 
-export function writeTwoLineProgress(line1: string, line2: string) {
-  clearLines(2);
-  process.stdout.write(`${line1}\n${line2}`);
-}
-
-export function writeThreeLineProgress(line1: string, line2: string, line3: string) {
-  clearLines(3);
-  process.stdout.write(`${line1}\n${line2}\n${line3}`);
-}
-
 export function writeMultiLineProgress(lines: string[], prevLineCount: number) {
   clearLines(prevLineCount);
   process.stdout.write(lines.join("\n"));

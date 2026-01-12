@@ -136,7 +136,7 @@ export async function scrape(
     useCloud ? `R2 (${config.cloudflare.r2BucketName})` : `local (${config.storage.localPath})`,
   );
   keyValue("Crawl", crawlId);
-  keyValue("WARC workers", config.crawl.warcConcurrency);
+  keyValue("Workers", config.crawl.concurrency);
   if (force) keyValue("Force", "re-process all URLs");
   if (verbose) keyValue("Verbose", "enabled");
   blank();
@@ -159,11 +159,11 @@ export async function scrape(
   };
 
   // Parallel download setup
-  const downloadLimit = pLimit(config.crawl.warcConcurrency);
-  const warcRateLimiter = createRateLimiter({
-    initialRps: config.crawl.warcRateLimitRps,
-    minRps: config.crawl.warcMinRps,
-    maxRps: config.crawl.warcMaxRps,
+  const downloadLimit = pLimit(config.crawl.concurrency);
+  const rateLimiter = createRateLimiter({
+    initialRps: config.crawl.rateLimitRps,
+    minRps: config.crawl.minRps,
+    maxRps: config.crawl.maxRps,
   });
 
   // Track throughput
@@ -187,7 +187,7 @@ export async function scrape(
       docsAtLastUpdate = stats.saved;
     }
 
-    const { errorCount } = warcRateLimiter.getStats();
+    const { errorCount } = rateLimiter.getStats();
 
     const extras: string[] = [];
     if (docsPerSec > 0) extras.push(`${docsPerSec.toFixed(1)}/s`);
@@ -222,14 +222,14 @@ export async function scrape(
 
     // Queue parallel download
     const task = downloadLimit(async () => {
-      await warcRateLimiter.acquire();
+      await rateLimiter.acquire();
       await processRecord(record, {
         db,
         storage,
         config,
         crawlId,
         stats,
-        rateLimiter: warcRateLimiter,
+        rateLimiter: rateLimiter,
         force,
       });
       updateProgress();
@@ -238,7 +238,7 @@ export async function scrape(
     tasks.add(task);
 
     // Backpressure: if too many tasks queued, wait for some to complete
-    if (tasks.size >= config.crawl.warcConcurrency * 2) {
+    if (tasks.size >= config.crawl.concurrency * 2) {
       await Promise.race(tasks);
     }
   }
