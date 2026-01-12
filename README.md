@@ -1,6 +1,7 @@
 <img width="400" alt="logo" src="https://github.com/user-attachments/assets/ea105e9e-00d0-4d48-a2a4-006cc4e89848" />
 
-[![GitHub release](https://img.shields.io/github/v/release/superdoc-dev/docx-corpus)](https://github.com/superdoc-dev/docx-corpus/releases)
+[![Scraper](https://img.shields.io/github/v/release/superdoc-dev/docx-corpus?filter=scraper-v*&label=scraper)](https://github.com/superdoc-dev/docx-corpus/releases)
+[![CDX Filter](https://img.shields.io/github/v/release/superdoc-dev/docx-corpus?filter=cdx-filter-v*&label=cdx-filter)](https://github.com/superdoc-dev/docx-corpus/releases)
 [![codecov](https://codecov.io/gh/superdoc-dev/docx-corpus/graph/badge.svg)](https://codecov.io/gh/superdoc-dev/docx-corpus)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
