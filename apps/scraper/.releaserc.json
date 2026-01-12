@@ -16,6 +16,6 @@
         "message": "chore(release): scraper v${nextRelease.version}"
       }
     ],
-    "@semantic-release/github"
+    ["@semantic-release/github", { "successComment": false }]
   ]
 }

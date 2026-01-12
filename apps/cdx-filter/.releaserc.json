@@ -24,7 +24,8 @@
             "path": "function.zip",
             "label": "Lambda Function Package"
           }
-        ]
+        ],
+        "successComment": false
       }
     ]
   ]
