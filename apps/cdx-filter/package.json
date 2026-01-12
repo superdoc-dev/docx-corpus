@@ -1,6 +1,6 @@
 {
   "name": "@docx-corpus/cdx-filter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "scripts": {
     "build": "tsc && cp -r node_modules dist/ && cd dist && zip -r ../function.zip ."
   },
