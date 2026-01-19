@@ -69,11 +69,18 @@ export function createR2Storage(config: R2Config): Storage {
     },
 
     async write(key: string, content: Uint8Array | string): Promise<void> {
+      // Always convert to Uint8Array and set ContentLength to avoid
+      // "Stream of unknown length" errors with S3-compatible storage
+      const body = typeof content === "string"
+        ? new TextEncoder().encode(content)
+        : content;
+
       await client.send(
         new PutObjectCommand({
           Bucket: bucket,
           Key: key,
-          Body: content,
+          Body: body,
+          ContentLength: body.length,
         }),
       );
     },
