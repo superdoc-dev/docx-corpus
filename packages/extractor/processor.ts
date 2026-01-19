@@ -15,11 +15,14 @@ export async function processDirectory(
 ): Promise<void> {
   const { storage, inputPrefix, outputPrefix, batchSize } = config;
 
-  // Load index to get already-processed IDs
-  const processedIds = await loadProcessedIds(storage, outputPrefix);
+  // Load index to get already-processed IDs and existing errors
+  const indexState = await loadIndexState(storage, outputPrefix);
 
-  if (processedIds.size > 0) {
-    console.log(`Already extracted: ${processedIds.size} documents`);
+  if (indexState.successIds.size > 0) {
+    console.log(`Already extracted: ${indexState.successIds.size} documents`);
+  }
+  if (indexState.errorIds.size > 0) {
+    console.log(`Previous errors: ${indexState.errorIds.size} documents (will retry)`);
   }
 
   // List .docx files, filtering out already-processed ones
@@ -29,7 +32,7 @@ export async function processDirectory(
   for await (const key of storage.list(inputPrefix)) {
     if (key.toLowerCase().endsWith(".docx") && !basename(key).startsWith("~$")) {
       const id = extractIdFromKey(key);
-      if (!processedIds.has(id)) {
+      if (!indexState.successIds.has(id)) {
         files.push(key);
         if (files.length >= batchSize) {
           console.log(`Listed ${files.length} files to process (batch limit)`);
@@ -51,27 +54,16 @@ export async function processDirectory(
   const tempDir = join(tmpdir(), `docx-extract-${Date.now()}`);
   await mkdir(tempDir, { recursive: true });
 
-  let successCount = 0;
-  let errorCount = 0;
-
   try {
-    const results = await processBatch(files, storage, tempDir, config.workers, verbose);
-
-    for (const result of results) {
-      if (result.success && result.document) {
-        // Write text file
-        await storage.write(
-          `${outputPrefix}/${result.document.id}.txt`,
-          result.document.text
-        );
-        // Append to index (metadata)
-        await appendToIndex(storage, outputPrefix, result.document);
-        successCount++;
-      } else {
-        errorCount++;
-        await appendError(storage, outputPrefix, result.error || "Unknown error", result.sourceKey);
-      }
-    }
+    const { successCount, errorCount } = await processBatch(
+      files,
+      storage,
+      outputPrefix,
+      tempDir,
+      config.workers,
+      verbose,
+      indexState.errorIds
+    );
 
     console.log(`Processed: ${successCount} success, ${errorCount} errors`);
   } finally {
@@ -82,13 +74,6 @@ export async function processDirectory(
   console.log("\nExtraction complete!");
   console.log(`  Output: ${outputPrefix}/{hash}.txt`);
   console.log(`  Index: ${outputPrefix}/${INDEX_FILE}`);
-}
-
-interface ProcessResult {
-  sourceKey: string;
-  success: boolean;
-  document?: ExtractedDocument;
-  error?: string;
 }
 
 async function extractWithPython(
@@ -127,17 +112,22 @@ async function extractWithPython(
 async function processBatch(
   keys: string[],
   storage: ExtractConfig["storage"],
+  outputPrefix: string,
   tempDir: string,
   workers: number,
-  verbose: boolean
-): Promise<ProcessResult[]> {
-  const results: ProcessResult[] = [];
+  verbose: boolean,
+  existingErrorIds: Set<string>
+): Promise<{ successCount: number; errorCount: number }> {
+  let successCount = 0;
+  let errorCount = 0;
   const queue = [...keys];
 
   const processFile = async (): Promise<void> => {
     while (queue.length > 0) {
       const sourceKey = queue.shift();
       if (!sourceKey) continue;
+
+      const id = extractIdFromKey(sourceKey);
 
       try {
         // Download file from storage to temp
@@ -146,12 +136,17 @@ async function processBatch(
           throw new Error(`File not found: ${sourceKey}`);
         }
 
-        const tempFile = join(tempDir, `${extractIdFromKey(sourceKey)}.docx`);
+        const tempFile = join(tempDir, `${id}.docx`);
         await Bun.write(tempFile, content);
 
         // Extract using Python
         const document = await extractWithPython(sourceKey, tempFile);
-        results.push({ sourceKey, success: true, document });
+
+        // Write text file immediately
+        await storage.write(`${outputPrefix}/${document.id}.txt`, document.text);
+        // Append to index immediately
+        await appendToIndex(storage, outputPrefix, document);
+        successCount++;
 
         // Cleanup temp file
         await rm(tempFile, { force: true });
@@ -161,7 +156,12 @@ async function processBatch(
         }
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
-        results.push({ sourceKey, success: false, error });
+        // Only append error if not already recorded
+        if (!existingErrorIds.has(id)) {
+          await appendError(storage, outputPrefix, error, sourceKey);
+          existingErrorIds.add(id); // Track in-flight errors too
+        }
+        errorCount++;
 
         if (verbose) {
           console.error(`  Failed: ${basename(sourceKey)}: ${error}`);
@@ -175,7 +175,7 @@ async function processBatch(
     .map(() => processFile());
 
   await Promise.all(workerPromises);
-  return results;
+  return { successCount, errorCount };
 }
 
 function extractIdFromKey(key: string): string {
@@ -200,11 +200,17 @@ async function appendError(
   await storage.write(indexKey, existingText + line);
 }
 
-async function loadProcessedIds(
+interface IndexState {
+  successIds: Set<string>;
+  errorIds: Set<string>;
+}
+
+async function loadIndexState(
   storage: ExtractConfig["storage"],
   outputPrefix: string
-): Promise<Set<string>> {
-  const ids = new Set<string>();
+): Promise<IndexState> {
+  const successIds = new Set<string>();
+  const errorIds = new Set<string>();
   try {
     const content = await storage.read(`${outputPrefix}/${INDEX_FILE}`);
     if (content) {
@@ -212,17 +218,18 @@ async function loadProcessedIds(
       for (const line of text.split("\n")) {
         if (line.trim()) {
           const entry = JSON.parse(line);
-          // Only skip files that were successfully processed (no error field)
-          if (!entry.error) {
-            ids.add(entry.id);
+          if (entry.error) {
+            errorIds.add(entry.id);
+          } else {
+            successIds.add(entry.id);
           }
         }
       }
     }
   } catch {
-    // Index doesn't exist yet, return empty set
+    // Index doesn't exist yet, return empty sets
   }
-  return ids;
+  return { successIds, errorIds };
 }
 
 async function appendToIndex(
