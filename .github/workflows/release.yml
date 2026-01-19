@@ -6,8 +6,11 @@ on:
     branches:
       - main
     paths:
-      - "apps/scraper/**"
+      - "apps/cli/**"
       - "apps/cdx-filter/**"
+      - "packages/scraper/**"
+      - "packages/shared/**"
+      - "packages/extractor/**"
 
 jobs:
   release:
@@ -30,11 +33,11 @@ jobs:
 
       - run: bun install
 
-      - name: Release Scraper
+      - name: Release CLI
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: 0
-        working-directory: apps/scraper
+        working-directory: apps/cli
         run: bunx semantic-release
 
       - name: Release CDX Filter

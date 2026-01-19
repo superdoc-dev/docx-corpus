@@ -1,0 +1,22 @@
+{
+  "name": "@docx-corpus/scraper",
+  "version": "0.22.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "build": "bun build index.ts --outdir dist --target bun"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.966.0",
+    "@docx-corpus/shared": "workspace:*",
+    "p-limit": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}

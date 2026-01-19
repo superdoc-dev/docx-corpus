@@ -1,8 +1,7 @@
-node_modules/
-dist/
+node_modules
+dist
+.git
+*.log
+.env*
 corpus/
-.git/
-.github/
-*.md
-.env
-.env.*
+packages/extractor/python/.venv

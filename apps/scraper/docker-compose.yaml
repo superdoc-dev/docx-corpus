@@ -1,8 +1,0 @@
-services:
-  scraper:
-    build: .
-    container_name: docx-corpus-scraper
-    volumes:
-      - ./corpus:/app/corpus
-    env_file:
-      - .env

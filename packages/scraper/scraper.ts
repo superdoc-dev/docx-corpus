@@ -18,7 +18,7 @@ import {
   logError,
   section,
   writeMultiLineProgress,
-} from "./ui";
+} from "@docx-corpus/shared";
 import { computeHash, extractFilename, validateDocx } from "./validation";
 
 interface ProcessContext {
@@ -117,17 +117,21 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
   });
 }
 
-export async function scrape(
-  config: Config,
-  batchSize: number,
-  verbose?: boolean,
-  force?: boolean,
-  crawlIds?: string[],
-) {
+export interface ScrapeOptions {
+  config: Config;
+  batchSize: number;
+  verbose?: boolean;
+  force?: boolean;
+  crawlIds?: string[];
+  version: string;
+}
+
+export async function scrape(options: ScrapeOptions) {
+  const { config, batchSize, verbose, force, crawlIds, version } = options;
   const startTime = Date.now();
   const useCloud = hasCloudflareCredentials(config);
 
-  header();
+  header("docx-corpus", version);
 
   // Resolve crawl IDs: from param, config, or fetch latest
   let resolvedCrawlIds: string[];

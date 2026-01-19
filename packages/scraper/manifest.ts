@@ -49,27 +49,3 @@ export async function generateManifest(
 
   return { count: rows.length, path, uploaded };
 }
-
-// CLI entry point
-if (import.meta.main) {
-  (async () => {
-    const { loadConfig, hasCloudflareCredentials } = await import("./config");
-    const config = loadConfig();
-
-    const cloudflareConfig = hasCloudflareCredentials(config) ? config.cloudflare : undefined;
-
-    const result = await generateManifest(
-      config.database.url,
-      config.storage.localPath,
-      cloudflareConfig,
-    );
-
-    if (!result) {
-      console.log("No uploaded documents found.");
-      process.exit(0);
-    }
-
-    const uploadStatus = result.uploaded ? " (uploaded to R2)" : "";
-    console.log(`Generated ${result.path} with ${result.count} documents${uploadStatus}`);
-  })();
-}

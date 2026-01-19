@@ -1,10 +1,9 @@
 import { gunzipSync } from "bun";
 import type { RateLimiter } from "../rate-limiter";
 import type { CdxRecord } from "./cdx-r2";
-import pkg from "../package.json";
 
 const WARC_BASE_URL = "https://data.commoncrawl.org";
-const USER_AGENT = `docx-corpus/${pkg.version} (https://github.com/superdoc-dev/docx-corpus)`;
+const USER_AGENT = "docx-corpus (https://github.com/superdoc-dev/docx-corpus)";
 
 export interface WarcResult {
   content: Uint8Array;

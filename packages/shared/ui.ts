@@ -1,9 +1,5 @@
-import pkg from "./package.json";
-
-export const VERSION = pkg.version;
-
-export function header() {
-  console.log(`\ndocx-corpus v${VERSION}\n`);
+export function header(name: string, version: string) {
+  console.log(`\n${name} v${version}\n`);
 }
 
 export function section(title: string) {

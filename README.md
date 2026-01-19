@@ -65,15 +65,21 @@ bun install
 ## Project Structure
 
 ```
+packages/
+  shared/         # Shared utilities (progress bars, formatting)
+  scraper/        # Core scraper logic (downloads WARC, validates .docx)
+  extractor/      # Text extraction using Docling (Python)
 apps/
+  cli/            # Unified CLI - corpus <command>
   cdx-filter/     # AWS Lambda - filters CDX indexes for .docx URLs
-  scraper/        # Main CLI - downloads WARC records and validates .docx files
 ```
 
-| App            | Purpose                           | Runtime              |
+| Package/App    | Purpose                           | Runtime              |
 | -------------- | --------------------------------- | -------------------- |
+| **cli**        | Unified CLI entry point           | Bun                  |
+| **scraper**    | Download and validate .docx files | Bun                  |
+| **extractor**  | Extract text from .docx files     | Bun + Python         |
 | **cdx-filter** | Filter Common Crawl CDX indexes   | AWS Lambda (Node.js) |
-| **scraper**    | Download and validate .docx files | Local (Bun)          |
 
 ## Usage
 
@@ -92,19 +98,19 @@ This reads CDX files directly from Common Crawl S3 (no rate limits) and stores f
 
 ```bash
 # Scrape from a single crawl
-bun run scrape --crawl CC-MAIN-2025-51
+bun run corpus scrape --crawl CC-MAIN-2025-51
 
 # Scrape latest 3 crawls, 100 docs each
-bun run scrape --crawl 3 --batch 100
+bun run corpus scrape --crawl 3 --batch 100
 
 # Scrape from multiple specific crawls
-bun run scrape --crawl CC-MAIN-2025-51,CC-MAIN-2025-48 --batch 500
+bun run corpus scrape --crawl CC-MAIN-2025-51,CC-MAIN-2025-48 --batch 500
 
 # Re-process URLs already in database
-bun run scrape --crawl CC-MAIN-2025-51 --force
+bun run corpus scrape --crawl CC-MAIN-2025-51 --force
 
 # Check progress
-bun run status
+bun run corpus status
 ```
 
 ### Docker
@@ -112,20 +118,22 @@ bun run status
 Run the CLI in a container:
 
 ```bash
-cd apps/scraper
-
-# Build and start the container
-docker-compose up -d --build
+# Build the image
+docker build -t docx-corpus .
 
 # Run CLI commands
-docker exec docx-corpus-scraper bun run scrape --crawl CC-MAIN-2025-51
-docker exec docx-corpus-scraper bun run status
+docker run docx-corpus --help
+docker run docx-corpus scrape --help
+docker run docx-corpus scrape --crawl CC-MAIN-2025-51 --batch 100
 
-# Stop the container
-docker-compose down
+# With environment variables
+docker run \
+  -e DATABASE_URL=postgres://... \
+  -e CLOUDFLARE_ACCOUNT_ID=xxx \
+  -e R2_ACCESS_KEY_ID=xxx \
+  -e R2_SECRET_ACCESS_KEY=xxx \
+  docx-corpus scrape --batch 100
 ```
-
-Pass environment variables via `docker run -e` or add them to your `.env` file in `apps/scraper/`.
 
 ### Storage Options
 
@@ -141,7 +149,7 @@ Documents can also be uploaded to R2 alongside the CDX records:
 export CLOUDFLARE_ACCOUNT_ID=xxx
 export R2_ACCESS_KEY_ID=xxx
 export R2_SECRET_ACCESS_KEY=xxx
-bun run scrape --crawl CC-MAIN-2025-51 --batch 1000
+bun run corpus scrape --crawl CC-MAIN-2025-51 --batch 1000
 ```
 
 ## Configuration

@@ -1,6 +1,6 @@
 {
   "branches": ["main"],
-  "tagFormat": "scraper-v${version}",
+  "tagFormat": "cli-v${version}",
   "plugins": [
     "@semantic-release/commit-analyzer",
     [
@@ -13,9 +13,14 @@
       "@semantic-release/git",
       {
         "assets": ["package.json"],
-        "message": "chore(release): scraper v${nextRelease.version}"
+        "message": "chore(release): cli v${nextRelease.version}"
       }
     ],
-    ["@semantic-release/github", { "successComment": false }]
+    [
+      "@semantic-release/github",
+      {
+        "successComment": false
+      }
+    ]
   ]
 }

@@ -1,0 +1,29 @@
+{
+  "name": "@docx-corpus/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "corpus": "./index.ts"
+  },
+  "scripts": {
+    "start": "bun run index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "build": "bun build index.ts --outdir dist --target bun",
+    "release": "semantic-release"
+  },
+  "dependencies": {
+    "@docx-corpus/scraper": "workspace:*",
+    "@docx-corpus/extractor": "workspace:*",
+    "@docx-corpus/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@types/bun": "latest",
+    "semantic-release": "^25.0.2",
+    "typescript": "^5.9.3"
+  }
+}

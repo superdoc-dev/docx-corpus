@@ -2,15 +2,18 @@
   "name": "docx-corpus",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
+    "corpus": "bun run apps/cli/index.ts",
     "lint": "biome check",
     "format": "biome format --write",
-    "typecheck": "bun run --cwd apps/scraper typecheck",
-    "test": "bun run --cwd apps/scraper test",
-    "build": "bun run --cwd apps/scraper build",
-    "release": "bun run --cwd apps/scraper release",
+    "typecheck": "bun run --cwd packages/scraper typecheck && bun run --cwd packages/extractor typecheck && bun run --cwd apps/cli typecheck",
+    "test": "bun run --cwd packages/scraper test && bun run --cwd apps/cli test",
+    "build": "bun run --cwd packages/scraper build && bun run --cwd apps/cli build",
+    "release:cli": "bun run --cwd apps/cli release",
+    "setup:extractor": "bun run --cwd packages/extractor setup",
     "prepare": "husky"
   },
   "devDependencies": {
