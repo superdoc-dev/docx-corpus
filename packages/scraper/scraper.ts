@@ -29,20 +29,18 @@ interface ProcessContext {
   crawlId: string;
   stats: { saved: number; skipped: number; failed: number };
   rateLimiter: RateLimiter;
+  uploadedUrls: Set<string>;
   force?: boolean;
   onError?: (status: number, url: string, message: string) => void;
 }
 
 async function processRecord(record: CdxRecord, ctx: ProcessContext) {
-  const { db, storage, config, crawlId, stats, rateLimiter, force, onError } = ctx;
+  const { db, storage, config, crawlId, stats, rateLimiter, uploadedUrls, force, onError } = ctx;
 
   // Check if already processed (skip if --force)
-  if (!force) {
-    const existingByUrl = await db.getDocumentByUrl(record.url);
-    if (existingByUrl && existingByUrl.status === "uploaded") {
-      stats.skipped++;
-      return;
-    }
+  if (!force && uploadedUrls.has(record.url)) {
+    stats.skipped++;
+    return;
   }
 
   // Download from WARC
@@ -172,6 +170,9 @@ export async function scrape(options: ScrapeOptions) {
   // Initialize database
   const db = await createDb(config.database.url);
 
+  // Pre-load successful URLs for fast duplicate checking
+  const uploadedUrls = force ? new Set<string>() : await db.getUploadedUrls();
+
   // Aggregate stats across all crawls
   const totalStats = { saved: 0, skipped: 0, failed: 0 };
 
@@ -259,6 +260,7 @@ export async function scrape(options: ScrapeOptions) {
           crawlId,
           stats,
           rateLimiter,
+          uploadedUrls,
           force,
           onError,
         });

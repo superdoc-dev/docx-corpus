@@ -20,6 +20,7 @@ export interface DbClient {
   upsertDocument(doc: Partial<DocumentRecord> & { id: string }): Promise<void>;
   getDocument(id: string): Promise<DocumentRecord | null>;
   getDocumentByUrl(url: string): Promise<DocumentRecord | null>;
+  getUploadedUrls(): Promise<Set<string>>;
   getPendingDocuments(limit: number): Promise<DocumentRecord[]>;
   getDocumentsByStatus(status: DocumentStatus, limit?: number): Promise<DocumentRecord[]>;
   getStats(): Promise<{ status: string; count: number }[]>;
@@ -82,6 +83,13 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
         SELECT * FROM documents WHERE source_url = ${url}
       `;
       return rows[0] || null;
+    },
+
+    async getUploadedUrls() {
+      const rows = await sql<{ source_url: string }[]>`
+        SELECT source_url FROM documents WHERE status = 'uploaded'
+      `;
+      return new Set(rows.map((r) => r.source_url));
     },
 
     async getPendingDocuments(limit: number) {
