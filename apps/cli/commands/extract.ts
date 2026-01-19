@@ -9,13 +9,11 @@ import { createLocalStorage, createR2Storage } from "@docx-corpus/shared";
 interface ParsedFlags {
   batchSize?: number;
   workers?: number;
-  resume: boolean;
   verbose: boolean;
 }
 
 function parseFlags(args: string[]): ParsedFlags {
   const flags: ParsedFlags = {
-    resume: false,
     verbose: false,
   };
 
@@ -33,10 +31,6 @@ function parseFlags(args: string[]): ParsedFlags {
       case "-w":
         flags.workers = parseInt(next || "", 10);
         i++;
-        break;
-      case "--resume":
-      case "-r":
-        flags.resume = true;
         break;
       case "--verbose":
       case "-v":
@@ -58,10 +52,11 @@ Storage is auto-selected based on environment:
   - With R2 credentials: reads from r2://documents/, writes to r2://extracted/
   - Without R2 credentials: reads from ./corpus/documents/, writes to ./corpus/extracted/
 
+Already-extracted files are automatically skipped (tracked in index.jsonl).
+
 Options
   --batch-size, -b <n>    Number of files per batch (default: from EXTRACT_BATCH_SIZE or 100)
   --workers, -w <n>       Number of parallel workers (default: from EXTRACT_WORKERS or 4)
-  --resume, -r            Resume from last checkpoint
   --verbose, -v           Show detailed progress
   --help, -h              Show this help
 
@@ -77,8 +72,8 @@ Environment Variables
   EXTRACT_WORKERS         Worker count (default: 4)
 
 Examples
-  corpus extract                    # Use defaults from env
-  corpus extract --resume -v        # Resume with verbose output
+  corpus extract                    # Extract up to batch size
+  corpus extract -v                 # With verbose output
   corpus extract -b 50 -w 8         # Custom batch/workers
 `;
 
@@ -108,7 +103,6 @@ export async function runExtract(args: string[]) {
     outputPrefix: envConfig.extract.outputPrefix,
     batchSize: flags.batchSize ?? envConfig.extract.batchSize,
     workers: flags.workers ?? envConfig.extract.workers,
-    resume: flags.resume,
   };
 
   console.log("Text Extractor");
@@ -120,7 +114,6 @@ export async function runExtract(args: string[]) {
   console.log(`Output:  ${config.outputPrefix}/`);
   console.log(`Workers: ${config.workers}`);
   console.log(`Batch:   ${config.batchSize}`);
-  if (config.resume) console.log("Resume:  enabled");
   console.log("");
 
   try {

@@ -23,18 +23,4 @@ export interface ExtractConfig {
   outputPrefix: string;
   batchSize: number;
   workers: number;
-  resume: boolean;
-}
-
-/**
- * Progress tracking for resumable extraction
- */
-export interface ExtractionProgress {
-  totalFiles: number;
-  processedFiles: number;
-  successCount: number;
-  errorCount: number;
-  lastProcessedKey?: string;
-  startedAt: string;
-  updatedAt: string;
 }

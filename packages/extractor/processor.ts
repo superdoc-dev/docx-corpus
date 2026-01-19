@@ -1,110 +1,88 @@
 import { mkdir, rm } from "node:fs/promises";
 import { join, basename, dirname } from "node:path";
 import { tmpdir } from "node:os";
-import type { ExtractConfig, ExtractedDocument, ExtractionProgress } from "./types";
+import type { ExtractConfig, ExtractedDocument } from "./types";
 
 const PYTHON_DIR = join(dirname(import.meta.path), "python");
 const PYTHON_PATH = join(PYTHON_DIR, ".venv", "bin", "python");
 const SCRIPT_PATH = join(PYTHON_DIR, "extract.py");
 
-const PROGRESS_FILE = "progress.json";
+const INDEX_FILE = "index.jsonl";
 const ERRORS_FILE = "errors.jsonl";
-const OUTPUT_FILE = "documents.jsonl";
 
 export async function processDirectory(
   config: ExtractConfig,
   verbose: boolean = false
 ): Promise<void> {
-  const { storage, inputPrefix, outputPrefix } = config;
+  const { storage, inputPrefix, outputPrefix, batchSize } = config;
 
-  // List all .docx files in input prefix
+  // Load index to get already-processed IDs
+  const processedIds = await loadProcessedIds(storage, outputPrefix);
+
+  if (processedIds.size > 0) {
+    console.log(`Already extracted: ${processedIds.size} documents`);
+  }
+
+  // List .docx files, filtering out already-processed ones
   const files: string[] = [];
+
+  console.log(`Scanning ${inputPrefix}/...`);
   for await (const key of storage.list(inputPrefix)) {
     if (key.toLowerCase().endsWith(".docx") && !basename(key).startsWith("~$")) {
-      files.push(key);
+      const id = extractIdFromKey(key);
+      if (!processedIds.has(id)) {
+        files.push(key);
+        if (files.length >= batchSize) {
+          console.log(`Listed ${files.length} files to process (batch limit)`);
+          break;
+        }
+      }
     }
   }
   files.sort();
 
   if (files.length === 0) {
-    console.log(`No DOCX files found in ${inputPrefix}`);
+    console.log(`No new DOCX files to process in ${inputPrefix}`);
     return;
   }
 
-  console.log(`Found ${files.length} DOCX files`);
-
-  // Load progress
-  const progress = await loadProgress(storage, outputPrefix);
-  const startIndex = config.resume ? progress.processedFiles : 0;
-
-  if (config.resume && startIndex > 0) {
-    console.log(`Resuming from file ${startIndex + 1}`);
-  }
-
-  progress.totalFiles = files.length;
-  progress.startedAt = progress.startedAt || new Date().toISOString();
+  console.log(`Found ${files.length} DOCX files to extract`);
 
   // Create temp directory for processing
   const tempDir = join(tmpdir(), `docx-extract-${Date.now()}`);
   await mkdir(tempDir, { recursive: true });
 
-  // Collect output lines in memory, write at end
-  const outputLines: string[] = [];
-
-  // Load existing output if resuming
-  if (config.resume && startIndex > 0) {
-    const existingOutput = await storage.read(`${outputPrefix}/${OUTPUT_FILE}`);
-    if (existingOutput) {
-      const text = new TextDecoder().decode(existingOutput);
-      outputLines.push(...text.trim().split("\n").filter(Boolean));
-    }
-  }
-
-  const batches = chunkArray(files.slice(startIndex), config.batchSize);
-  let totalProcessed = startIndex;
+  let successCount = 0;
+  let errorCount = 0;
 
   try {
-    for (const batch of batches) {
-      const results = await processBatch(batch, storage, tempDir, config.workers, verbose);
+    const results = await processBatch(files, storage, tempDir, config.workers, verbose);
 
-      for (const result of results) {
-        if (result.success && result.document) {
-          outputLines.push(JSON.stringify(result.document));
-          progress.successCount++;
-        } else {
-          progress.errorCount++;
-          await appendError(storage, outputPrefix, result.error || "Unknown error", result.sourceKey);
-        }
+    for (const result of results) {
+      if (result.success && result.document) {
+        // Write text file
+        await storage.write(
+          `${outputPrefix}/${result.document.id}.txt`,
+          result.document.text
+        );
+        // Append to index (metadata)
+        await appendToIndex(storage, outputPrefix, result.document);
+        successCount++;
+      } else {
+        errorCount++;
+        await appendError(storage, outputPrefix, result.error || "Unknown error", result.sourceKey);
       }
-
-      totalProcessed += batch.length;
-      progress.processedFiles = totalProcessed;
-      progress.lastProcessedKey = batch[batch.length - 1];
-      progress.updatedAt = new Date().toISOString();
-
-      // Save progress and output
-      await saveProgress(storage, outputPrefix, progress);
-      await storage.write(
-        `${outputPrefix}/${OUTPUT_FILE}`,
-        outputLines.join("\n") + "\n"
-      );
-
-      const percent = ((totalProcessed / files.length) * 100).toFixed(1);
-      console.log(
-        `Progress: ${totalProcessed}/${files.length} (${percent}%) - ` +
-          `Success: ${progress.successCount}, Errors: ${progress.errorCount}`
-      );
     }
+
+    console.log(`Processed: ${successCount} success, ${errorCount} errors`);
   } finally {
     // Cleanup temp directory
     await rm(tempDir, { recursive: true, force: true });
   }
 
   console.log("\nExtraction complete!");
-  console.log(`  Total: ${files.length}`);
-  console.log(`  Success: ${progress.successCount}`);
-  console.log(`  Errors: ${progress.errorCount}`);
-  console.log(`  Output: ${outputPrefix}/${OUTPUT_FILE}`);
+  console.log(`  Output: ${outputPrefix}/{hash}.txt`);
+  console.log(`  Index: ${outputPrefix}/${INDEX_FILE}`);
 }
 
 interface ProcessResult {
@@ -133,7 +111,7 @@ async function extractWithPython(
   }
 
   const result = JSON.parse(stdout);
-  const id = generateId(sourceKey);
+  const id = extractIdFromKey(sourceKey);
 
   return {
     id,
@@ -169,7 +147,7 @@ async function processBatch(
           throw new Error(`File not found: ${sourceKey}`);
         }
 
-        const tempFile = join(tempDir, `${generateId(sourceKey)}.docx`);
+        const tempFile = join(tempDir, `${extractIdFromKey(sourceKey)}.docx`);
         await Bun.write(tempFile, content);
 
         // Extract using Python
@@ -201,44 +179,10 @@ async function processBatch(
   return results;
 }
 
-function generateId(key: string): string {
-  const hasher = new Bun.CryptoHasher("sha256");
-  hasher.update(key);
-  return hasher.digest("hex").slice(0, 16);
-}
-
-async function loadProgress(
-  storage: ExtractConfig["storage"],
-  outputPrefix: string
-): Promise<ExtractionProgress> {
-  try {
-    const content = await storage.read(`${outputPrefix}/${PROGRESS_FILE}`);
-    if (content) {
-      return JSON.parse(new TextDecoder().decode(content));
-    }
-  } catch {
-    // Ignore errors, return fresh progress
-  }
-
-  return {
-    totalFiles: 0,
-    processedFiles: 0,
-    successCount: 0,
-    errorCount: 0,
-    startedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-async function saveProgress(
-  storage: ExtractConfig["storage"],
-  outputPrefix: string,
-  progress: ExtractionProgress
-): Promise<void> {
-  await storage.write(
-    `${outputPrefix}/${PROGRESS_FILE}`,
-    JSON.stringify(progress, null, 2)
-  );
+function extractIdFromKey(key: string): string {
+  // Extract hash from filename: "documents/abc123.docx" → "abc123"
+  const filename = basename(key);
+  return filename.replace(/\.docx$/i, "");
 }
 
 async function appendError(
@@ -256,10 +200,45 @@ async function appendError(
   await storage.write(errorsKey, existingText + line);
 }
 
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
+async function loadProcessedIds(
+  storage: ExtractConfig["storage"],
+  outputPrefix: string
+): Promise<Set<string>> {
+  const ids = new Set<string>();
+  try {
+    const content = await storage.read(`${outputPrefix}/${INDEX_FILE}`);
+    if (content) {
+      const text = new TextDecoder().decode(content);
+      for (const line of text.split("\n")) {
+        if (line.trim()) {
+          const entry = JSON.parse(line);
+          ids.add(entry.id);
+        }
+      }
+    }
+  } catch {
+    // Index doesn't exist yet, return empty set
   }
-  return chunks;
+  return ids;
+}
+
+async function appendToIndex(
+  storage: ExtractConfig["storage"],
+  outputPrefix: string,
+  doc: ExtractedDocument
+): Promise<void> {
+  const indexKey = `${outputPrefix}/${INDEX_FILE}`;
+  const entry = {
+    id: doc.id,
+    extractedAt: doc.extractedAt,
+    wordCount: doc.wordCount,
+    charCount: doc.charCount,
+    tableCount: doc.tableCount,
+    imageCount: doc.imageCount,
+  };
+
+  // Read existing index and append
+  const existing = await storage.read(indexKey);
+  const existingText = existing ? new TextDecoder().decode(existing) : "";
+  await storage.write(indexKey, existingText + JSON.stringify(entry) + "\n");
 }
