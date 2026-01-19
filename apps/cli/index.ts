@@ -18,7 +18,8 @@ Commands
   status    Show corpus statistics
 
 Options
-  --help    Show help for a command
+  --help, -h       Show help for a command
+  --version, -v    Show version
 
 Examples
   corpus scrape --crawl 3 --batch 100
@@ -32,6 +33,11 @@ async function main() {
 
   if (!command || command === "--help" || command === "-h") {
     console.log(HELP);
+    process.exit(0);
+  }
+
+  if (command === "--version" || command === "-v") {
+    console.log(VERSION);
     process.exit(0);
   }
 
