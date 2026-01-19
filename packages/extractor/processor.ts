@@ -2,6 +2,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { join, basename, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import type { ExtractConfig, ExtractedDocument } from "./types";
+import { formatProgress, writeMultiLineProgress } from "@docx-corpus/shared";
 
 const PYTHON_DIR = join(dirname(import.meta.path), "python");
 const PYTHON_PATH = join(PYTHON_DIR, ".venv", "bin", "python");
@@ -34,7 +35,7 @@ export async function processDirectory(
       const id = extractIdFromKey(key);
       if (!indexState.successIds.has(id)) {
         files.push(key);
-        if (files.length >= batchSize) {
+        if (batchSize !== Infinity && files.length >= batchSize) {
           console.log(`Listed ${files.length} files to process (batch limit)`);
           break;
         }
@@ -122,6 +123,35 @@ async function processBatch(
   let errorCount = 0;
   const queue = [...keys];
 
+  // Progress tracking (only used when not verbose)
+  const startTime = Date.now();
+  let lastThroughputUpdate = startTime;
+  let docsAtLastUpdate = 0;
+  let currentDocsPerSec = 0;
+  let prevLineCount = 0;
+
+  const updateProgress = () => {
+    const now = Date.now();
+    const elapsed = (now - lastThroughputUpdate) / 1000;
+    if (elapsed >= 1) {
+      currentDocsPerSec = (successCount + errorCount - docsAtLastUpdate) / elapsed;
+      lastThroughputUpdate = now;
+      docsAtLastUpdate = successCount + errorCount;
+    }
+
+    const lines = formatProgress({
+      saved: successCount + errorCount,
+      total: keys.length,
+      docsPerSec: currentDocsPerSec,
+      failed: errorCount > 0 ? errorCount : undefined,
+      elapsedMs: now - startTime,
+    });
+
+    prevLineCount = writeMultiLineProgress(lines, prevLineCount);
+  };
+
+  const progressInterval = !verbose ? setInterval(updateProgress, 100) : null;
+
   const processFile = async (): Promise<void> => {
     while (queue.length > 0) {
       const sourceKey = queue.shift();
@@ -175,6 +205,14 @@ async function processBatch(
     .map(() => processFile());
 
   await Promise.all(workerPromises);
+
+  // Clean up progress display
+  if (progressInterval) {
+    clearInterval(progressInterval);
+    updateProgress(); // Final update
+    console.log(); // Move to next line
+  }
+
   return { successCount, errorCount };
 }
 

@@ -22,7 +22,7 @@ function parseFlags(args: string[]): ParsedFlags {
     const next = args[i + 1];
 
     switch (arg) {
-      case "--batch-size":
+      case "--batch":
       case "-b":
         flags.batchSize = parseInt(next || "", 10);
         i++;
@@ -55,7 +55,7 @@ Storage is auto-selected based on environment:
 Already-extracted files are automatically skipped (tracked in index.jsonl).
 
 Options
-  --batch-size, -b <n>    Number of files per batch (default: from EXTRACT_BATCH_SIZE or 100)
+  --batch, -b <n>         Limit to n documents (default: all)
   --workers, -w <n>       Number of parallel workers (default: from EXTRACT_WORKERS or 4)
   --verbose, -v           Show detailed progress
   --help, -h              Show this help
@@ -68,11 +68,11 @@ Environment Variables
   R2_BUCKET_NAME          R2 bucket (default: docx-corpus)
   EXTRACT_INPUT_PREFIX    Input prefix (default: documents)
   EXTRACT_OUTPUT_PREFIX   Output prefix (default: extracted)
-  EXTRACT_BATCH_SIZE      Batch size (default: 100)
   EXTRACT_WORKERS         Worker count (default: 4)
 
 Examples
-  corpus extract                    # Extract up to batch size
+  corpus extract                    # Extract all documents
+  corpus extract -b 100             # Limit to 100 documents
   corpus extract -v                 # With verbose output
   corpus extract -b 50 -w 8         # Custom batch/workers
 `;
@@ -101,7 +101,7 @@ export async function runExtract(args: string[]) {
     storage,
     inputPrefix: envConfig.extract.inputPrefix,
     outputPrefix: envConfig.extract.outputPrefix,
-    batchSize: flags.batchSize ?? envConfig.extract.batchSize,
+    batchSize: flags.batchSize ?? Infinity,
     workers: flags.workers ?? envConfig.extract.workers,
   };
 
@@ -113,7 +113,7 @@ export async function runExtract(args: string[]) {
   console.log(`Input:   ${config.inputPrefix}/`);
   console.log(`Output:  ${config.outputPrefix}/`);
   console.log(`Workers: ${config.workers}`);
-  console.log(`Batch:   ${config.batchSize}`);
+  console.log(`Batch:   ${config.batchSize === Infinity ? "all" : config.batchSize}`);
   console.log("");
 
   try {

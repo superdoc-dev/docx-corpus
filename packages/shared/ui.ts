@@ -53,10 +53,10 @@ export interface ProgressStats {
   saved: number;
   total: number;
   docsPerSec: number;
-  currentRps: number;
-  skipped: number;
-  failed: number;
-  retried: number;
+  currentRps?: number;
+  skipped?: number;
+  failed?: number;
+  retried?: number;
   elapsedMs: number;
 }
 
@@ -76,10 +76,14 @@ export function formatProgress(stats: ProgressStats): string[] {
 
   // Line 2: Metrics
   const metrics: string[] = [];
-  metrics.push(`${docsPerSec.toFixed(1)}/s @ ${currentRps} RPS`);
-  if (skipped > 0) metrics.push(`${skipped} dup`);
-  if (failed > 0) metrics.push(`${failed} fail`);
-  if (retried > 0) metrics.push(`${retried} retried`);
+  if (currentRps !== undefined && currentRps > 0) {
+    metrics.push(`${docsPerSec.toFixed(1)}/s @ ${currentRps} RPS`);
+  } else {
+    metrics.push(`${docsPerSec.toFixed(1)}/s`);
+  }
+  if (skipped !== undefined && skipped > 0) metrics.push(`${skipped} dup`);
+  if (failed !== undefined && failed > 0) metrics.push(`${failed} fail`);
+  if (retried !== undefined && retried > 0) metrics.push(`${retried} retried`);
   metrics.push(formatDuration(elapsedMs));
 
   lines.push(metrics.join(" · "));
