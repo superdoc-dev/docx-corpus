@@ -1,6 +1,6 @@
 <img width="400" alt="logo" src="https://github.com/user-attachments/assets/ea105e9e-00d0-4d48-a2a4-006cc4e89848" />
 
-[![Scraper](https://img.shields.io/github/v/release/superdoc-dev/docx-corpus?filter=scraper-v*&label=scraper)](https://github.com/superdoc-dev/docx-corpus/releases)
+[![CLI](https://img.shields.io/github/v/release/superdoc-dev/docx-corpus?filter=cli-v*&label=cli)](https://github.com/superdoc-dev/docx-corpus/releases)
 [![CDX Filter](https://img.shields.io/github/v/release/superdoc-dev/docx-corpus?filter=cdx-filter-v*&label=cdx-filter)](https://github.com/superdoc-dev/docx-corpus/releases)
 [![codecov](https://codecov.io/gh/superdoc-dev/docx-corpus/graph/badge.svg)](https://codecov.io/gh/superdoc-dev/docx-corpus)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,21 +23,24 @@ Document rendering is hard. Microsoft Word has decades of edge cases, quirks, an
 ## How It Works
 
 ```
+                         Phase 1: Index Filtering (Lambda)
 ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-│   Common Crawl   │      │   cdx-filter     │      │     scraper      │
-│   (S3 bucket)    │ ───► │   (Lambda)       │ ───► │     (Bun)        │
-│                  │      │                  │      │                  │
-│  CDX indexes     │      │  Filters .docx   │      │  Downloads WARC  │
-│  WARC archives   │      │  Writes to R2    │      │  Validates docx  │
+│   Common Crawl   │      │   cdx-filter     │      │   Cloudflare R2  │
+│      (S3)        │ ───► │    (Lambda)      │ ───► │                  │
+│                  │      │                  │      │  cdx-filtered/   │
+│  CDX indexes     │      │  Filters .docx   │      │  *.jsonl         │
 └──────────────────┘      └──────────────────┘      └──────────────────┘
-                                   │                         │
-                                   ▼                         ▼
-                          ┌──────────────────┐      ┌──────────────────┐
-                          │   Cloudflare R2  │      │     Storage      │
-                          │                  │      │                  │
-                          │  cdx-filtered/   │      │  Local or R2     │
-                          │  *.jsonl         │      │  documents/      │
-                          └──────────────────┘      └──────────────────┘
+
+                         Phase 2: Document Collection (CLI)
+┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+│   Cloudflare R2  │      │   corpus CLI     │      │     Storage      │
+│                  │ ───► │     (Bun)        │ ───► │                  │
+│  cdx-filtered/   │      │                  │      │  Local or R2     │
+│  *.jsonl         │      │  Downloads WARC  │      │  documents/      │
+├──────────────────┤      │  Validates docx  │      └──────────────────┘
+│   Common Crawl   │ ───► │  Deduplicates    │
+│  WARC archives   │      │                  │
+└──────────────────┘      └──────────────────┘
 ```
 
 ### Why Common Crawl?
