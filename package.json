@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "corpus": "bun run apps/cli/index.ts",
+    "db:shell": "docker exec -it docx-corpus-postgres-1 psql -U postgres -d docx_corpus",
     "lint": "biome check",
     "format": "biome format --write",
     "typecheck": "bun run --cwd packages/scraper typecheck && bun run --cwd packages/extractor typecheck && bun run --cwd apps/cli typecheck",
