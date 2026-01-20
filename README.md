@@ -175,6 +175,8 @@ bun run corpus embed --model voyage-lite  # requires VOYAGE_API_KEY
 bun run corpus embed --batch 100 --verbose
 ```
 
+> **Note:** Vector dimensions are model-specific. The default schema uses `vector(384)` for minilm. If using a different model, update the column dimension accordingly (e.g., `vector(1024)` for bge-m3).
+
 ### Docker
 
 Run the CLI in a container:

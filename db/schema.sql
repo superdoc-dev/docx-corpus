@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS documents (
     extraction_error TEXT,
 
     -- Embedding data
+    -- Note: vector dimensions are model-specific (e.g., minilm=384, bge-m3=1024, openai=1536)
     embedded_at TIMESTAMP WITH TIME ZONE,
     embedding_model VARCHAR(50),
     embedding vector(384),
