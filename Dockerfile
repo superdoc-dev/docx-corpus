@@ -13,6 +13,7 @@ COPY package.json bun.lock ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/scraper/package.json ./packages/scraper/
 COPY packages/extractor/package.json ./packages/extractor/
+COPY packages/embedder/package.json ./packages/embedder/
 COPY apps/cli/package.json ./apps/cli/
 COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
 
