@@ -112,6 +112,11 @@ class PersistentExtractor {
     this.readBuffer = "";
     this.stdoutReader = null;
   }
+
+  async restart(): Promise<void> {
+    await this.stop();
+    await this.start();
+  }
 }
 
 export async function processDirectory(
@@ -163,6 +168,7 @@ export async function processDirectory(
 }
 
 const EXTRACTION_TIMEOUT_MS = 30_000; // 30 seconds per document
+const STALL_TIMEOUT_MS = 60_000; // 1 minute without progress
 
 async function processBatch(
   documents: DocumentRecord[],
@@ -175,12 +181,19 @@ async function processBatch(
   let errorCount = 0;
   const queue = [...documents];
 
+  // Atomic queue retrieval to avoid race conditions
+  const getNextDocument = (): DocumentRecord | undefined => queue.shift();
+
   // Progress tracking (only used when not verbose)
   const startTime = Date.now();
   let lastThroughputUpdate = startTime;
   let docsAtLastUpdate = 0;
   let currentDocsPerSec = 0;
   let prevLineCount = 0;
+
+  // Stall detection - track when last progress was made
+  let lastProgressTime = Date.now();
+  let stalled = false;
 
   const updateProgress = () => {
     const now = Date.now();
@@ -218,11 +231,10 @@ async function processBatch(
 
   // Worker function - each worker uses its own extractor
   const processWorker = async (extractor: PersistentExtractor): Promise<void> => {
-    while (queue.length > 0) {
-      const doc = queue.shift();
-      if (!doc) continue;
-
+    let doc: DocumentRecord | undefined;
+    while ((doc = getNextDocument()) && !stalled) {
       const sourceKey = `${inputPrefix}/${doc.id}.docx`;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
       try {
         // Download file from storage to temp
@@ -237,12 +249,15 @@ async function processBatch(
         // Extract using persistent Python worker with timeout
         const extractPromise = extractor.extract(tempFile);
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => {
+          timeoutId = setTimeout(() => {
             reject(new Error(`Extraction timed out after ${EXTRACTION_TIMEOUT_MS / 1000}s`));
           }, EXTRACTION_TIMEOUT_MS);
         });
 
         const result = await Promise.race([extractPromise, timeoutPromise]);
+
+        // Clear timeout on success
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (!result.success) {
           throw new Error(result.error || "Extraction failed");
@@ -268,6 +283,7 @@ async function processBatch(
         });
 
         successCount++;
+        lastProgressTime = Date.now();
 
         // Cleanup temp file
         await rm(tempFile, { force: true });
@@ -276,11 +292,25 @@ async function processBatch(
           console.log(`  Extracted: ${doc.id} (${result.wordCount} words)`);
         }
       } catch (err) {
+        // Clear timeout on error
+        if (timeoutId) clearTimeout(timeoutId);
+
         const error = err instanceof Error ? err.message : String(err);
+
+        // Restart Python process after timeout to restore clean state
+        if (error.includes("timed out")) {
+          try {
+            await extractor.restart();
+          } catch {
+            // If restart fails, continue with potentially broken extractor
+            // It will fail on next extraction and be caught
+          }
+        }
 
         // Update database with error
         await db.updateExtractionError(doc.id, error);
         errorCount++;
+        lastProgressTime = Date.now();
 
         if (verbose) {
           console.error(`  Failed: ${doc.id}: ${error}`);
@@ -289,11 +319,33 @@ async function processBatch(
     }
   };
 
+  // Stall detection interval - check if no progress for too long
+  const stallCheckInterval = setInterval(async () => {
+    const timeSinceProgress = Date.now() - lastProgressTime;
+    if (timeSinceProgress > STALL_TIMEOUT_MS && queue.length > 0) {
+      console.error(`\nStall detected: no progress for ${STALL_TIMEOUT_MS / 1000}s, restarting extractors...`);
+      stalled = true;
+
+      // Force restart all extractors
+      await Promise.all(extractors.map(async (e) => {
+        try {
+          await e.restart();
+        } catch {
+          // Ignore restart errors
+        }
+      }));
+
+      stalled = false;
+      lastProgressTime = Date.now();
+    }
+  }, 10_000); // Check every 10 seconds
+
   try {
     // Run all workers in parallel, each with its own extractor
     await Promise.all(extractors.map(extractor => processWorker(extractor)));
   } finally {
-    // Always stop all extractors
+    // Always stop all extractors and clear intervals
+    clearInterval(stallCheckInterval);
     await Promise.all(extractors.map(e => e.stop()));
   }
 
