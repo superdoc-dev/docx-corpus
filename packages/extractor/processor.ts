@@ -53,7 +53,7 @@ export async function processDirectory(
   }
 
   console.log("\nExtraction complete!");
-  console.log(`  Output: ${outputPrefix}/{hash}.txt`);
+  console.log(`  Output: ${outputPrefix}/{hash}.txt, ${outputPrefix}/{hash}.json`);
 }
 
 const EXTRACTION_TIMEOUT_MS = 30_000; // 30 seconds per document
@@ -106,6 +106,7 @@ async function extractWithPython(
     charCount: result.charCount,
     tableCount: result.tableCount,
     imageCount: result.imageCount,
+    extraction: result.extraction,
     extractedAt: new Date().toISOString(),
   };
 }
@@ -172,6 +173,12 @@ async function processBatch(
 
         // Write text file to storage
         await storage.write(`${outputPrefix}/${doc.id}.txt`, extracted.text);
+
+        // Write extraction JSON to storage
+        await storage.write(
+          `${outputPrefix}/${doc.id}.json`,
+          JSON.stringify(extracted.extraction)
+        );
 
         // Update database with extraction metadata
         await db.updateExtraction({

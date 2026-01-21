@@ -15,15 +15,16 @@ def extract(file_path: str) -> dict:
     # Export as markdown for text extraction
     text = result.document.export_to_markdown()
 
-    # Get structured data for counts
-    doc_dict = result.document.export_to_dict()
+    # Get full structured extraction (raw, no stripping)
+    extraction = result.document.export_to_dict()
 
     return {
         "text": text,
         "wordCount": len(text.split()),
         "charCount": len(text),
-        "tableCount": len(doc_dict.get("tables", [])),
-        "imageCount": len(doc_dict.get("pictures", [])),
+        "tableCount": len(extraction.get("tables", [])),
+        "imageCount": len(extraction.get("pictures", [])),
+        "extraction": extraction,
     }
 
 

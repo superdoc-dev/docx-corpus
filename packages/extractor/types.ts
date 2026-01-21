@@ -11,6 +11,7 @@ export interface ExtractedDocument {
   charCount: number;
   tableCount: number;
   imageCount: number;
+  extraction: Record<string, unknown>;
   extractedAt: string;
 }
 
