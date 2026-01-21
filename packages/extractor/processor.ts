@@ -229,68 +229,81 @@ async function processBatch(
   }
   console.log(`${numWorkers} extractor(s) ready, processing documents...`);
 
+  // Process a single document with timeout covering all operations
+  const processDocument = async (
+    doc: DocumentRecord,
+    extractor: PersistentExtractor
+  ): Promise<{ success: boolean; needsRestart: boolean }> => {
+    const sourceKey = `${inputPrefix}/${doc.id}.docx`;
+
+    // Download file from storage to temp
+    const content = await storage.read(sourceKey);
+    if (!content) {
+      throw new Error(`File not found: ${sourceKey}`);
+    }
+
+    const tempFile = join(tempDir, `${doc.id}.docx`);
+    await Bun.write(tempFile, content);
+
+    // Extract using persistent Python worker
+    const result = await extractor.extract(tempFile);
+
+    if (!result.success) {
+      throw new Error(result.error || "Extraction failed");
+    }
+
+    // Write text file to storage
+    await storage.write(`${outputPrefix}/${doc.id}.txt`, result.text!);
+
+    // Write extraction JSON to storage
+    await storage.write(
+      `${outputPrefix}/${doc.id}.json`,
+      JSON.stringify(result.extraction)
+    );
+
+    // Update database with extraction metadata
+    await db.updateExtraction({
+      id: doc.id,
+      word_count: result.wordCount!,
+      char_count: result.charCount!,
+      table_count: result.tableCount!,
+      image_count: result.imageCount!,
+      extracted_at: new Date().toISOString(),
+    });
+
+    // Cleanup temp file
+    await rm(tempFile, { force: true });
+
+    if (verbose) {
+      console.log(`  Extracted: ${doc.id} (${result.wordCount} words)`);
+    }
+
+    return { success: true, needsRestart: false };
+  };
+
   // Worker function - each worker uses its own extractor
   const processWorker = async (extractor: PersistentExtractor): Promise<void> => {
     let doc: DocumentRecord | undefined;
     while ((doc = getNextDocument()) && !stalled) {
-      const sourceKey = `${inputPrefix}/${doc.id}.docx`;
+      const currentDoc = doc; // Capture for closure
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
       try {
-        // Download file from storage to temp
-        const content = await storage.read(sourceKey);
-        if (!content) {
-          throw new Error(`File not found: ${sourceKey}`);
-        }
-
-        const tempFile = join(tempDir, `${doc.id}.docx`);
-        await Bun.write(tempFile, content);
-
-        // Extract using persistent Python worker with timeout
-        const extractPromise = extractor.extract(tempFile);
+        // Wrap entire document processing with timeout
+        const processPromise = processDocument(currentDoc, extractor);
         const timeoutPromise = new Promise<never>((_, reject) => {
           timeoutId = setTimeout(() => {
-            reject(new Error(`Extraction timed out after ${EXTRACTION_TIMEOUT_MS / 1000}s`));
+            reject(new Error(`Document processing timed out after ${EXTRACTION_TIMEOUT_MS / 1000}s`));
           }, EXTRACTION_TIMEOUT_MS);
         });
 
-        const result = await Promise.race([extractPromise, timeoutPromise]);
+        await Promise.race([processPromise, timeoutPromise]);
 
         // Clear timeout on success
         if (timeoutId) clearTimeout(timeoutId);
 
-        if (!result.success) {
-          throw new Error(result.error || "Extraction failed");
-        }
-
-        // Write text file to storage
-        await storage.write(`${outputPrefix}/${doc.id}.txt`, result.text!);
-
-        // Write extraction JSON to storage
-        await storage.write(
-          `${outputPrefix}/${doc.id}.json`,
-          JSON.stringify(result.extraction)
-        );
-
-        // Update database with extraction metadata
-        await db.updateExtraction({
-          id: doc.id,
-          word_count: result.wordCount!,
-          char_count: result.charCount!,
-          table_count: result.tableCount!,
-          image_count: result.imageCount!,
-          extracted_at: new Date().toISOString(),
-        });
-
         successCount++;
         lastProgressTime = Date.now();
-
-        // Cleanup temp file
-        await rm(tempFile, { force: true });
-
-        if (verbose) {
-          console.log(`  Extracted: ${doc.id} (${result.wordCount} words)`);
-        }
       } catch (err) {
         // Clear timeout on error
         if (timeoutId) clearTimeout(timeoutId);
@@ -303,17 +316,25 @@ async function processBatch(
             await extractor.restart();
           } catch {
             // If restart fails, continue with potentially broken extractor
-            // It will fail on next extraction and be caught
           }
         }
 
-        // Update database with error
-        await db.updateExtractionError(doc.id, error);
+        // Update database with error (with its own timeout)
+        try {
+          const dbPromise = db.updateExtractionError(currentDoc.id, error);
+          const dbTimeout = new Promise<void>((resolve) => {
+            setTimeout(resolve, 5000); // 5s timeout for DB update
+          });
+          await Promise.race([dbPromise, dbTimeout]);
+        } catch {
+          // Ignore DB errors during error handling
+        }
+
         errorCount++;
         lastProgressTime = Date.now();
 
         if (verbose) {
-          console.error(`  Failed: ${doc.id}: ${error}`);
+          console.error(`  Failed: ${currentDoc.id}: ${error}`);
         }
       }
     }
@@ -322,7 +343,9 @@ async function processBatch(
   // Stall detection interval - check if no progress for too long
   const stallCheckInterval = setInterval(async () => {
     const timeSinceProgress = Date.now() - lastProgressTime;
-    if (timeSinceProgress > STALL_TIMEOUT_MS && queue.length > 0) {
+    const totalProcessed = successCount + errorCount;
+    // Check if stalled: no progress for too long AND we haven't finished all documents
+    if (timeSinceProgress > STALL_TIMEOUT_MS && totalProcessed < documents.length) {
       console.error(`\nStall detected: no progress for ${STALL_TIMEOUT_MS / 1000}s, restarting extractors...`);
       stalled = true;
 
