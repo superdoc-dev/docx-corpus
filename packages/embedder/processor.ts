@@ -1,16 +1,84 @@
-import { join, dirname } from "node:path";
-import type { EmbedConfig, EmbeddingModel } from "./types";
-import { formatProgress, writeMultiLineProgress, type DocumentRecord } from "@docx-corpus/shared";
+import { GoogleGenAI } from "@google/genai";
+import type { EmbedConfig } from "./types";
+import { formatProgress, writeMultiLineProgress } from "@docx-corpus/shared";
 
-const PYTHON_DIR = join(dirname(import.meta.path), "python");
-const PYTHON_PATH = join(PYTHON_DIR, ".venv", "bin", "python");
-const SCRIPT_PATH = join(PYTHON_DIR, "embed.py");
+// Chunking config (same as eval)
+const CHUNK_SIZE_CHARS = 6000;
+const CHUNK_OVERLAP_CHARS = 200;
 
-export async function processEmbeddings(
-  config: EmbedConfig,
-  verbose: boolean = false
-): Promise<void> {
-  const { db, storage, inputPrefix, model, batchSize } = config;
+// Google API config
+const GOOGLE_MODEL = "gemini-embedding-001";
+const GOOGLE_DIMENSIONS = 3072;
+const API_BATCH_SIZE = 100; // Google supports up to 100 texts per request
+
+/**
+ * Split text into overlapping chunks for embedding.
+ */
+function chunkText(text: string): string[] {
+  if (text.length <= CHUNK_SIZE_CHARS) {
+    return [text];
+  }
+
+  const chunks: string[] = [];
+  let start = 0;
+
+  while (start < text.length) {
+    const end = Math.min(start + CHUNK_SIZE_CHARS, text.length);
+    const chunk = text.slice(start, end).trim();
+    if (chunk.length > 0) {
+      chunks.push(chunk);
+    }
+
+    if (end >= text.length) break;
+
+    const nextStart = end - CHUNK_OVERLAP_CHARS;
+    start = nextStart <= start ? start + 1 : nextStart;
+  }
+
+  return chunks;
+}
+
+/**
+ * Combine multiple embeddings using weighted average (weighted by chunk length).
+ * Then normalize to unit length.
+ */
+function weightedAverageEmbeddings(embeddings: number[][], weights: number[]): number[] {
+  if (embeddings.length === 1) {
+    return embeddings[0];
+  }
+
+  const dimensions = embeddings[0].length;
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  const result = new Array(dimensions).fill(0);
+
+  for (let i = 0; i < embeddings.length; i++) {
+    const weight = weights[i] / totalWeight;
+    for (let d = 0; d < dimensions; d++) {
+      result[d] += embeddings[i][d] * weight;
+    }
+  }
+
+  // Normalize to unit length
+  const norm = Math.sqrt(result.reduce((sum, val) => sum + val * val, 0));
+  if (norm > 0) {
+    for (let d = 0; d < dimensions; d++) {
+      result[d] /= norm;
+    }
+  }
+
+  return result;
+}
+
+export async function processEmbeddings(config: EmbedConfig, verbose: boolean = false): Promise<void> {
+  const { db, storage, inputPrefix, batchSize } = config;
+
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    throw new Error("GOOGLE_API_KEY environment variable required");
+  }
+
+  // Initialize Google GenAI client
+  const ai = new GoogleGenAI({ apiKey });
 
   // Get embedding stats from database
   const stats = await db.getEmbeddingStats();
@@ -29,8 +97,6 @@ export async function processEmbeddings(
 
   console.log(`Found ${documents.length} documents to embed`);
 
-  // Process in batches for Python
-  const pythonBatchSize = 32; // Send 32 docs at a time to Python
   let processed = 0;
   let errorCount = 0;
 
@@ -63,21 +129,42 @@ export async function processEmbeddings(
 
   const progressInterval = !verbose ? setInterval(updateProgress, 100) : null;
 
-  try {
-    for (let i = 0; i < documents.length; i += pythonBatchSize) {
-      const batch = documents.slice(i, i + pythonBatchSize);
+  /**
+   * Embed texts using Google GenAI SDK
+   */
+  async function embedTexts(texts: string[]): Promise<number[][]> {
+    const response = await ai.models.embedContent({
+      model: GOOGLE_MODEL,
+      contents: texts,
+    });
 
-      // Read text for each doc from storage
-      const docsWithText: { id: string; text: string }[] = [];
+    if (!response.embeddings) {
+      throw new Error("No embeddings returned from Google API");
+    }
+
+    return response.embeddings.map((e) => e.values || []);
+  }
+
+  try {
+    // Process documents in batches
+    const docBatchSize = 10; // Load 10 docs at a time from storage
+
+    for (let i = 0; i < documents.length; i += docBatchSize) {
+      const batch = documents.slice(i, i + docBatchSize);
+
+      // Load text for each doc and prepare chunks
+      const docsWithChunks: { id: string; chunks: string[]; weights: number[] }[] = [];
+
       for (const doc of batch) {
         try {
           const textContent = await storage.read(`${inputPrefix}/${doc.id}.txt`);
           if (textContent) {
             const text = new TextDecoder().decode(textContent);
-            docsWithText.push({ id: doc.id, text });
+            const chunks = chunkText(text);
+            const weights = chunks.map((c) => c.length);
+            docsWithChunks.push({ id: doc.id, chunks, weights });
           }
         } catch {
-          // Skip if text file not found
           errorCount++;
           if (verbose) {
             console.error(`  Skipped: ${doc.id} (text file not found)`);
@@ -85,32 +172,79 @@ export async function processEmbeddings(
         }
       }
 
-      if (docsWithText.length === 0) continue;
+      if (docsWithChunks.length === 0) continue;
 
-      try {
-        // Call Python with batch
-        const embeddings = await embedBatch(docsWithText, model);
+      // Flatten all chunks for batch embedding
+      const allChunks: string[] = [];
+      const chunkToDoc: { docIdx: number; chunkIdx: number }[] = [];
 
-        // Save each embedding to database
-        for (const emb of embeddings) {
-          await db.updateEmbedding({
-            id: emb.id,
-            embedding: emb.embedding,
-            embedding_model: model,
-            embedded_at: new Date().toISOString(),
-          });
+      for (let docIdx = 0; docIdx < docsWithChunks.length; docIdx++) {
+        const { chunks } = docsWithChunks[docIdx];
+        for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
+          allChunks.push(chunks[chunkIdx]);
+          chunkToDoc.push({ docIdx, chunkIdx });
+        }
+      }
 
-          processed++;
+      // Embed all chunks in API batches
+      const chunkEmbeddings: number[][] = new Array(allChunks.length);
 
-          if (verbose) {
-            console.log(`  Embedded: ${emb.id} (${emb.dimensions} dims)`);
+      for (let j = 0; j < allChunks.length; j += API_BATCH_SIZE) {
+        const batchChunks = allChunks.slice(j, j + API_BATCH_SIZE);
+
+        let retries = 0;
+        const maxRetries = 3;
+        while (retries < maxRetries) {
+          try {
+            const embeddings = await embedTexts(batchChunks);
+            for (let k = 0; k < embeddings.length; k++) {
+              chunkEmbeddings[j + k] = embeddings[k];
+            }
+            break;
+          } catch (error: unknown) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            if (errorMsg.includes("429") || errorMsg.includes("rate") || errorMsg.includes("quota")) {
+              retries++;
+              const waitTime = Math.pow(2, retries) * 10;
+              if (verbose) {
+                console.log(`  Rate limited, waiting ${waitTime}s (retry ${retries}/${maxRetries})...`);
+              }
+              await new Promise((r) => setTimeout(r, waitTime * 1000));
+            } else {
+              throw error;
+            }
           }
         }
-      } catch (err) {
-        errorCount += docsWithText.length;
+        if (retries >= maxRetries) {
+          throw new Error(`Failed after ${maxRetries} retries due to rate limiting`);
+        }
+      }
+
+      // Combine chunk embeddings per document and save
+      for (let docIdx = 0; docIdx < docsWithChunks.length; docIdx++) {
+        const { id, chunks, weights } = docsWithChunks[docIdx];
+
+        // Find this doc's chunk embeddings
+        const docEmbeddings: number[][] = [];
+        for (let ci = 0; ci < chunkToDoc.length; ci++) {
+          if (chunkToDoc[ci].docIdx === docIdx) {
+            docEmbeddings.push(chunkEmbeddings[ci]);
+          }
+        }
+
+        const finalEmbedding = weightedAverageEmbeddings(docEmbeddings, weights);
+
+        await db.updateEmbedding({
+          id,
+          embedding: finalEmbedding,
+          embedding_model: "google",
+          embedded_at: new Date().toISOString(),
+        });
+
+        processed++;
+
         if (verbose) {
-          const error = err instanceof Error ? err.message : String(err);
-          console.error(`  Batch failed: ${error}`);
+          console.log(`  Embedded: ${id} (${chunks.length} chunks, ${GOOGLE_DIMENSIONS} dims)`);
         }
       }
     }
@@ -123,39 +257,4 @@ export async function processEmbeddings(
   }
 
   console.log(`Embedded: ${processed} documents, ${errorCount} errors`);
-}
-
-async function embedBatch(
-  docs: { id: string; text: string }[],
-  model: EmbeddingModel
-): Promise<{ id: string; embedding: number[]; dimensions: number }[]> {
-  const proc = Bun.spawn([PYTHON_PATH, SCRIPT_PATH, "--model", model, "--batch"], {
-    stdin: "pipe",
-    stdout: "pipe",
-    stderr: "pipe",
-    env: {
-      ...process.env,
-    },
-  });
-
-  // Write docs to stdin as JSONL
-  for (const doc of docs) {
-    proc.stdin.write(JSON.stringify(doc) + "\n");
-  }
-  proc.stdin.end();
-
-  const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
-  const exitCode = await proc.exited;
-
-  if (exitCode !== 0) {
-    const errorData = stderr ? JSON.parse(stderr) : { error: "Unknown error" };
-    throw new Error(errorData.error || "Python embedding failed");
-  }
-
-  return stdout
-    .trim()
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => JSON.parse(line));
 }

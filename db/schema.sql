@@ -25,10 +25,10 @@ CREATE TABLE IF NOT EXISTS documents (
     extraction_error TEXT,
 
     -- Embedding data
-    -- Note: vector dimensions are model-specific (e.g., minilm=384, bge-m3=1024, openai=1536)
+    -- Using Google's gemini-embedding-001 (3072 dimensions)
     embedded_at TIMESTAMP WITH TIME ZONE,
     embedding_model VARCHAR(50),
-    embedding vector(384),
+    embedding vector(3072),
 
     -- Classification data
     cluster_id INTEGER,

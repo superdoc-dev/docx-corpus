@@ -3,7 +3,7 @@ import type { DbClient, Storage } from "@docx-corpus/shared";
 /**
  * Supported embedding models
  */
-export type EmbeddingModel = "minilm" | "bge-m3" | "voyage-lite";
+export type EmbeddingModel = "google";
 
 /**
  * Embedded document with vector

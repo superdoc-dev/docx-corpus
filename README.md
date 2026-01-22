@@ -86,7 +86,7 @@ packages/
   shared/         # Shared utilities (DB client, storage, formatting)
   scraper/        # Core scraper logic (downloads WARC, validates .docx)
   extractor/      # Text extraction using Docling (Python)
-  embedder/       # Document embeddings using sentence-transformers (Python)
+  embedder/       # Document embeddings
 apps/
   cli/            # Unified CLI - corpus <command>
   cdx-filter/     # AWS Lambda - filters CDX indexes for .docx URLs
@@ -111,7 +111,7 @@ db/
 | **shared**     | DB client, storage, formatting    | Bun          |
 | **scraper**    | Download and validate .docx files | Bun          |
 | **extractor**  | Extract text (Docling)            | Bun + Python |
-| **embedder**   | Generate embeddings               | Bun + Python |
+| **embedder**   | Generate embeddings               | Bun          |
 
 ## Usage
 
@@ -164,18 +164,14 @@ bun run corpus extract --verbose
 ### 4. Generate embeddings
 
 ```bash
-# Embed all extracted documents (default: minilm, 384 dims)
+# Embed all extracted documents
 bun run corpus embed
-
-# Use a different model
-bun run corpus embed --model bge-m3      # 1024 dims
-bun run corpus embed --model voyage-lite  # requires VOYAGE_API_KEY
 
 # Embed with batch limit
 bun run corpus embed --batch 100 --verbose
 ```
 
-> **Note:** Vector dimensions are model-specific. The default schema uses `vector(384)` for minilm. If using a different model, update the column dimension accordingly (e.g., `vector(1024)` for bge-m3).
+Uses Google's `gemini-embedding-001` model (3072 dimensions, ~$0.006/1M tokens). Documents are chunked and embeddings are combined via weighted average.
 
 ### Docker
 
@@ -269,9 +265,8 @@ EXTRACT_WORKERS=4
 
 # Embedder
 EMBED_INPUT_PREFIX=extracted
-EMBED_MODEL=minilm           # minilm | bge-m3 | voyage-lite
 EMBED_BATCH_SIZE=100
-VOYAGE_API_KEY=              # Required for voyage-lite model
+GOOGLE_API_KEY=              # Required for embeddings
 ```
 
 ### Rate Limiting

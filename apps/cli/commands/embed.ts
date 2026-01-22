@@ -2,14 +2,12 @@ import {
   processEmbeddings,
   loadEmbedderConfig,
   hasCloudflareCredentials,
-  hasVoyageCredentials,
+  hasGoogleCredentials,
   type EmbedConfig,
-  type EmbeddingModel,
 } from "@docx-corpus/embedder";
 import { createDb, createLocalStorage, createR2Storage } from "@docx-corpus/shared";
 
 interface ParsedFlags {
-  model?: EmbeddingModel;
   batchSize?: number;
   verbose: boolean;
 }
@@ -24,11 +22,6 @@ function parseFlags(args: string[]): ParsedFlags {
     const next = args[i + 1];
 
     switch (arg) {
-      case "--model":
-      case "-m":
-        flags.model = next as EmbeddingModel;
-        i++;
-        break;
       case "--batch":
       case "-b":
         flags.batchSize = parseInt(next || "", 10);
@@ -57,30 +50,27 @@ Storage is auto-selected based on environment:
 
 Embedding progress is tracked in the database (embedded_at column).
 
+Model
+  Uses Google's gemini-embedding-001 (3072 dimensions, ~$0.006/1M tokens)
+  Documents are chunked (6000 chars) and embeddings are combined via weighted average.
+
 Options
-  --model, -m <name>      Embedding model (default: minilm)
-                            minilm      - all-MiniLM-L6-v2 (fast, 384 dims)
-                            bge-m3      - BAAI/bge-m3 (better quality, 1024 dims)
-                            voyage-lite - Voyage 3.5 lite (best, requires API key)
   --batch, -b <n>         Limit to n documents (default: all)
   --verbose, -v           Show detailed progress
   --help, -h              Show this help
 
 Environment Variables
   DATABASE_URL            PostgreSQL connection string (required)
+  GOOGLE_API_KEY          Google AI API key (required)
   STORAGE_PATH            Local storage path (default: ./corpus)
   CLOUDFLARE_ACCOUNT_ID   Cloudflare account ID (enables R2)
   R2_ACCESS_KEY_ID        R2 access key
   R2_SECRET_ACCESS_KEY    R2 secret key
   R2_BUCKET_NAME          R2 bucket (default: docx-corpus)
   EMBED_INPUT_PREFIX      Input prefix (default: extracted)
-  EMBED_MODEL             Default model (default: minilm)
-  VOYAGE_API_KEY          Voyage AI API key (required for voyage-lite)
 
 Examples
-  corpus embed                        # Embed all documents with minilm
-  corpus embed -m bge-m3              # Use BGE-M3 model
-  corpus embed -m voyage-lite         # Use Voyage API (requires VOYAGE_API_KEY)
+  corpus embed                        # Embed all documents
   corpus embed -b 100 -v              # Limit to 100, verbose output
 `;
 
@@ -99,14 +89,13 @@ export async function runEmbed(args: string[]) {
     process.exit(1);
   }
 
-  const useCloud = hasCloudflareCredentials(envConfig);
-  const model = flags.model ?? envConfig.embed.model;
-
-  // Validate Voyage API key if needed
-  if (model === "voyage-lite" && !hasVoyageCredentials(envConfig)) {
-    console.error("Error: VOYAGE_API_KEY environment variable required for voyage-lite model");
+  // Validate Google API key
+  if (!hasGoogleCredentials(envConfig)) {
+    console.error("Error: GOOGLE_API_KEY environment variable is required");
     process.exit(1);
   }
+
+  const useCloud = hasCloudflareCredentials(envConfig);
 
   // Create database client
   const db = await createDb(envConfig.database.url);
@@ -125,7 +114,7 @@ export async function runEmbed(args: string[]) {
     db,
     storage,
     inputPrefix: envConfig.embed.inputPrefix,
-    model,
+    model: "google",
     batchSize: flags.batchSize ?? 1000000,
   };
 
@@ -136,7 +125,7 @@ export async function runEmbed(args: string[]) {
   );
   console.log(`Input:   ${config.inputPrefix}/`);
   console.log(`Output:  database (embedding column)`);
-  console.log(`Model:   ${config.model}`);
+  console.log(`Model:   gemini-embedding-001 (3072 dims)`);
   console.log(`Batch:   ${config.batchSize >= 1000000 ? "all" : config.batchSize}`);
   console.log("");
 

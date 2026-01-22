@@ -6,11 +6,11 @@
     ".": "./index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "setup": "cd python && uv sync"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@docx-corpus/shared": "workspace:*"
+    "@docx-corpus/shared": "workspace:*",
+    "@google/genai": "^1.38.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

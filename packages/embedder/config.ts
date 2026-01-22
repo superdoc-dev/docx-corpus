@@ -18,7 +18,7 @@ export interface EmbedderConfig {
     model: EmbeddingModel;
     batchSize: number;
   };
-  voyage: {
+  google: {
     apiKey: string;
   };
 }
@@ -41,11 +41,11 @@ export function loadEmbedderConfig(): EmbedderConfig {
     },
     embed: {
       inputPrefix: env.EMBED_INPUT_PREFIX || "extracted",
-      model: (env.EMBED_MODEL as EmbeddingModel) || "minilm",
+      model: (env.EMBED_MODEL as EmbeddingModel) || "google",
       batchSize: parseInt(env.EMBED_BATCH_SIZE || "100", 10),
     },
-    voyage: {
-      apiKey: env.VOYAGE_API_KEY || "",
+    google: {
+      apiKey: env.GOOGLE_API_KEY || "",
     },
   };
 }
@@ -62,8 +62,8 @@ export function hasCloudflareCredentials(config: EmbedderConfig): boolean {
 }
 
 /**
- * Check if Voyage API key is configured
+ * Check if Google API key is configured
  */
-export function hasVoyageCredentials(config: EmbedderConfig): boolean {
-  return !!config.voyage.apiKey;
+export function hasGoogleCredentials(config: EmbedderConfig): boolean {
+  return !!config.google.apiKey;
 }

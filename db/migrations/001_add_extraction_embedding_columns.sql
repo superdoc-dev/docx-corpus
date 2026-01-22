@@ -15,7 +15,7 @@ ALTER TABLE documents ADD COLUMN IF NOT EXISTS extraction_error TEXT;
 -- Add embedding columns
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS embedded_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(50);
-ALTER TABLE documents ADD COLUMN IF NOT EXISTS embedding vector(384);
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS embedding vector(3072);
 
 -- Add classification columns
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS cluster_id INTEGER;

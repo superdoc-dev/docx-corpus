@@ -1,9 +1,0 @@
-[project]
-name = "embedder-python"
-version = "0.1.0"
-requires-python = ">=3.10"
-dependencies = [
-    "sentence-transformers>=2.2.0",
-    "numpy>=1.24.0",
-    "voyageai>=0.3.0",
-]
