@@ -119,8 +119,8 @@ export async function processEmbeddings(config: EmbedConfig, verbose: boolean = 
 
   // Get embedding stats from database
   const stats = await db.getEmbeddingStats();
-  if (stats.embedded > 0) {
-    console.log(`Already embedded: ${stats.embedded} documents`);
+  if (stats.embedded > 0 || stats.skipped > 0) {
+    console.log(`Already embedded: ${stats.embedded} documents (${stats.skipped} skipped)`);
   }
 
   // Get unembedded documents from database
@@ -199,6 +199,7 @@ export async function processEmbeddings(config: EmbedConfig, verbose: boolean = 
             const text = new TextDecoder().decode(textContent);
             const chunks = chunkText(text);
             if (chunks.length === 0) {
+              await db.markEmbeddingSkipped(doc.id, "empty");
               if (verbose) {
                 console.log(`  Skipped: ${doc.id} (empty text content)`);
               }
@@ -206,11 +207,16 @@ export async function processEmbeddings(config: EmbedConfig, verbose: boolean = 
             }
             const weights = chunks.map((c) => c.length);
             docsWithChunks.push({ id: doc.id, chunks, weights });
+          } else {
+            await db.markEmbeddingSkipped(doc.id, "empty");
+            if (verbose) {
+              console.log(`  Skipped: ${doc.id} (text file not found)`);
+            }
           }
         } catch {
           errorCount++;
           if (verbose) {
-            console.error(`  Skipped: ${doc.id} (text file not found)`);
+            console.error(`  Error: ${doc.id} (failed to read text file)`);
           }
         }
       }
@@ -243,7 +249,10 @@ export async function processEmbeddings(config: EmbedConfig, verbose: boolean = 
 
       // Process batch with rate limiting and retry
       const processBatch = async (task: { startIdx: number; chunks: string[] }) => {
-        while (true) {
+        const maxRetries = 5;
+        let retries = 0;
+
+        while (retries < maxRetries) {
           await rateLimiter.wait();
           try {
             const embeddings = await embedTexts(task.chunks);
@@ -254,16 +263,29 @@ export async function processEmbeddings(config: EmbedConfig, verbose: boolean = 
             return;
           } catch (error: unknown) {
             const errorMsg = error instanceof Error ? error.message : String(error);
-            if (errorMsg.includes("429") || errorMsg.includes("rate") || errorMsg.includes("quota")) {
+            const isRetryable =
+              errorMsg.includes("429") ||
+              errorMsg.includes("rate") ||
+              errorMsg.includes("quota") ||
+              errorMsg.includes("timeout") ||
+              errorMsg.includes("timed out") ||
+              errorMsg.includes("TimeoutError");
+
+            if (isRetryable) {
+              retries++;
               rateLimiter.backoff();
               if (verbose) {
-                console.log(`  Rate limited, backing off...`);
+                const reason = errorMsg.includes("timeout") || errorMsg.includes("timed out") || errorMsg.includes("TimeoutError")
+                  ? "timeout"
+                  : "rate limited";
+                console.log(`  Retrying (${reason}, attempt ${retries}/${maxRetries})...`);
               }
             } else {
               throw error;
             }
           }
         }
+        throw new Error(`Failed after ${maxRetries} retries for batch starting at ${task.startIdx}`);
       };
 
       // Run batches with concurrency limit
