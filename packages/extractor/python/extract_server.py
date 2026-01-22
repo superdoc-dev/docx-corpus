@@ -21,20 +21,25 @@ from docling.document_converter import DocumentConverter
 from docling.datamodel.base_models import InputFormat
 from docling_core.types.doc.labels import DocItemLabel
 
-import langid
+from lingua import LanguageDetectorBuilder
+
+# Build detector once at module load (includes all languages)
+_detector = LanguageDetectorBuilder.from_all_languages().build()
 
 
 def detect_language(text: str, min_chars: int = 50) -> tuple[str, float]:
-    """Detect language using langid. Returns (lang_code, confidence)."""
+    """Detect language using lingua. Returns (lang_code, confidence)."""
     if not text or len(text) < min_chars:
         return "unknown", 0.0
 
     try:
-        lang, score = langid.classify(text[:2000])
-        # Normalize confidence: langid scores are negative log-probs, typically -500 to -3000
-        # Map to 0-1 where closer to 0 = higher confidence
-        confidence = max(0.0, min(1.0, 1.0 + score / 3000))
-        return lang, confidence
+        confidence_values = _detector.compute_language_confidence_values(text[:2000])
+        if confidence_values:
+            top = confidence_values[0]
+            lang = top.language.iso_code_639_1.name.lower()
+            confidence = top.value
+            return lang, confidence
+        return "unknown", 0.0
     except Exception:
         return "unknown", 0.0
 

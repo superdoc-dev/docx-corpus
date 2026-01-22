@@ -4,5 +4,5 @@ version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
     "docling>=2.0.0",
-    "langid>=1.1.6",
+    "lingua-language-detector>=2.0.0",
 ]
