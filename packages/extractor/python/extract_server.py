@@ -21,6 +21,23 @@ from docling.document_converter import DocumentConverter
 from docling.datamodel.base_models import InputFormat
 from docling_core.types.doc.labels import DocItemLabel
 
+import langid
+
+
+def detect_language(text: str, min_chars: int = 50) -> tuple[str, float]:
+    """Detect language using langid. Returns (lang_code, confidence)."""
+    if not text or len(text) < min_chars:
+        return "unknown", 0.0
+
+    try:
+        lang, score = langid.classify(text[:2000])
+        # Normalize confidence: langid scores are negative log-probs, typically -500 to -3000
+        # Map to 0-1 where closer to 0 = higher confidence
+        confidence = max(0.0, min(1.0, 1.0 + score / 3000))
+        return lang, confidence
+    except Exception:
+        return "unknown", 0.0
+
 
 @contextlib.contextmanager
 def suppress_stderr():
@@ -85,6 +102,9 @@ def extract(converter: DocumentConverter, file_path: str) -> dict:
     # Use smart extraction to avoid table padding bloat
     text = smart_extract_text(result.document)
 
+    # Detect language
+    lang, lang_confidence = detect_language(text)
+
     # Get full structured extraction (stripped of image data)
     extraction = result.document.export_to_dict()
     extraction = strip_image_data(extraction)
@@ -95,6 +115,8 @@ def extract(converter: DocumentConverter, file_path: str) -> dict:
         "charCount": len(text),
         "tableCount": len(extraction.get("tables", [])),
         "imageCount": len(extraction.get("pictures", [])),
+        "language": lang,
+        "languageConfidence": lang_confidence,
         "extraction": extraction,
     }
 

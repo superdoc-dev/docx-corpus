@@ -84,6 +84,8 @@ class PersistentExtractor {
     charCount?: number;
     tableCount?: number;
     imageCount?: number;
+    language?: string;
+    languageConfidence?: number;
     extraction?: any;
     error?: string;
   }> {
@@ -268,6 +270,8 @@ async function processBatch(
       char_count: result.charCount!,
       table_count: result.tableCount!,
       image_count: result.imageCount!,
+      language: result.language || "unknown",
+      language_confidence: result.languageConfidence || 0,
       extracted_at: new Date().toISOString(),
     });
 

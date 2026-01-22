@@ -21,6 +21,8 @@ export interface DocumentRecord {
   char_count: number | null;
   table_count: number | null;
   image_count: number | null;
+  language: string | null;
+  language_confidence: number | null;
   extraction_error: string | null;
 
   // Embedding data
@@ -40,6 +42,8 @@ export interface ExtractionData {
   char_count: number;
   table_count: number;
   image_count: number;
+  language: string;
+  language_confidence: number;
   extracted_at?: string;
   extraction_error?: string;
 }
@@ -200,6 +204,8 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
           char_count = ${data.char_count},
           table_count = ${data.table_count},
           image_count = ${data.image_count},
+          language = ${data.language},
+          language_confidence = ${data.language_confidence},
           extraction_error = NULL
         WHERE id = ${data.id}
       `;

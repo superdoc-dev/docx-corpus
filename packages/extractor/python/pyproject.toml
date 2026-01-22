@@ -2,4 +2,7 @@
 name = "text-extractor-python"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["docling>=2.0.0"]
+dependencies = [
+    "docling>=2.0.0",
+    "langid>=1.1.6",
+]

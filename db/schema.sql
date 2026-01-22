@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS documents (
     char_count INTEGER,
     table_count INTEGER,
     image_count INTEGER,
+    language VARCHAR(10),
+    language_confidence REAL,
     extraction_error TEXT,
 
     -- Embedding data
@@ -47,6 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_documents_source_url ON documents(source_url);
 CREATE INDEX IF NOT EXISTS idx_documents_extracted ON documents(extracted_at) WHERE extracted_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_documents_embedded ON documents(embedded_at) WHERE embedded_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_documents_cluster ON documents(cluster_id) WHERE cluster_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_documents_language ON documents(language) WHERE language IS NOT NULL;
 
 -- Vector similarity search index (IVFFlat for approximate nearest neighbor)
 -- Note: Run this AFTER populating embeddings for better index quality
