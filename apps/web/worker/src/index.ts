@@ -15,6 +15,29 @@ interface DocumentRow {
   classification_confidence: number | null;
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  legal: "Legal", forms: "Forms", reports: "Reports", policies: "Policies",
+  educational: "Educational", correspondence: "Correspondence", technical: "Technical",
+  administrative: "Administrative", creative: "Creative", reference: "Reference",
+  general: "General",
+};
+
+const TOPIC_LABELS: Record<string, string> = {
+  government: "Government", education: "Education", healthcare: "Healthcare",
+  finance: "Finance", legal_judicial: "Legal / Judicial", technology: "Technology",
+  environment: "Environment", nonprofit: "Nonprofit", general: "General",
+};
+
+const LANG_NAMES: Record<string, string> = {
+  en: "English", ru: "Russian", cs: "Czech", pl: "Polish", es: "Spanish",
+  zh: "Chinese", lt: "Lithuanian", sk: "Slovak", de: "German", id: "Indonesian",
+  fr: "French", pt: "Portuguese", ar: "Arabic", ja: "Japanese", ko: "Korean",
+  it: "Italian", sv: "Swedish", nl: "Dutch", bg: "Bulgarian", tr: "Turkish",
+  vi: "Vietnamese", th: "Thai", uk: "Ukrainian", ro: "Romanian", hu: "Hungarian",
+  hr: "Croatian", fi: "Finnish", da: "Danish", nb: "Norwegian", el: "Greek",
+  he: "Hebrew", hi: "Hindi",
+};
+
 function corsHeaders(origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin,
@@ -23,14 +46,15 @@ function corsHeaders(origin: string): Record<string, string> {
   };
 }
 
-function json(data: unknown, status: number, origin: string): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      ...corsHeaders(origin),
-    },
-  });
+function json(data: unknown, status: number, origin: string, cacheSeconds = 0): Response {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...corsHeaders(origin),
+  };
+  if (cacheSeconds > 0) {
+    headers["Cache-Control"] = `public, max-age=${cacheSeconds}`;
+  }
+  return new Response(JSON.stringify(data), { status, headers });
 }
 
 export default {
@@ -38,24 +62,100 @@ export default {
     const url = new URL(request.url);
     const origin = env.CORS_ORIGIN || "*";
 
-    // CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
-    if (url.pathname === "/api/documents" && request.method === "GET") {
-      return handleDocuments(url, env, origin);
+    if (request.method !== "GET") {
+      return json({ error: "Method not allowed" }, 405, origin);
     }
 
-    return json({ error: "Not found" }, 404, origin);
+    switch (url.pathname) {
+      case "/api/stats":
+        return handleStats(env, origin);
+      case "/api/documents":
+        return handleDocuments(url, env, origin);
+      default:
+        return json({ error: "Not found" }, 404, origin);
+    }
   },
 };
 
-async function handleDocuments(
-  url: URL,
-  env: Env,
-  origin: string
-): Promise<Response> {
+// ---------- /api/stats ----------
+
+async function handleStats(env: Env, origin: string): Promise<Response> {
+  const sql = neon(env.DATABASE_URL);
+
+  const [heroRows, typeRows, topicRows, langRows] = await Promise.all([
+    sql`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(DISTINCT language) FILTER (WHERE language IS NOT NULL)::int AS languages,
+        ROUND(AVG(classification_confidence)::numeric, 2)::float AS avg_confidence,
+        COUNT(*) FILTER (WHERE document_type IS NOT NULL)::int AS classified
+      FROM documents
+      WHERE status = 'uploaded'
+    `,
+    sql`
+      SELECT document_type AS id, COUNT(*)::int AS count
+      FROM documents WHERE document_type IS NOT NULL
+      GROUP BY document_type ORDER BY count DESC
+    `,
+    sql`
+      SELECT document_topic AS id, COUNT(*)::int AS count
+      FROM documents WHERE document_topic IS NOT NULL
+      GROUP BY document_topic ORDER BY count DESC
+    `,
+    sql`
+      SELECT
+        COALESCE(NULLIF(language, 'unknown'), 'unknown') AS code,
+        SUM(count)::int AS count
+      FROM (
+        SELECT COALESCE(language, 'unknown') AS language, COUNT(*) AS count
+        FROM documents WHERE status = 'uploaded'
+        GROUP BY language
+      ) sub
+      GROUP BY COALESCE(NULLIF(language, 'unknown'), 'unknown')
+      ORDER BY count DESC
+      LIMIT 20
+    `,
+  ]);
+
+  const hero = heroRows[0];
+  const totalClassified = typeRows.reduce((s: number, t: { count: number }) => s + t.count, 0);
+
+  return json({
+    hero: {
+      total_documents: hero.total,
+      languages: hero.languages,
+      types: typeRows.length,
+      topics: topicRows.length,
+      avg_confidence: hero.avg_confidence,
+    },
+    types: typeRows.map((t: { id: string; count: number }) => ({
+      id: t.id,
+      label: TYPE_LABELS[t.id] || t.id,
+      count: t.count,
+      percentage: Math.round((1000 * t.count) / totalClassified) / 10,
+    })),
+    topics: topicRows.map((t: { id: string; count: number }) => ({
+      id: t.id,
+      label: TOPIC_LABELS[t.id] || t.id,
+      count: t.count,
+      percentage: Math.round((1000 * t.count) / totalClassified) / 10,
+    })),
+    languages: langRows.map((l: { code: string; count: number }) => ({
+      code: l.code,
+      name: LANG_NAMES[l.code] || l.code,
+      count: l.count,
+      percentage: Math.round((1000 * l.count) / hero.total) / 10,
+    })),
+  }, 200, origin, 300); // cache 5 minutes
+}
+
+// ---------- /api/documents ----------
+
+async function handleDocuments(url: URL, env: Env, origin: string): Promise<Response> {
   const sql = neon(env.DATABASE_URL);
 
   const q = url.searchParams.get("q")?.trim() || "";
@@ -66,7 +166,6 @@ async function handleDocuments(
   const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "25", 10)));
   const offset = (page - 1) * limit;
 
-  // Build WHERE clauses
   const conditions: string[] = ["document_type IS NOT NULL"];
   const params: unknown[] = [];
   let paramIndex = 1;
@@ -94,30 +193,19 @@ async function handleDocuments(
 
   const where = conditions.join(" AND ");
 
-  // Count query
-  const countResult = await sql(
-    `SELECT COUNT(*)::int AS total FROM documents WHERE ${where}`,
-    params
-  );
+  const [countResult, rows] = await Promise.all([
+    sql(`SELECT COUNT(*)::int AS total FROM documents WHERE ${where}`, params),
+    sql(
+      `SELECT id, original_filename AS filename, document_type, document_topic,
+              language, word_count, classification_confidence
+       FROM documents WHERE ${where}
+       ORDER BY classification_confidence DESC NULLS LAST
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...params, limit, offset]
+    ),
+  ]);
+
   const total = countResult[0].total as number;
-
-  // Data query
-  const rows = await sql(
-    `SELECT
-      id,
-      original_filename AS filename,
-      document_type,
-      document_topic,
-      language,
-      word_count,
-      classification_confidence
-    FROM documents
-    WHERE ${where}
-    ORDER BY classification_confidence DESC NULLS LAST
-    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-    [...params, limit, offset]
-  );
-
   const documents = (rows as DocumentRow[]).map((r) => ({
     id: r.id,
     filename: r.filename,
@@ -128,14 +216,5 @@ async function handleDocuments(
     confidence: r.classification_confidence,
   }));
 
-  return json(
-    {
-      documents,
-      total,
-      page,
-      pages: Math.ceil(total / limit),
-    },
-    200,
-    origin
-  );
+  return json({ documents, total, page, pages: Math.ceil(total / limit) }, 200, origin);
 }

@@ -16,15 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: oven-sh/setup-bun@v2
-
-      - run: bun install
-
-      - name: Generate stats
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: bun run generate-stats
-
       - name: Upload site to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

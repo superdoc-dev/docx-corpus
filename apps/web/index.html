@@ -337,12 +337,13 @@
 <script>
 (function() {
   // ---------- state ----------
-  let stats = null;
   let filters = { type: '', topic: '', lang: '', q: '' };
   let currentPage = 1;
-  let totalResults = 0;
   const PAGE_SIZE = 25;
   let debounceTimer = null;
+
+  // ---------- config ----------
+  const API = 'https://api.docxcorp.us';
 
   // ---------- color palettes ----------
   const CORAL_SHADES = ['#F97B6D','#e06b5e','#d45d52','#c85046','#bc433b'];
@@ -363,13 +364,17 @@
     return c != null ? c.toFixed(2) : '—';
   }
 
-  // ---------- render helpers ----------
+  function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ---------- render ----------
   function renderRow(doc) {
     const name = doc.filename || 'unknown.docx';
-    const hash = truncHash(doc.id);
     const conf = doc.confidence;
     return `<tr>
-      <td><div class="fname">${escHtml(name)}</div><div class="fhash">${hash}</div></td>
+      <td><div class="fname">${escHtml(name)}</div><div class="fhash">${truncHash(doc.id)}</div></td>
       <td><span class="label label-type">${escHtml(doc.type)}</span></td>
       <td><span class="label label-topic">${escHtml(doc.topic)}</span></td>
       <td class="mono">${escHtml(doc.language || '—')}</td>
@@ -377,13 +382,10 @@
     </tr>`;
   }
 
-  function escHtml(s) {
-    if (!s) return '';
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
   function renderTable(docs) {
-    $('doc-tbody').innerHTML = docs.map(renderRow).join('');
+    $('doc-tbody').innerHTML = docs.length
+      ? docs.map(renderRow).join('')
+      : '<tr class="loading-row"><td colspan="5">No documents found</td></tr>';
   }
 
   function renderLoading() {
@@ -396,10 +398,7 @@
 
     const info = `<div class="pagination-info">page ${page} of ${fmt(pages)}</div>`;
     let btns = '';
-
     btns += `<button class="pg-btn" ${page <= 1 ? 'disabled' : ''} data-page="${page-1}">&laquo;</button>`;
-
-    // Show up to 5 page buttons around current
     const start = Math.max(1, page - 2);
     const end = Math.min(pages, start + 4);
     for (let i = start; i <= end; i++) {
@@ -409,12 +408,9 @@
       btns += `<button class="pg-btn" disabled>...</button>`;
       btns += `<button class="pg-btn" data-page="${pages}">${fmt(pages)}</button>`;
     }
-
     btns += `<button class="pg-btn" ${page >= pages ? 'disabled' : ''} data-page="${page+1}">&raquo;</button>`;
 
     $('pagination').innerHTML = info + `<div class="pagination-btns">${btns}</div>`;
-
-    // Bind click handlers
     $('pagination').querySelectorAll('.pg-btn[data-page]').forEach(btn => {
       btn.addEventListener('click', function() {
         if (this.disabled) return;
@@ -443,14 +439,21 @@
 
   function updateActiveStates() {
     renderFilters();
-    // Update taxonomy grid active states
     document.querySelectorAll('.tax-cell').forEach(cell => {
       cell.classList.toggle('active', cell.dataset.type === filters.type);
     });
   }
 
-  // ---------- API ----------
-  const API_BASE = '/api';
+  // ---------- API calls ----------
+  async function fetchStats() {
+    try {
+      const res = await fetch(`${API}/api/stats`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
 
   async function fetchDocuments() {
     renderLoading();
@@ -465,42 +468,22 @@
     params.set('limit', PAGE_SIZE);
 
     try {
-      const res = await fetch(`${API_BASE}/documents?${params}`);
+      const res = await fetch(`${API}/api/documents?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      totalResults = data.total;
       $('explore-count').textContent = `${fmt(data.total)} results`;
       renderTable(data.documents);
       renderPagination(data.total, data.page);
-    } catch (err) {
-      // Fallback: show sample docs from stats.json
-      if (stats && stats.sample_documents) {
-        let docs = stats.sample_documents;
-        if (filters.type) docs = docs.filter(d => d.type === filters.type);
-        if (filters.topic) docs = docs.filter(d => d.topic === filters.topic);
-        if (filters.lang) docs = docs.filter(d => d.language === filters.lang);
-        totalResults = docs.length;
-        $('explore-count').textContent = `${fmt(docs.length)} sample results (API unavailable)`;
-        renderTable(docs);
-        $('pagination').innerHTML = '';
-      }
+    } catch {
+      $('explore-count').textContent = 'API unavailable';
+      $('doc-tbody').innerHTML = '<tr class="loading-row"><td colspan="5">Could not load documents</td></tr>';
+      $('pagination').innerHTML = '';
     }
   }
 
-  // ---------- init ----------
-  async function init() {
-    // Load stats.json
-    try {
-      const res = await fetch('/data/stats.json');
-      stats = await res.json();
-    } catch {
-      // stats unavailable — show placeholders
-      return;
-    }
-
+  // ---------- render stats ----------
+  function renderStats(stats) {
     const h = stats.hero;
-
-    // Hero stats
     $('stat-docs').textContent = fmt(h.total_documents);
     $('stat-langs').textContent = h.languages;
     $('stat-taxonomy').textContent = `${h.types} \u00d7 ${h.topics}`;
@@ -516,11 +499,9 @@
       </div>`
     ).join('');
 
-    // Taxonomy click
     document.querySelectorAll('.tax-cell').forEach(cell => {
       cell.addEventListener('click', function() {
-        const type = this.dataset.type;
-        filters.type = filters.type === type ? '' : type;
+        filters.type = filters.type === this.dataset.type ? '' : this.dataset.type;
         currentPage = 1;
         updateActiveStates();
         fetchDocuments();
@@ -529,11 +510,8 @@
     });
 
     // Language strip
-    const langs = stats.languages;
-    const topLangs = langs.slice(0, 10);
-    const otherCount = langs.slice(10).reduce((s, l) => s + l.count, 0);
-    const otherPct = langs.slice(10).reduce((s, l) => s + l.percentage, 0);
-    const totalPct = topLangs.reduce((s, l) => s + l.percentage, 0) + otherPct;
+    const topLangs = stats.languages.slice(0, 10);
+    const otherPct = stats.languages.slice(10).reduce((s, l) => s + l.percentage, 0);
 
     let langHtml = '';
     let legendHtml = '';
@@ -542,34 +520,33 @@
       langHtml += `<div class="lang-bar" style="flex:${l.percentage};background:${color}" data-lang="${l.code}" title="${l.name} ${l.percentage}%">${l.code.toUpperCase()}</div>`;
       legendHtml += `<div class="lang-legend-item"><span class="lang-dot" style="background:${color}"></span>${l.name} ${l.percentage}%</div>`;
     });
-    if (otherCount > 0) {
-      const remaining = langs.length - 10;
-      langHtml += `<div class="lang-bar" style="flex:${otherPct};background:#d0d0d0;color:#888;font-size:0.6rem">+${remaining}</div>`;
+    if (otherPct > 0) {
+      langHtml += `<div class="lang-bar" style="flex:${otherPct};background:#d0d0d0;color:#888;font-size:0.6rem">+${stats.languages.length - 10}</div>`;
     }
 
     $('lang-row').innerHTML = langHtml;
     $('lang-legend').innerHTML = legendHtml;
 
-    // Language bar click
     document.querySelectorAll('.lang-bar[data-lang]').forEach(bar => {
       bar.addEventListener('click', function() {
-        const lang = this.dataset.lang;
-        filters.lang = filters.lang === lang ? '' : lang;
+        filters.lang = filters.lang === this.dataset.lang ? '' : this.dataset.lang;
         currentPage = 1;
         updateActiveStates();
         fetchDocuments();
         $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+  }
 
-    // Initial table — show sample docs first, then try API
-    $('explore-count').textContent = `${fmt(stats.sample_documents.length)} sample documents`;
-    renderTable(stats.sample_documents);
+  // ---------- init ----------
+  async function init() {
+    renderLoading();
 
-    // Try loading from API
-    fetchDocuments();
+    // Load stats and first page of documents in parallel
+    const [stats] = await Promise.all([fetchStats(), fetchDocuments()]);
 
-    // Search input
+    if (stats) renderStats(stats);
+
     $('search-input').addEventListener('input', function() {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {

@@ -14,7 +14,7 @@ dist/
 corpus/
 dev/
 
-# Generated web data (built by CI)
+# Generated web data (local only)
 apps/web/data/
 
 # Tests
