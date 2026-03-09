@@ -32,10 +32,16 @@ CREATE TABLE IF NOT EXISTS documents (
     embedding_model VARCHAR(50),
     embedding vector(3072),
 
-    -- Classification data
+    -- Classification data (clustering)
     cluster_id INTEGER,
     cluster_label VARCHAR(255),
     classified_at TIMESTAMP WITH TIME ZONE,
+
+    -- Classification data (type/topic from LLM pipeline)
+    document_type VARCHAR(50),
+    document_topic VARCHAR(50),
+    classification_confidence REAL,
+    classification_model VARCHAR(50),
 
     CONSTRAINT valid_status CHECK (status IN ('pending', 'downloading', 'validating', 'uploaded', 'failed'))
 );
@@ -50,6 +56,8 @@ CREATE INDEX IF NOT EXISTS idx_documents_extracted ON documents(extracted_at) WH
 CREATE INDEX IF NOT EXISTS idx_documents_embedded ON documents(embedded_at) WHERE embedded_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_documents_cluster ON documents(cluster_id) WHERE cluster_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_documents_language ON documents(language) WHERE language IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_documents_type ON documents(document_type) WHERE document_type IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_documents_topic ON documents(document_topic) WHERE document_topic IS NOT NULL;
 
 -- Vector similarity search index (IVFFlat for approximate nearest neighbor)
 -- Note: Run this AFTER populating embeddings for better index quality

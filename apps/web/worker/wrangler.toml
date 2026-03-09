@@ -1,0 +1,8 @@
+name = "docx-corpus-api"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+
+[vars]
+CORS_ORIGIN = "https://docxcorp.us"
+
+# DATABASE_URL added via: wrangler secret put DATABASE_URL

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9QG5MXVL5"></script>
@@ -8,12 +7,16 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-C9QG5MXVL5');
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>docx-corpus</title>
+  <title>docx-corpus — The largest classified corpus of Word documents</title>
+  <meta name="description" content="736K+ .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages. Open dataset for document processing research.">
+  <meta property="og:title" content="docx-corpus">
+  <meta property="og:description" content="The largest classified corpus of Word documents. 736K+ files across 46+ languages.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://docxcorp.us">
   <link rel="icon" type="image/x-icon" href="/public/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
@@ -21,217 +24,565 @@
   <link rel="manifest" href="/public/site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: #FFFFFF;
       color: #2D2D2D;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
     }
 
-    .logo {
-      height: 180px;
-      margin-bottom: 1.5rem;
+    /* Header */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 48px;
+      max-width: 1200px; margin: 0 auto;
     }
-
-    .tagline {
-      color: #9CA3AF;
-      font-size: 1.125rem;
-      text-align: center;
-      max-width: 400px;
-      line-height: 1.6;
+    .brand { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand .accent { color: #F97B6D; }
+    .links { display: flex; gap: 24px; }
+    .links a {
+      text-decoration: none; color: #9CA3AF; font-size: 0.82rem; font-weight: 500;
+      transition: color 0.15s;
     }
+    .links a:hover { color: #2D2D2D; }
 
-    .stat-badge {
-      margin-top: 1.5rem;
-      padding: 0.5rem 1.25rem;
-      background: #F3F4F6;
-      border-radius: 9999px;
-      font-size: 0.9375rem;
-      color: #6B7280;
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
+
+    /* Hero */
+    .hero {
+      padding: 64px 0 48px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 40px;
     }
-
-    .stat-badge #count {
-      font-weight: 600;
+    .hero-kicker {
+      font-size: 0.72rem; font-weight: 600; color: #F97B6D;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-size: 2.8rem; font-weight: 800; letter-spacing: -0.04em;
+      line-height: 1.1; margin-bottom: 16px;
+      max-width: 700px;
+    }
+    .hero-sub {
+      font-size: 1.05rem; color: #9CA3AF; line-height: 1.6;
+      max-width: 560px; margin-bottom: 36px;
+    }
+    .numbers { display: flex; gap: 48px; }
+    .num-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem; font-weight: 700; letter-spacing: -0.02em;
       color: #2D2D2D;
     }
+    .num-label { font-size: 0.72rem; color: #9CA3AF; letter-spacing: 0.02em; }
 
-    .counting-note {
-      margin-top: 0.5rem;
-      font-size: 0.8125rem;
-      color: #9CA3AF;
-      font-style: italic;
+    /* Taxonomy grid */
+    .taxonomy {
+      padding: 40px 0;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 40px;
     }
-
-    .links {
-      margin-top: 1.5rem;
-      display: flex;
-      gap: 1.5rem;
+    .section-label {
+      font-size: 0.72rem; font-weight: 600; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 20px;
     }
+    .taxonomy-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+    .tax-cell {
+      padding: 14px 12px;
+      border: 1px solid #f0f0f0;
+      border-radius: 8px;
+      text-align: center;
+      transition: border-color 0.15s;
+      cursor: pointer;
+    }
+    .tax-cell:hover { border-color: #F97B6D; }
+    .tax-cell.active { border-color: #F97B6D; background: #fef8f7; }
+    .tax-name { font-size: 0.82rem; font-weight: 600; margin-bottom: 2px; }
+    .tax-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; color: #9CA3AF;
+    }
+    .tax-bar { height: 3px; background: #f5f5f5; border-radius: 2px; margin-top: 8px; }
+    .tax-bar-fill { height: 100%; background: #F97B6D; border-radius: 2px; }
 
-    .links a {
-      color: #F97B6D;
-      text-decoration: none;
+    /* Language strip */
+    .lang-section {
+      padding: 0 0 40px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 40px;
+    }
+    .lang-row {
+      display: flex; gap: 3px; height: 32px; border-radius: 6px; overflow: hidden;
+      margin-top: 20px;
+    }
+    .lang-bar {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 600; color: #fff;
+      min-width: 24px;
+      transition: opacity 0.15s;
+      cursor: pointer;
+    }
+    .lang-bar:hover { opacity: 0.85; }
+    .lang-legend {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;
+      font-size: 0.72rem; color: #9CA3AF;
+    }
+    .lang-legend-item { display: flex; align-items: center; gap: 5px; }
+    .lang-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+    /* Explore table */
+    .explore-section { padding-bottom: 64px; }
+    .explore-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .explore-count {
+      font-size: 0.72rem; color: #9CA3AF;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .active-filters { display: flex; gap: 8px; align-items: center; }
+    .filter-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 4px;
+      font-size: 0.72rem; font-weight: 600;
+      background: #fef0ee; color: #F97B6D;
+    }
+    .filter-pill button {
+      background: none; border: none; color: #F97B6D; cursor: pointer;
+      font-size: 0.8rem; line-height: 1; padding: 0; margin-left: 2px;
+    }
+    .search-row { display: flex; gap: 10px; margin-bottom: 24px; }
+    .search-input {
+      flex: 1; padding: 12px 16px;
+      border: 1px solid #e5e5e5; border-radius: 8px;
+      font-size: 0.9rem; font-family: inherit;
+      outline: none; background: #fafafa;
+    }
+    .search-input:focus { border-color: #F97B6D; background: #fff; }
+
+    /* Table */
+    .dtable { width: 100%; border-collapse: collapse; }
+    .dtable th {
+      text-align: left; font-size: 0.68rem; font-weight: 600; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 8px 0; border-bottom: 2px solid #f0f0f0;
+    }
+    .dtable td {
+      padding: 12px 0; border-bottom: 1px solid #f8f8f8;
+      font-size: 0.85rem; vertical-align: middle;
+    }
+    .dtable tr:hover td { background: #fdfcfb; }
+    .dtable .fname {
       font-weight: 600;
+      max-width: 280px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dtable .fhash {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; color: #ccc;
+    }
+    .dtable td:last-child { text-align: right; }
+    .label {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .label-type { background: #fef0ee; color: #F97B6D; }
+    .label-topic { background: #f0f4ff; color: #6b8cce; }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem; color: #9CA3AF;
+    }
+    .conf-g { color: #059669; }
+    .conf-y { color: #d97706; }
+    .conf-r { color: #dc2626; }
+
+    /* Loading state */
+    .loading-row td { text-align: center; color: #9CA3AF; padding: 24px 0; }
+
+    /* Pagination */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0; margin-top: 8px;
+    }
+    .pagination-info {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; color: #9CA3AF;
+    }
+    .pagination-btns { display: flex; gap: 4px; }
+    .pg-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem; color: #9CA3AF;
+      padding: 6px 12px; border-radius: 4px;
+      border: 1px solid #e5e5e5; background: #fff;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .pg-btn:hover { border-color: #F97B6D; color: #F97B6D; }
+    .pg-btn:disabled { opacity: 0.4; cursor: default; }
+    .pg-btn:disabled:hover { border-color: #e5e5e5; color: #9CA3AF; }
+    .pg-btn.active { background: #F97B6D; color: #fff; border-color: #F97B6D; }
+
+    /* Footer */
+    .site-footer {
+      border-top: 1px solid #f0f0f0;
+      padding: 24px 0;
+      margin-top: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.78rem; color: #9CA3AF;
+      max-width: 1200px; margin: 0 auto; padding: 24px 48px;
+    }
+    .site-footer a { color: #9CA3AF; text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 800px) {
+      header, .container, .site-footer { padding-left: 20px; padding-right: 20px; }
+      .hero h1 { font-size: 2rem; }
+      .hero { padding: 40px 0 32px; }
+      .numbers { gap: 24px; flex-wrap: wrap; }
+      .num-val { font-size: 1.5rem; }
+      .taxonomy-grid { grid-template-columns: repeat(2, 1fr); }
+      .dtable .fname { max-width: 160px; }
+      .links { gap: 16px; }
     }
 
-    .links a:hover {
-      text-decoration: underline;
-    }
-
-    .files-note {
-      margin-top: 2rem;
-      font-size: 0.875rem;
-      color: #9CA3AF;
-    }
-
-    .files-note code {
-      background: #F3F4F6;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-family: ui-monospace, monospace;
-    }
-
-    footer {
-      position: absolute;
-      bottom: 2rem;
-      font-size: 0.875rem;
-      color: #9CA3AF;
-    }
-
-    footer a {
-      color: #9CA3AF;
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
-    .takedown {
-      margin-top: 0.75rem;
-      font-size: 0.75rem;
-      color: #9CA3AF;
-    }
-
-    .takedown a {
-      color: #9CA3AF;
-      text-decoration: none;
-    }
-
-    .takedown a:hover {
-      text-decoration: underline;
-    }
-
-    @media (max-width: 480px) {
-      body {
-        padding: 1.5rem 1rem;
-        justify-content: flex-start;
-        padding-top: 3rem;
-      }
-
-      .logo {
-        height: 120px;
-        margin-bottom: 1rem;
-      }
-
-      .tagline {
-        font-size: 1rem;
-      }
-
-      .stat-badge {
-        font-size: 0.875rem;
-        padding: 0.4rem 1rem;
-      }
-
-      .links {
-        gap: 1rem;
-      }
-
-      .files-note {
-        text-align: center;
-      }
-
-      footer {
-        position: relative;
-        bottom: auto;
-        margin-top: 2rem;
-      }
-    }
-
-    @media (max-height: 600px) {
-      footer {
-        position: relative;
-        bottom: auto;
-        margin-top: 2rem;
-      }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      body {
-        background: #18181B;
-        color: #E5E5E5;
-      }
-
-      .stat-badge {
-        background: #27272A;
-        color: #9CA3AF;
-      }
-
-      .stat-badge #count {
-        color: #E5E5E5;
-      }
-
-      .files-note code {
-        background: #27272A;
-      }
+    @media (max-width: 500px) {
+      .taxonomy-grid { grid-template-columns: 1fr 1fr; }
+      .numbers { gap: 16px; }
+      .hero h1 { font-size: 1.6rem; }
     }
   </style>
 </head>
-
 <body>
-  <img src="/public/logo.png" alt="docx-corpus" class="logo">
-  <p class="tagline">
-    The largest public corpus of .docx files, scraped from Common Crawl for document processing research.
-  </p>
-  <div class="stat-badge">
-    <span id="count">—</span> files
-  </div>
-  <p class="counting-note">and counting...</p>
-  <div class="links">
-    <a href="https://github.com/superdoc-dev/docx-corpus">GitHub</a>
-    <a href="/manifest.txt">manifest.txt</a>
-  </div>
-  <p class="files-note">
-    Download the manifest, then fetch files at <code>/documents/{hash}.docx</code>
-  </p>
-  <p class="takedown">Takedown requests: <a href="mailto:help@docxcorp.us">help@docxcorp.us</a></p>
-  <footer>
-    Built by 🦋 <a href="https://superdoc.dev">SuperDoc</a>
-  </footer>
-  <script>
-    fetch('/manifest.txt')
-      .then(r => r.text())
-      .then(t => {
-        const count = t.trim().split('\n').length;
-        document.getElementById('count').textContent = count.toLocaleString();
-      })
-      .catch(() => {
-        document.getElementById('count').textContent = 'Hundreds of thousands of';
-      });
-  </script>
-</body>
 
+<header>
+  <div class="brand"><span class="accent">docx</span>-corpus</div>
+  <div class="links">
+    <a href="#explore">Explore</a>
+    <a href="https://github.com/superdoc-dev/docx-corpus">GitHub</a>
+    <a href="/manifest.txt">Manifest</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-kicker">Open Dataset</div>
+    <h1>The largest classified corpus of Word documents</h1>
+    <p class="hero-sub">.docx files from the public web, classified into document types and topics across dozens of languages.</p>
+    <div class="numbers">
+      <div><div class="num-val" id="stat-docs">—</div><div class="num-label">documents</div></div>
+      <div><div class="num-val" id="stat-langs">—</div><div class="num-label">languages</div></div>
+      <div><div class="num-val" id="stat-taxonomy">—</div><div class="num-label">taxonomy</div></div>
+      <div><div class="num-val" id="stat-conf">—</div><div class="num-label">avg confidence</div></div>
+    </div>
+  </div>
+
+  <!-- Document Types -->
+  <div class="taxonomy">
+    <div class="section-label">Document Types</div>
+    <div class="taxonomy-grid" id="types-grid"></div>
+  </div>
+
+  <!-- Languages -->
+  <div class="lang-section">
+    <div class="section-label">Languages</div>
+    <div class="lang-row" id="lang-row"></div>
+    <div class="lang-legend" id="lang-legend"></div>
+  </div>
+
+  <!-- Explore -->
+  <div class="explore-section" id="explore">
+    <div class="explore-header">
+      <div class="section-label" style="margin-bottom:0">Browse Documents</div>
+      <div class="active-filters" id="active-filters"></div>
+      <div class="explore-count" id="explore-count"></div>
+    </div>
+
+    <div class="search-row">
+      <input class="search-input" id="search-input" type="text" placeholder="Filter by filename...">
+    </div>
+
+    <table class="dtable">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Type</th>
+          <th>Topic</th>
+          <th>Lang</th>
+          <th style="text-align:right">Confidence</th>
+        </tr>
+      </thead>
+      <tbody id="doc-tbody"></tbody>
+    </table>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div>
+
+<div class="site-footer">
+  <span>Built by <a href="https://superdoc.dev">SuperDoc</a></span>
+  <span>Takedown requests: <a href="mailto:help@docxcorp.us">help@docxcorp.us</a></span>
+</div>
+
+<script>
+(function() {
+  // ---------- state ----------
+  let stats = null;
+  let filters = { type: '', topic: '', lang: '', q: '' };
+  let currentPage = 1;
+  let totalResults = 0;
+  const PAGE_SIZE = 25;
+  let debounceTimer = null;
+
+  // ---------- color palettes ----------
+  const CORAL_SHADES = ['#F97B6D','#e06b5e','#d45d52','#c85046','#bc433b'];
+  const GRAY_SHADES  = ['#9CA3AF','#8a919e','#787f8d','#666d7c','#545b6b'];
+
+  // ---------- helpers ----------
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return n.toLocaleString(); }
+  function truncHash(id) { return id.slice(0,8) + '...' + id.slice(-4); }
+
+  function confClass(c) {
+    if (c >= 0.8) return 'conf-g';
+    if (c >= 0.6) return 'conf-y';
+    return 'conf-r';
+  }
+
+  function confStr(c) {
+    return c != null ? c.toFixed(2) : '—';
+  }
+
+  // ---------- render helpers ----------
+  function renderRow(doc) {
+    const name = doc.filename || 'unknown.docx';
+    const hash = truncHash(doc.id);
+    const conf = doc.confidence;
+    return `<tr>
+      <td><div class="fname">${escHtml(name)}</div><div class="fhash">${hash}</div></td>
+      <td><span class="label label-type">${escHtml(doc.type)}</span></td>
+      <td><span class="label label-topic">${escHtml(doc.topic)}</span></td>
+      <td class="mono">${escHtml(doc.language || '—')}</td>
+      <td class="mono ${confClass(conf)}" style="text-align:right">${confStr(conf)}</td>
+    </tr>`;
+  }
+
+  function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderTable(docs) {
+    $('doc-tbody').innerHTML = docs.map(renderRow).join('');
+  }
+
+  function renderLoading() {
+    $('doc-tbody').innerHTML = '<tr class="loading-row"><td colspan="5">Loading...</td></tr>';
+  }
+
+  function renderPagination(total, page) {
+    const pages = Math.ceil(total / PAGE_SIZE);
+    if (pages <= 1) { $('pagination').innerHTML = ''; return; }
+
+    const info = `<div class="pagination-info">page ${page} of ${fmt(pages)}</div>`;
+    let btns = '';
+
+    btns += `<button class="pg-btn" ${page <= 1 ? 'disabled' : ''} data-page="${page-1}">&laquo;</button>`;
+
+    // Show up to 5 page buttons around current
+    const start = Math.max(1, page - 2);
+    const end = Math.min(pages, start + 4);
+    for (let i = start; i <= end; i++) {
+      btns += `<button class="pg-btn ${i === page ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    if (end < pages) {
+      btns += `<button class="pg-btn" disabled>...</button>`;
+      btns += `<button class="pg-btn" data-page="${pages}">${fmt(pages)}</button>`;
+    }
+
+    btns += `<button class="pg-btn" ${page >= pages ? 'disabled' : ''} data-page="${page+1}">&raquo;</button>`;
+
+    $('pagination').innerHTML = info + `<div class="pagination-btns">${btns}</div>`;
+
+    // Bind click handlers
+    $('pagination').querySelectorAll('.pg-btn[data-page]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (this.disabled) return;
+        currentPage = parseInt(this.dataset.page, 10);
+        fetchDocuments();
+      });
+    });
+  }
+
+  function renderFilters() {
+    const el = $('active-filters');
+    let html = '';
+    if (filters.type) html += `<span class="filter-pill">type: ${escHtml(filters.type)} <button data-clear="type">&times;</button></span>`;
+    if (filters.topic) html += `<span class="filter-pill">topic: ${escHtml(filters.topic)} <button data-clear="topic">&times;</button></span>`;
+    if (filters.lang) html += `<span class="filter-pill">lang: ${escHtml(filters.lang)} <button data-clear="lang">&times;</button></span>`;
+    el.innerHTML = html;
+    el.querySelectorAll('button[data-clear]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        filters[this.dataset.clear] = '';
+        currentPage = 1;
+        updateActiveStates();
+        fetchDocuments();
+      });
+    });
+  }
+
+  function updateActiveStates() {
+    renderFilters();
+    // Update taxonomy grid active states
+    document.querySelectorAll('.tax-cell').forEach(cell => {
+      cell.classList.toggle('active', cell.dataset.type === filters.type);
+    });
+  }
+
+  // ---------- API ----------
+  const API_BASE = '/api';
+
+  async function fetchDocuments() {
+    renderLoading();
+    renderFilters();
+
+    const params = new URLSearchParams();
+    if (filters.q) params.set('q', filters.q);
+    if (filters.type) params.set('type', filters.type);
+    if (filters.topic) params.set('topic', filters.topic);
+    if (filters.lang) params.set('lang', filters.lang);
+    params.set('page', currentPage);
+    params.set('limit', PAGE_SIZE);
+
+    try {
+      const res = await fetch(`${API_BASE}/documents?${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      totalResults = data.total;
+      $('explore-count').textContent = `${fmt(data.total)} results`;
+      renderTable(data.documents);
+      renderPagination(data.total, data.page);
+    } catch (err) {
+      // Fallback: show sample docs from stats.json
+      if (stats && stats.sample_documents) {
+        let docs = stats.sample_documents;
+        if (filters.type) docs = docs.filter(d => d.type === filters.type);
+        if (filters.topic) docs = docs.filter(d => d.topic === filters.topic);
+        if (filters.lang) docs = docs.filter(d => d.language === filters.lang);
+        totalResults = docs.length;
+        $('explore-count').textContent = `${fmt(docs.length)} sample results (API unavailable)`;
+        renderTable(docs);
+        $('pagination').innerHTML = '';
+      }
+    }
+  }
+
+  // ---------- init ----------
+  async function init() {
+    // Load stats.json
+    try {
+      const res = await fetch('/data/stats.json');
+      stats = await res.json();
+    } catch {
+      // stats unavailable — show placeholders
+      return;
+    }
+
+    const h = stats.hero;
+
+    // Hero stats
+    $('stat-docs').textContent = fmt(h.total_documents);
+    $('stat-langs').textContent = h.languages;
+    $('stat-taxonomy').textContent = `${h.types} \u00d7 ${h.topics}`;
+    $('stat-conf').textContent = (h.avg_confidence * 100).toFixed(0) + '%';
+
+    // Taxonomy grid
+    const maxCount = stats.types[0]?.count || 1;
+    $('types-grid').innerHTML = stats.types.map(t =>
+      `<div class="tax-cell" data-type="${escHtml(t.id)}">
+        <div class="tax-name">${escHtml(t.label)}</div>
+        <div class="tax-count">${fmt(t.count)}</div>
+        <div class="tax-bar"><div class="tax-bar-fill" style="width:${(100 * t.count / maxCount).toFixed(1)}%"></div></div>
+      </div>`
+    ).join('');
+
+    // Taxonomy click
+    document.querySelectorAll('.tax-cell').forEach(cell => {
+      cell.addEventListener('click', function() {
+        const type = this.dataset.type;
+        filters.type = filters.type === type ? '' : type;
+        currentPage = 1;
+        updateActiveStates();
+        fetchDocuments();
+        $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Language strip
+    const langs = stats.languages;
+    const topLangs = langs.slice(0, 10);
+    const otherCount = langs.slice(10).reduce((s, l) => s + l.count, 0);
+    const otherPct = langs.slice(10).reduce((s, l) => s + l.percentage, 0);
+    const totalPct = topLangs.reduce((s, l) => s + l.percentage, 0) + otherPct;
+
+    let langHtml = '';
+    let legendHtml = '';
+    topLangs.forEach((l, i) => {
+      const color = i < 5 ? CORAL_SHADES[i] : GRAY_SHADES[i - 5];
+      langHtml += `<div class="lang-bar" style="flex:${l.percentage};background:${color}" data-lang="${l.code}" title="${l.name} ${l.percentage}%">${l.code.toUpperCase()}</div>`;
+      legendHtml += `<div class="lang-legend-item"><span class="lang-dot" style="background:${color}"></span>${l.name} ${l.percentage}%</div>`;
+    });
+    if (otherCount > 0) {
+      const remaining = langs.length - 10;
+      langHtml += `<div class="lang-bar" style="flex:${otherPct};background:#d0d0d0;color:#888;font-size:0.6rem">+${remaining}</div>`;
+    }
+
+    $('lang-row').innerHTML = langHtml;
+    $('lang-legend').innerHTML = legendHtml;
+
+    // Language bar click
+    document.querySelectorAll('.lang-bar[data-lang]').forEach(bar => {
+      bar.addEventListener('click', function() {
+        const lang = this.dataset.lang;
+        filters.lang = filters.lang === lang ? '' : lang;
+        currentPage = 1;
+        updateActiveStates();
+        fetchDocuments();
+        $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Initial table — show sample docs first, then try API
+    $('explore-count').textContent = `${fmt(stats.sample_documents.length)} sample documents`;
+    renderTable(stats.sample_documents);
+
+    // Try loading from API
+    fetchDocuments();
+
+    // Search input
+    $('search-input').addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        filters.q = this.value.trim();
+        currentPage = 1;
+        fetchDocuments();
+      }, 300);
+    });
+  }
+
+  init();
+})();
+</script>
+
+</body>
 </html>
