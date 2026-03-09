@@ -195,7 +195,8 @@
       cursor: pointer; transition: all 0.15s;
       white-space: nowrap;
     }
-    .manifest-btn:hover { background: #F97B6D; color: #fff; }
+    .manifest-btn:hover:not(:disabled) { background: #F97B6D; color: #fff; }
+    .manifest-btn:disabled { opacity: 0.6; cursor: wait; }
 
     /* Table */
     .dtable { width: 100%; border-collapse: collapse; }
@@ -532,9 +533,33 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
     return params;
   }
 
-  function downloadManifest() {
-    const params = buildFilterParams();
-    window.location.href = `${API}/manifest?${params}`;
+  async function downloadManifest() {
+    const btn = $('manifest-btn');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    try {
+      const params = buildFilterParams();
+      const res = await fetch(`${API}/manifest?${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const cd = res.headers.get('Content-Disposition') || '';
+      const match = cd.match(/filename="(.+)"/);
+      const filename = match ? match[1] : 'manifest.txt';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      btn.textContent = 'Failed — retry';
+      btn.disabled = false;
+      return;
+    }
+
+    btn.textContent = 'Download manifest';
+    btn.disabled = false;
   }
 
   // ---------- API calls ----------
