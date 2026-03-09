@@ -3,6 +3,9 @@
 import { runScrape } from "./commands/scrape";
 import { runExtract } from "./commands/extract";
 import { runEmbed } from "./commands/embed";
+import { runClassify } from "./commands/classify";
+import { runCrawls } from "./commands/crawls";
+import { runExport } from "./commands/export";
 import { runStatus } from "./commands/status";
 
 const VERSION = "0.1.0";
@@ -14,20 +17,25 @@ Usage
   corpus <command> [options]
 
 Commands
-  scrape    Download .docx files from Common Crawl
-  extract   Extract text from DOCX files using Docling
-  embed     Generate embeddings for extracted documents
-  status    Show corpus statistics
+  scrape      Download .docx files from Common Crawl
+  extract     Extract text from DOCX files using Docling
+  embed       Generate embeddings for extracted documents
+  classify    Classify documents by type and topic (ML)
+  crawls      List available CDX-filtered crawls from R2
+  export      Export corpus metadata to HuggingFace
+  status      Show corpus statistics
 
 Options
   --help, -h       Show help for a command
   --version, -v    Show version
 
 Examples
-  corpus scrape --crawl 3 --batch 100
-  corpus extract -b 100
-  corpus embed -m bge-m3
-  corpus status
+  corpus crawls                        # List available crawls
+  corpus scrape --crawl 3 --batch 100  # Scrape latest 3 crawls
+  corpus extract -b 100                # Extract text
+  corpus classify                      # Classify all pending
+  corpus export --push                 # Push to HuggingFace
+  corpus status                        # Show pipeline stats
 `;
 
 async function main() {
@@ -55,6 +63,15 @@ async function main() {
       break;
     case "embed":
       await runEmbed(commandArgs);
+      break;
+    case "classify":
+      await runClassify(commandArgs);
+      break;
+    case "crawls":
+      await runCrawls(commandArgs);
+      break;
+    case "export":
+      await runExport(commandArgs);
       break;
     case "status":
       await runStatus(commandArgs);

@@ -33,13 +33,29 @@ export async function runStatus(_args: string[]) {
     keyValue("embedded", embeddingStats.embedded);
     keyValue("pending", embeddingStats.pending);
 
-    // Classification stats
-    const classificationStats = await db.getClassificationStats();
+    // LLM Classification stats
+    const llmStats = await db.getLLMClassificationStats();
     blank();
-    section("Classification");
-    keyValue("classified", classificationStats.classified);
-    keyValue("pending", classificationStats.pending);
-    keyValue("clusters", classificationStats.clusters);
+    section("Classification (ML)");
+    keyValue("classified", llmStats.classified);
+    keyValue("pending", llmStats.pending);
+    if (Object.keys(llmStats.byType).length > 0) {
+      blank();
+      section("By type");
+      for (const [type, count] of Object.entries(llmStats.byType)) {
+        keyValue(type, count);
+      }
+    }
+
+    // Clustering stats
+    const clusterStats = await db.getClassificationStats();
+    if (clusterStats.classified > 0) {
+      blank();
+      section("Clustering");
+      keyValue("clustered", clusterStats.classified);
+      keyValue("pending", clusterStats.pending);
+      keyValue("clusters", clusterStats.clusters);
+    }
   } finally {
     await db.close();
   }
