@@ -164,6 +164,23 @@
       background: none; border: none; color: #F97B6D; cursor: pointer;
       font-size: 0.8rem; line-height: 1; padding: 0; margin-left: 2px;
     }
+    .conf-filter {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; font-size: 0.78rem; color: #9CA3AF;
+    }
+    .conf-filter input[type="range"] {
+      width: 180px; accent-color: #F97B6D;
+    }
+    .manifest-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; font-weight: 600;
+      padding: 6px 14px; border-radius: 6px;
+      border: 1px solid #F97B6D; background: #fff; color: #F97B6D;
+      cursor: pointer; transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .manifest-btn:hover { background: #F97B6D; color: #fff; }
+
     /* Table */
     .dtable { width: 100%; border-collapse: collapse; }
     .dtable th {
@@ -307,6 +324,12 @@
     <div class="taxonomy-grid" id="types-grid"></div>
   </div>
 
+  <!-- Topics -->
+  <div class="taxonomy">
+    <div class="section-label">Topics</div>
+    <div class="taxonomy-grid" id="topics-grid"></div>
+  </div>
+
   <!-- Languages -->
   <div class="lang-section">
     <div class="section-label">Languages</div>
@@ -319,7 +342,16 @@
     <div class="explore-header">
       <div class="section-label" style="margin-bottom:0">Browse Documents</div>
       <div class="active-filters" id="active-filters"></div>
-      <div class="explore-count" id="explore-count"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="explore-count" id="explore-count"></div>
+        <button class="manifest-btn" id="manifest-btn" title="Download URL manifest for current filters">Download manifest</button>
+      </div>
+    </div>
+
+    <div class="conf-filter">
+      <label for="conf-slider">Min confidence:</label>
+      <input type="range" id="conf-slider" min="0" max="0.95" step="0.05" value="0">
+      <span class="mono" id="conf-value">any</span>
     </div>
 
     <table class="dtable">
@@ -348,7 +380,7 @@
 <script>
 (function() {
   // ---------- state ----------
-  let filters = { type: '', topic: '', lang: '' };
+  let filters = { type: '', topic: '', lang: '', minConf: 0 };
   let currentPage = 1;
   const PAGE_SIZE = 25;
 
@@ -437,10 +469,12 @@
     if (filters.type) html += `<span class="filter-pill">type: ${escHtml(filters.type)} <button data-clear="type">&times;</button></span>`;
     if (filters.topic) html += `<span class="filter-pill">topic: ${escHtml(filters.topic)} <button data-clear="topic">&times;</button></span>`;
     if (filters.lang) html += `<span class="filter-pill">lang: ${escHtml(filters.lang)} <button data-clear="lang">&times;</button></span>`;
+    if (filters.minConf > 0) html += `<span class="filter-pill">conf &ge; ${filters.minConf} <button data-clear="minConf">&times;</button></span>`;
     el.innerHTML = html;
     el.querySelectorAll('button[data-clear]').forEach(btn => {
       btn.addEventListener('click', function() {
-        filters[this.dataset.clear] = '';
+        const key = this.dataset.clear;
+        filters[key] = key === 'minConf' ? 0 : '';
         currentPage = 1;
         updateActiveStates();
         fetchDocuments();
@@ -450,9 +484,26 @@
 
   function updateActiveStates() {
     renderFilters();
-    document.querySelectorAll('.tax-cell').forEach(cell => {
+    document.querySelectorAll('#types-grid .tax-cell').forEach(cell => {
       cell.classList.toggle('active', cell.dataset.type === filters.type);
     });
+    document.querySelectorAll('#topics-grid .tax-cell').forEach(cell => {
+      cell.classList.toggle('active', cell.dataset.topic === filters.topic);
+    });
+  }
+
+  function buildFilterParams() {
+    const params = new URLSearchParams();
+    if (filters.type) params.set('type', filters.type);
+    if (filters.topic) params.set('topic', filters.topic);
+    if (filters.lang) params.set('lang', filters.lang);
+    if (filters.minConf > 0) params.set('min_confidence', filters.minConf);
+    return params;
+  }
+
+  function downloadManifest() {
+    const params = buildFilterParams();
+    window.location.href = `${API}/manifest?${params}`;
   }
 
   // ---------- API calls ----------
@@ -470,10 +521,7 @@
     renderLoading();
     renderFilters();
 
-    const params = new URLSearchParams();
-    if (filters.type) params.set('type', filters.type);
-    if (filters.topic) params.set('topic', filters.topic);
-    if (filters.lang) params.set('lang', filters.lang);
+    const params = buildFilterParams();
     params.set('page', currentPage);
     params.set('limit', PAGE_SIZE);
 
@@ -509,9 +557,29 @@
       </div>`
     ).join('');
 
-    document.querySelectorAll('.tax-cell').forEach(cell => {
+    document.querySelectorAll('#types-grid .tax-cell').forEach(cell => {
       cell.addEventListener('click', function() {
         filters.type = filters.type === this.dataset.type ? '' : this.dataset.type;
+        currentPage = 1;
+        updateActiveStates();
+        fetchDocuments();
+        $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Topics grid
+    const maxTopicCount = stats.topics[0]?.count || 1;
+    $('topics-grid').innerHTML = stats.topics.map(t =>
+      `<div class="tax-cell" data-topic="${escHtml(t.id)}">
+        <div class="tax-name">${escHtml(t.label)}</div>
+        <div class="tax-count">${fmt(t.count)}</div>
+        <div class="tax-bar"><div class="tax-bar-fill" style="width:${(100 * t.count / maxTopicCount).toFixed(1)}%"></div></div>
+      </div>`
+    ).join('');
+
+    document.querySelectorAll('#topics-grid .tax-cell').forEach(cell => {
+      cell.addEventListener('click', function() {
+        filters.topic = filters.topic === this.dataset.topic ? '' : this.dataset.topic;
         currentPage = 1;
         updateActiveStates();
         fetchDocuments();
@@ -549,11 +617,12 @@
   }
 
   function renderSkeletons() {
-    // Taxonomy grid skeletons
     $('types-grid').innerHTML = Array(10).fill(
       '<div class="skeleton skeleton-cell" style="width:100%"></div>'
     ).join('');
-    // Language strip skeleton
+    $('topics-grid').innerHTML = Array(9).fill(
+      '<div class="skeleton skeleton-cell" style="width:100%"></div>'
+    ).join('');
     $('lang-row').innerHTML = '<div class="skeleton skeleton-bar"></div>';
     $('lang-legend').innerHTML = '';
   }
@@ -567,6 +636,17 @@
     const [stats] = await Promise.all([fetchStats(), fetchDocuments()]);
 
     if (stats) renderStats(stats);
+
+    $('conf-slider').addEventListener('input', function() {
+      const val = parseFloat(this.value);
+      $('conf-value').textContent = val > 0 ? val.toFixed(2) : 'any';
+      filters.minConf = val;
+      currentPage = 1;
+      updateActiveStates();
+      fetchDocuments();
+    });
+
+    $('manifest-btn').addEventListener('click', downloadManifest);
   }
 
   init();

@@ -75,6 +75,8 @@ export default {
         return handleStats(env, origin);
       case "/documents":
         return handleDocuments(url, env, origin);
+      case "/manifest":
+        return handleManifest(url, env, origin);
       default:
         return json({ error: "Not found" }, 404, origin);
     }
@@ -153,46 +155,51 @@ async function handleStats(env: Env, origin: string): Promise<Response> {
   }, 200, origin, 300); // cache 5 minutes
 }
 
-// ---------- /api/documents ----------
+// ---------- shared filter builder ----------
+
+function buildFilters(url: URL): { where: string; params: unknown[]; paramIndex: number } {
+  const type = url.searchParams.get("type") || "";
+  const topic = url.searchParams.get("topic") || "";
+  const lang = url.searchParams.get("lang") || "";
+  const minConf = parseFloat(url.searchParams.get("min_confidence") || "0");
+
+  const conditions: string[] = ["document_type IS NOT NULL"];
+  const params: unknown[] = [];
+  let paramIndex = 1;
+
+  if (type) {
+    conditions.push(`document_type = $${paramIndex}`);
+    params.push(type);
+    paramIndex++;
+  }
+  if (topic) {
+    conditions.push(`document_topic = $${paramIndex}`);
+    params.push(topic);
+    paramIndex++;
+  }
+  if (lang) {
+    conditions.push(`language = $${paramIndex}`);
+    params.push(lang);
+    paramIndex++;
+  }
+  if (minConf > 0) {
+    conditions.push(`classification_confidence >= $${paramIndex}`);
+    params.push(minConf);
+    paramIndex++;
+  }
+
+  return { where: conditions.join(" AND "), params, paramIndex };
+}
+
+// ---------- /documents ----------
 
 async function handleDocuments(url: URL, env: Env, origin: string): Promise<Response> {
   try {
     const sql = neon(env.DATABASE_URL);
-
-    const q = url.searchParams.get("q")?.trim() || "";
-    const type = url.searchParams.get("type") || "";
-    const topic = url.searchParams.get("topic") || "";
-    const lang = url.searchParams.get("lang") || "";
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "25", 10)));
     const offset = (page - 1) * limit;
-
-    const conditions: string[] = ["document_type IS NOT NULL"];
-    const params: unknown[] = [];
-    let paramIndex = 1;
-
-    if (q) {
-      conditions.push(`original_filename ILIKE $${paramIndex}`);
-      params.push(`%${q}%`);
-      paramIndex++;
-    }
-    if (type) {
-      conditions.push(`document_type = $${paramIndex}`);
-      params.push(type);
-      paramIndex++;
-    }
-    if (topic) {
-      conditions.push(`document_topic = $${paramIndex}`);
-      params.push(topic);
-      paramIndex++;
-    }
-    if (lang) {
-      conditions.push(`language = $${paramIndex}`);
-      params.push(lang);
-      paramIndex++;
-    }
-
-    const where = conditions.join(" AND ");
+    const { where, params, paramIndex } = buildFilters(url);
 
     const [countResult, rows] = await Promise.all([
       sql.query(`SELECT COUNT(*)::int AS total FROM documents WHERE ${where}`, params),
@@ -221,6 +228,47 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("handleDocuments error:", message);
+    return json({ error: message }, 500, origin);
+  }
+}
+
+// ---------- /manifest ----------
+
+const R2_BASE = "https://docxcorp.us/documents/";
+
+async function handleManifest(url: URL, env: Env, origin: string): Promise<Response> {
+  try {
+    const sql = neon(env.DATABASE_URL);
+    const { where, params } = buildFilters(url);
+
+    const rows = await sql.query(
+      `SELECT id FROM documents WHERE ${where} ORDER BY id`,
+      params
+    ) as { id: string }[];
+
+    const body = rows.map((r) => `${R2_BASE}${r.id}.docx`).join("\n") + "\n";
+
+    // Build a descriptive filename
+    const parts = ["docx-corpus"];
+    const type = url.searchParams.get("type");
+    const topic = url.searchParams.get("topic");
+    const lang = url.searchParams.get("lang");
+    if (type) parts.push(type);
+    if (topic) parts.push(topic);
+    if (lang) parts.push(lang);
+    const filename = `${parts.join("-")}-manifest.txt`;
+
+    return new Response(body, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        ...corsHeaders(origin),
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("handleManifest error:", message);
     return json({ error: message }, 500, origin);
   }
 }
