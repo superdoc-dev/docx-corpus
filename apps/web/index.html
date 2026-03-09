@@ -171,6 +171,22 @@
     .conf-filter input[type="range"] {
       width: 180px; accent-color: #F97B6D;
     }
+    .download-guide {
+      margin-bottom: 20px; font-size: 0.82rem; color: #666;
+    }
+    .download-guide summary {
+      cursor: pointer; color: #9CA3AF; font-size: 0.72rem;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .download-guide summary:hover { color: #2D2D2D; }
+    .guide-content { margin-top: 12px; }
+    .guide-content p { margin-bottom: 10px; line-height: 1.5; }
+    .guide-content pre {
+      background: #f8f8f8; border: 1px solid #f0f0f0; border-radius: 6px;
+      padding: 14px 16px; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+      line-height: 1.6; color: #2D2D2D;
+    }
     .manifest-btn {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.72rem; font-weight: 600;
@@ -353,6 +369,21 @@
       <input type="range" id="conf-slider" min="0" max="0.95" step="0.05" value="0">
       <span class="mono" id="conf-value">any</span>
     </div>
+
+    <details class="download-guide">
+      <summary>How to download</summary>
+      <div class="guide-content">
+        <p>Use the filters above to select a subset, then click <strong>Download manifest</strong> to get a text file with one URL per line.</p>
+        <pre><code># Download all files in the manifest
+wget -i manifest.txt -P ./corpus/
+
+# Or with curl
+xargs -n 1 curl -O &lt; manifest.txt
+
+# Or fetch directly via the API
+curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence=0.8" -o manifest.txt</code></pre>
+      </div>
+    </details>
 
     <table class="dtable">
       <thead>
