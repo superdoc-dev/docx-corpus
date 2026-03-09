@@ -516,12 +516,6 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
 
   function updateActiveStates() {
     renderFilters();
-    document.querySelectorAll('#types-grid .tax-cell').forEach(cell => {
-      cell.classList.toggle('active', cell.dataset.type === filters.type);
-    });
-    document.querySelectorAll('#topics-grid .tax-cell').forEach(cell => {
-      cell.classList.toggle('active', cell.dataset.topic === filters.topic);
-    });
   }
 
   function buildFilterParams() {
@@ -588,6 +582,10 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
       $('explore-count').textContent = `${fmt(data.total)} results`;
       renderTable(data.documents);
       renderPagination(data.total, data.page);
+      if (data.facets) {
+        renderTypesGrid(data.facets.types);
+        renderTopicsGrid(data.facets.topics);
+      }
     } catch {
       $('explore-count').textContent = 'API unavailable';
       $('doc-tbody').innerHTML = '<tr class="loading-row"><td colspan="5">Could not load documents</td></tr>';
@@ -595,18 +593,11 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
     }
   }
 
-  // ---------- render stats ----------
-  function renderStats(stats) {
-    const h = stats.hero;
-    $('stat-docs').textContent = fmt(h.total_documents);
-    $('stat-langs').textContent = h.languages;
-    $('stat-taxonomy').textContent = `${h.types} \u00d7 ${h.topics}`;
-    $('stat-conf').textContent = (h.avg_confidence * 100).toFixed(0) + '%';
-
-    // Taxonomy grid
-    const maxCount = stats.types[0]?.count || 1;
-    $('types-grid').innerHTML = stats.types.map(t =>
-      `<div class="tax-cell" data-type="${escHtml(t.id)}">
+  // ---------- grid renderers ----------
+  function renderTypesGrid(types) {
+    const maxCount = types[0]?.count || 1;
+    $('types-grid').innerHTML = types.map(t =>
+      `<div class="tax-cell${filters.type === t.id ? ' active' : ''}" data-type="${escHtml(t.id)}">
         <div class="tax-name">${escHtml(t.label)}</div>
         <div class="tax-count">${fmt(t.count)}</div>
         <div class="tax-bar"><div class="tax-bar-fill" style="width:${(100 * t.count / maxCount).toFixed(1)}%"></div></div>
@@ -622,14 +613,15 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
         $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+  }
 
-    // Topics grid
-    const maxTopicCount = stats.topics[0]?.count || 1;
-    $('topics-grid').innerHTML = stats.topics.map(t =>
-      `<div class="tax-cell" data-topic="${escHtml(t.id)}">
+  function renderTopicsGrid(topics) {
+    const maxCount = topics[0]?.count || 1;
+    $('topics-grid').innerHTML = topics.map(t =>
+      `<div class="tax-cell${filters.topic === t.id ? ' active' : ''}" data-topic="${escHtml(t.id)}">
         <div class="tax-name">${escHtml(t.label)}</div>
         <div class="tax-count">${fmt(t.count)}</div>
-        <div class="tax-bar"><div class="tax-bar-fill" style="width:${(100 * t.count / maxTopicCount).toFixed(1)}%"></div></div>
+        <div class="tax-bar"><div class="tax-bar-fill" style="width:${(100 * t.count / maxCount).toFixed(1)}%"></div></div>
       </div>`
     ).join('');
 
@@ -642,6 +634,18 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
         $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+  }
+
+  // ---------- render stats ----------
+  function renderStats(stats) {
+    const h = stats.hero;
+    $('stat-docs').textContent = fmt(h.total_documents);
+    $('stat-langs').textContent = h.languages;
+    $('stat-taxonomy').textContent = `${h.types} \u00d7 ${h.topics}`;
+    $('stat-conf').textContent = (h.avg_confidence * 100).toFixed(0) + '%';
+
+    renderTypesGrid(stats.types);
+    renderTopicsGrid(stats.topics);
 
     // Language strip
     const topLangs = stats.languages.slice(0, 10);

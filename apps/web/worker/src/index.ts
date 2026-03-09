@@ -191,6 +191,25 @@ function buildFilters(url: URL): { where: string; params: unknown[]; paramIndex:
   return { where: conditions.join(" AND "), params, paramIndex };
 }
 
+// Build filters excluding one dimension (for facet counts)
+function buildFiltersExcluding(url: URL, exclude: string): { where: string; params: unknown[] } {
+  const type = exclude === "type" ? "" : (url.searchParams.get("type") || "");
+  const topic = exclude === "topic" ? "" : (url.searchParams.get("topic") || "");
+  const lang = url.searchParams.get("lang") || "";
+  const minConf = parseFloat(url.searchParams.get("min_confidence") || "0");
+
+  const conditions: string[] = ["document_type IS NOT NULL"];
+  const params: unknown[] = [];
+  let i = 1;
+
+  if (type) { conditions.push(`document_type = $${i}`); params.push(type); i++; }
+  if (topic) { conditions.push(`document_topic = $${i}`); params.push(topic); i++; }
+  if (lang) { conditions.push(`language = $${i}`); params.push(lang); i++; }
+  if (minConf > 0) { conditions.push(`classification_confidence >= $${i}`); params.push(minConf); i++; }
+
+  return { where: conditions.join(" AND "), params };
+}
+
 // ---------- /documents ----------
 
 async function handleDocuments(url: URL, env: Env, origin: string): Promise<Response> {
@@ -201,7 +220,11 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
     const offset = (page - 1) * limit;
     const { where, params, paramIndex } = buildFilters(url);
 
-    const [countResult, rows] = await Promise.all([
+    // Facet queries: exclude own dimension so all options remain visible with counts
+    const typeFacet = buildFiltersExcluding(url, "type");
+    const topicFacet = buildFiltersExcluding(url, "topic");
+
+    const [countResult, rows, typeCounts, topicCounts] = await Promise.all([
       sql.query(`SELECT COUNT(*)::int AS total FROM documents WHERE ${where}`, params),
       sql.query(
         `SELECT id, original_filename AS filename, document_type, document_topic,
@@ -210,6 +233,18 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
          ORDER BY classification_confidence DESC NULLS LAST
          LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
         [...params, limit, offset]
+      ),
+      sql.query(
+        `SELECT document_type AS id, COUNT(*)::int AS count
+         FROM documents WHERE ${typeFacet.where}
+         GROUP BY document_type ORDER BY count DESC`,
+        typeFacet.params
+      ),
+      sql.query(
+        `SELECT document_topic AS id, COUNT(*)::int AS count
+         FROM documents WHERE ${topicFacet.where}
+         GROUP BY document_topic ORDER BY count DESC`,
+        topicFacet.params
       ),
     ]);
 
@@ -224,7 +259,16 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
       confidence: r.classification_confidence,
     }));
 
-    return json({ documents, total, page, pages: Math.ceil(total / limit) }, 200, origin);
+    const facets = {
+      types: (typeCounts as { id: string; count: number }[]).map(t => ({
+        id: t.id, label: TYPE_LABELS[t.id] || t.id, count: t.count,
+      })),
+      topics: (topicCounts as { id: string; count: number }[]).map(t => ({
+        id: t.id, label: TOPIC_LABELS[t.id] || t.id, count: t.count,
+      })),
+    };
+
+    return json({ documents, total, page, pages: Math.ceil(total / limit), facets }, 200, origin);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("handleDocuments error:", message);
