@@ -60,7 +60,8 @@ function json(data: unknown, status: number, origin: string, cacheSeconds = 0): 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    const origin = env.CORS_ORIGIN || "*";
+    const reqOrigin = request.headers.get("Origin") || "";
+    const origin = reqOrigin.startsWith("http://localhost") ? reqOrigin : (env.CORS_ORIGIN || "*");
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });

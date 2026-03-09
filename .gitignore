@@ -2,6 +2,7 @@
 node_modules/
 .venv/
 __pycache__/
+.wrangler/
 
 # Build output
 dist/
@@ -9,6 +10,7 @@ dist/
 # Environment
 .env
 .env.local
+.dev.vars
 
 # Local corpus cache
 corpus/
