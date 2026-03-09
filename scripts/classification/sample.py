@@ -175,10 +175,25 @@ def main():
         default=",".join(DEFAULT_LANGUAGES),
         help="Comma-separated language codes (default: en,ru,cs,pl,es)",
     )
+    parser.add_argument(
+        "--exclude",
+        type=str,
+        default=None,
+        help="JSONL file of docs to exclude (already sampled)",
+    )
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
 
     languages = [l.strip() for l in args.languages.split(",")]
+
+    # Load exclusion set
+    exclude_ids: set[str] = set()
+    if args.exclude:
+        with open(args.exclude) as f:
+            for line in f:
+                if line.strip():
+                    exclude_ids.add(json.loads(line)["id"])
+        print(f"Excluding {len(exclude_ids)} already-sampled documents")
 
     print("=" * 60)
     print("Stratified Document Sampling")
@@ -220,6 +235,8 @@ def main():
         print(f"\nSampling {n_samples} from {lang}...")
         # Fetch more than needed to allow stratification
         docs = get_documents_for_language(lang, limit=min(n_samples * 10, 100000))
+        if exclude_ids:
+            docs = [d for d in docs if d["id"] not in exclude_ids]
         print(f"  Fetched {len(docs):,} candidates")
 
         sampled = stratified_sample(docs, n_samples, seed=args.seed)

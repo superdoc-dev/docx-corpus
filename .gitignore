@@ -24,3 +24,7 @@ coverage/
 
 # OS
 .DS_Store
+
+# Classification pipeline artifacts
+scripts/classification/models/
+scripts/classification/*.jsonl
