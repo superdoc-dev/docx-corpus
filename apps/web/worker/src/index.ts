@@ -71,9 +71,9 @@ export default {
     }
 
     switch (url.pathname) {
-      case "/api/stats":
+      case "/stats":
         return handleStats(env, origin);
-      case "/api/documents":
+      case "/documents":
         return handleDocuments(url, env, origin);
       default:
         return json({ error: "Not found" }, 404, origin);
@@ -156,65 +156,71 @@ async function handleStats(env: Env, origin: string): Promise<Response> {
 // ---------- /api/documents ----------
 
 async function handleDocuments(url: URL, env: Env, origin: string): Promise<Response> {
-  const sql = neon(env.DATABASE_URL);
+  try {
+    const sql = neon(env.DATABASE_URL);
 
-  const q = url.searchParams.get("q")?.trim() || "";
-  const type = url.searchParams.get("type") || "";
-  const topic = url.searchParams.get("topic") || "";
-  const lang = url.searchParams.get("lang") || "";
-  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "25", 10)));
-  const offset = (page - 1) * limit;
+    const q = url.searchParams.get("q")?.trim() || "";
+    const type = url.searchParams.get("type") || "";
+    const topic = url.searchParams.get("topic") || "";
+    const lang = url.searchParams.get("lang") || "";
+    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "25", 10)));
+    const offset = (page - 1) * limit;
 
-  const conditions: string[] = ["document_type IS NOT NULL"];
-  const params: unknown[] = [];
-  let paramIndex = 1;
+    const conditions: string[] = ["document_type IS NOT NULL"];
+    const params: unknown[] = [];
+    let paramIndex = 1;
 
-  if (q) {
-    conditions.push(`original_filename ILIKE $${paramIndex}`);
-    params.push(`%${q}%`);
-    paramIndex++;
+    if (q) {
+      conditions.push(`original_filename ILIKE $${paramIndex}`);
+      params.push(`%${q}%`);
+      paramIndex++;
+    }
+    if (type) {
+      conditions.push(`document_type = $${paramIndex}`);
+      params.push(type);
+      paramIndex++;
+    }
+    if (topic) {
+      conditions.push(`document_topic = $${paramIndex}`);
+      params.push(topic);
+      paramIndex++;
+    }
+    if (lang) {
+      conditions.push(`language = $${paramIndex}`);
+      params.push(lang);
+      paramIndex++;
+    }
+
+    const where = conditions.join(" AND ");
+
+    const [countResult, rows] = await Promise.all([
+      sql.query(`SELECT COUNT(*)::int AS total FROM documents WHERE ${where}`, params),
+      sql.query(
+        `SELECT id, original_filename AS filename, document_type, document_topic,
+                language, word_count, classification_confidence
+         FROM documents WHERE ${where}
+         ORDER BY classification_confidence DESC NULLS LAST
+         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        [...params, limit, offset]
+      ),
+    ]);
+
+    const total = countResult[0].total as number;
+    const documents = (rows as DocumentRow[]).map((r) => ({
+      id: r.id,
+      filename: r.filename,
+      type: r.document_type,
+      topic: r.document_topic,
+      language: r.language,
+      word_count: r.word_count,
+      confidence: r.classification_confidence,
+    }));
+
+    return json({ documents, total, page, pages: Math.ceil(total / limit) }, 200, origin);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("handleDocuments error:", message);
+    return json({ error: message }, 500, origin);
   }
-  if (type) {
-    conditions.push(`document_type = $${paramIndex}`);
-    params.push(type);
-    paramIndex++;
-  }
-  if (topic) {
-    conditions.push(`document_topic = $${paramIndex}`);
-    params.push(topic);
-    paramIndex++;
-  }
-  if (lang) {
-    conditions.push(`language = $${paramIndex}`);
-    params.push(lang);
-    paramIndex++;
-  }
-
-  const where = conditions.join(" AND ");
-
-  const [countResult, rows] = await Promise.all([
-    sql(`SELECT COUNT(*)::int AS total FROM documents WHERE ${where}`, params),
-    sql(
-      `SELECT id, original_filename AS filename, document_type, document_topic,
-              language, word_count, classification_confidence
-       FROM documents WHERE ${where}
-       ORDER BY classification_confidence DESC NULLS LAST
-       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-      [...params, limit, offset]
-    ),
-  ]);
-
-  const total = countResult[0].total as number;
-  const documents = (rows as DocumentRow[]).map((r) => ({
-    id: r.id,
-    filename: r.filename,
-    type: r.document_type,
-    topic: r.document_topic,
-    language: r.language,
-    word_count: r.word_count,
-    confidence: r.classification_confidence,
-  }));
-
-  return json({ documents, total, page, pages: Math.ceil(total / limit) }, 200, origin);
 }

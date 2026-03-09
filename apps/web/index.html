@@ -69,8 +69,13 @@
     }
     .hero-sub {
       font-size: 1.05rem; color: #9CA3AF; line-height: 1.6;
-      max-width: 560px; margin-bottom: 36px;
+      max-width: 560px; margin-bottom: 12px;
     }
+    .hero-by {
+      font-size: 0.85rem; color: #9CA3AF; margin-bottom: 36px;
+    }
+    .hero-by a { color: #F97B6D; text-decoration: none; font-weight: 600; }
+    .hero-by a:hover { text-decoration: underline; }
     .numbers { display: flex; gap: 48px; }
     .num-val {
       font-family: 'JetBrains Mono', monospace;
@@ -293,6 +298,7 @@
     <div class="hero-kicker">Open Dataset</div>
     <h1>The largest classified corpus of Word documents</h1>
     <p class="hero-sub">.docx files from the public web, classified into document types and topics across dozens of languages.</p>
+    <p class="hero-by">Built by 🦋 <a href="https://superdoc.dev/">SuperDoc</a></p>
     <div class="numbers">
       <div><div class="num-val" id="stat-docs"><span class="skeleton skeleton-num"></span></div><div class="num-label">documents</div></div>
       <div><div class="num-val" id="stat-langs"><span class="skeleton skeleton-num"></span></div><div class="num-label">languages</div></div>
@@ -462,7 +468,7 @@
   // ---------- API calls ----------
   async function fetchStats() {
     try {
-      const res = await fetch(`${API}/api/stats`);
+      const res = await fetch(`${API}/stats`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch {
@@ -483,7 +489,7 @@
     params.set('limit', PAGE_SIZE);
 
     try {
-      const res = await fetch(`${API}/api/documents?${params}`);
+      const res = await fetch(`${API}/documents?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       $('explore-count').textContent = `${fmt(data.total)} results`;
