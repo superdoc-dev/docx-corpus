@@ -30,10 +30,16 @@ export interface DocumentRecord {
   embedding_model: string | null;
   embedding: number[] | null;
 
-  // Classification data
+  // Classification data (clustering)
   cluster_id: number | null;
   cluster_label: string | null;
   classified_at: string | null;
+
+  // LLM classification data
+  document_type: string | null;
+  document_topic: string | null;
+  classification_confidence: number | null;
+  classification_model: string | null;
 }
 
 export interface ExtractionData {
@@ -62,6 +68,14 @@ export interface ClassificationData {
   classified_at?: string;
 }
 
+export interface LLMClassificationData {
+  id: string;
+  documentType: string;
+  documentTopic: string;
+  confidence: number;
+  model: string;
+}
+
 export interface DbClient {
   // Scraping methods (existing)
   upsertDocument(doc: Partial<DocumentRecord> & { id: string }): Promise<void>;
@@ -82,18 +96,24 @@ export interface DbClient {
 
   // Embedding methods (new)
   updateEmbedding(data: EmbeddingData): Promise<void>;
+  markEmbeddingSkipped(id: string, reason: string): Promise<void>;
   getUnembeddedDocuments(limit: number): Promise<DocumentRecord[]>;
   getEmbeddedDocuments(limit: number): Promise<DocumentRecord[]>;
   getDocumentsWithEmbeddings(limit: number): Promise<{ id: string; embedding: number[] }[]>;
 
-  // Classification methods (new)
+  // Classification methods (clustering)
   updateClassification(data: ClassificationData): Promise<void>;
   updateClassificationBatch(data: ClassificationData[]): Promise<void>;
   getUnclassifiedDocuments(limit: number): Promise<DocumentRecord[]>;
 
+  // LLM classification methods
+  updateLLMClassification(data: LLMClassificationData): Promise<void>;
+  updateLLMClassificationBatch(ids: string[], data: Omit<LLMClassificationData, "id">): Promise<void>;
+  getLLMClassificationStats(): Promise<{ classified: number; pending: number; byType: Record<string, number> }>;
+
   // Stats
   getExtractionStats(): Promise<{ extracted: number; pending: number; errors: number }>;
-  getEmbeddingStats(): Promise<{ embedded: number; pending: number }>;
+  getEmbeddingStats(): Promise<{ embedded: number; pending: number; skipped: number }>;
   getClassificationStats(): Promise<{ classified: number; pending: number; clusters: number }>;
 
   close(): Promise<void>;
@@ -258,6 +278,15 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
       );
     },
 
+    async markEmbeddingSkipped(id: string, reason: string) {
+      await sql`
+        UPDATE documents SET
+          embedded_at = ${new Date().toISOString()},
+          embedding_model = ${`skipped:${reason}`}
+        WHERE id = ${id}
+      `;
+    },
+
     async getUnembeddedDocuments(limit: number) {
       return sql<DocumentRecord[]>`
         SELECT * FROM documents
@@ -327,6 +356,59 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
       `;
     },
 
+    // ==================== LLM Classification Methods ====================
+
+    async updateLLMClassification(data: LLMClassificationData) {
+      await sql`
+        UPDATE documents SET
+          document_type = ${data.documentType},
+          document_topic = ${data.documentTopic},
+          classification_confidence = ${data.confidence},
+          classification_model = ${data.model}
+        WHERE id = ${data.id}
+      `;
+    },
+
+    async updateLLMClassificationBatch(ids: string[], data: Omit<LLMClassificationData, "id">) {
+      for (const id of ids) {
+        await sql`
+          UPDATE documents SET
+            document_type = ${data.documentType},
+            document_topic = ${data.documentTopic},
+            classification_confidence = ${data.confidence},
+            classification_model = ${data.model}
+          WHERE id = ${id}
+        `;
+      }
+    },
+
+    async getLLMClassificationStats() {
+      const result = await sql<{ classified: number; pending: number }[]>`
+        SELECT
+          COUNT(*) FILTER (WHERE document_type IS NOT NULL)::int as classified,
+          COUNT(*) FILTER (WHERE extracted_at IS NOT NULL AND extraction_error IS NULL AND document_type IS NULL)::int as pending
+        FROM documents
+      `;
+
+      const byTypeRows = await sql<{ type: string; count: number }[]>`
+        SELECT document_type as type, COUNT(*)::int as count
+        FROM documents
+        WHERE document_type IS NOT NULL
+        GROUP BY document_type
+      `;
+
+      const byType: Record<string, number> = {};
+      for (const row of byTypeRows) {
+        byType[row.type] = row.count;
+      }
+
+      return {
+        classified: result[0].classified,
+        pending: result[0].pending,
+        byType,
+      };
+    },
+
     // ==================== Stats ====================
 
     async getExtractionStats() {
@@ -341,10 +423,11 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
     },
 
     async getEmbeddingStats() {
-      const result = await sql<{ embedded: number; pending: number }[]>`
+      const result = await sql<{ embedded: number; pending: number; skipped: number }[]>`
         SELECT
-          COUNT(*) FILTER (WHERE embedded_at IS NOT NULL)::int as embedded,
-          COUNT(*) FILTER (WHERE extracted_at IS NOT NULL AND extraction_error IS NULL AND embedded_at IS NULL)::int as pending
+          COUNT(*) FILTER (WHERE embedded_at IS NOT NULL AND embedding_model NOT LIKE 'skipped:%')::int as embedded,
+          COUNT(*) FILTER (WHERE extracted_at IS NOT NULL AND extraction_error IS NULL AND embedded_at IS NULL)::int as pending,
+          COUNT(*) FILTER (WHERE embedding_model LIKE 'skipped:%')::int as skipped
         FROM documents
       `;
       return result[0];

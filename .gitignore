@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 .venv/
+__pycache__/
 
 # Build output
 dist/
@@ -23,4 +24,3 @@ coverage/
 
 # OS
 .DS_Store
-CLAUDE.md
