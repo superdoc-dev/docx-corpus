@@ -128,7 +128,7 @@ wget -i manifest.txt -P ./corpus/
 
 - **Website**: [docxcorp.us](https://docxcorp.us)
 - **GitHub**: [superdoc-dev/docx-corpus](https://github.com/superdoc-dev/docx-corpus)
-- **Built by**: [SuperDoc](https://superdoc.dev)
+- **Built by**: 🦋 [SuperDoc](https://superdoc.dev)
 """
 
 
