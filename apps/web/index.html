@@ -164,15 +164,6 @@
       background: none; border: none; color: #F97B6D; cursor: pointer;
       font-size: 0.8rem; line-height: 1; padding: 0; margin-left: 2px;
     }
-    .search-row { display: flex; gap: 10px; margin-bottom: 24px; }
-    .search-input {
-      flex: 1; padding: 12px 16px;
-      border: 1px solid #e5e5e5; border-radius: 8px;
-      font-size: 0.9rem; font-family: inherit;
-      outline: none; background: #fafafa;
-    }
-    .search-input:focus { border-color: #F97B6D; background: #fff; }
-
     /* Table */
     .dtable { width: 100%; border-collapse: collapse; }
     .dtable th {
@@ -194,6 +185,8 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.68rem; color: #ccc;
     }
+    .doc-link { text-decoration: none; color: inherit; display: block; }
+    .doc-link:hover .fname { color: #F97B6D; }
     .dtable td:last-child { text-align: right; }
     .label {
       display: inline-block; padding: 2px 8px; border-radius: 4px;
@@ -288,6 +281,7 @@
   <div class="links">
     <a href="#explore">Explore</a>
     <a href="https://github.com/superdoc-dev/docx-corpus">GitHub</a>
+    <a href="https://huggingface.co/datasets/superdoc/docx-corpus">Download</a>
   </div>
 </header>
 
@@ -328,10 +322,6 @@
       <div class="explore-count" id="explore-count"></div>
     </div>
 
-    <div class="search-row">
-      <input class="search-input" id="search-input" type="text" placeholder="Filter by filename...">
-    </div>
-
     <table class="dtable">
       <thead>
         <tr>
@@ -358,10 +348,9 @@
 <script>
 (function() {
   // ---------- state ----------
-  let filters = { type: '', topic: '', lang: '', q: '' };
+  let filters = { type: '', topic: '', lang: '' };
   let currentPage = 1;
   const PAGE_SIZE = 25;
-  let debounceTimer = null;
 
   // ---------- config ----------
   const API = 'https://api.docxcorp.us';
@@ -394,8 +383,9 @@
   function renderRow(doc) {
     const name = doc.filename || 'unknown.docx';
     const conf = doc.confidence;
+    const href = `https://docxcorp.us/documents/${doc.id}.docx`;
     return `<tr>
-      <td><div class="fname">${escHtml(name)}</div><div class="fhash">${truncHash(doc.id)}</div></td>
+      <td><a href="${href}" class="doc-link"><div class="fname">${escHtml(name)}</div><div class="fhash">${truncHash(doc.id)}</div></a></td>
       <td><span class="label label-type">${escHtml(doc.type)}</span></td>
       <td><span class="label label-topic">${escHtml(doc.topic)}</span></td>
       <td class="mono">${escHtml(doc.language || '—')}</td>
@@ -481,7 +471,6 @@
     renderFilters();
 
     const params = new URLSearchParams();
-    if (filters.q) params.set('q', filters.q);
     if (filters.type) params.set('type', filters.type);
     if (filters.topic) params.set('topic', filters.topic);
     if (filters.lang) params.set('lang', filters.lang);
@@ -578,15 +567,6 @@
     const [stats] = await Promise.all([fetchStats(), fetchDocuments()]);
 
     if (stats) renderStats(stats);
-
-    $('search-input').addEventListener('input', function() {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        filters.q = this.value.trim();
-        currentPage = 1;
-        fetchDocuments();
-      }, 300);
-    });
   }
 
   init();
