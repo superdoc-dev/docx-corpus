@@ -204,6 +204,23 @@
     .conf-y { color: #d97706; }
     .conf-r { color: #dc2626; }
 
+    /* Skeleton loading */
+    @keyframes shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .skeleton-text { height: 1em; width: 80px; vertical-align: middle; }
+    .skeleton-num { height: 2rem; width: 100px; }
+    .skeleton-cell { height: 60px; border-radius: 8px; }
+    .skeleton-bar { height: 32px; border-radius: 6px; width: 100%; }
+
     /* Loading state */
     .loading-row td { text-align: center; color: #9CA3AF; padding: 24px 0; }
 
@@ -277,10 +294,10 @@
     <h1>The largest classified corpus of Word documents</h1>
     <p class="hero-sub">.docx files from the public web, classified into document types and topics across dozens of languages.</p>
     <div class="numbers">
-      <div><div class="num-val" id="stat-docs">—</div><div class="num-label">documents</div></div>
-      <div><div class="num-val" id="stat-langs">—</div><div class="num-label">languages</div></div>
-      <div><div class="num-val" id="stat-taxonomy">—</div><div class="num-label">taxonomy</div></div>
-      <div><div class="num-val" id="stat-conf">—</div><div class="num-label">avg confidence</div></div>
+      <div><div class="num-val" id="stat-docs"><span class="skeleton skeleton-num"></span></div><div class="num-label">documents</div></div>
+      <div><div class="num-val" id="stat-langs"><span class="skeleton skeleton-num"></span></div><div class="num-label">languages</div></div>
+      <div><div class="num-val" id="stat-taxonomy"><span class="skeleton skeleton-num"></span></div><div class="num-label">taxonomy</div></div>
+      <div><div class="num-val" id="stat-conf"><span class="skeleton skeleton-num"></span></div><div class="num-label">avg confidence</div></div>
     </div>
   </div>
 
@@ -536,8 +553,19 @@
     });
   }
 
+  function renderSkeletons() {
+    // Taxonomy grid skeletons
+    $('types-grid').innerHTML = Array(10).fill(
+      '<div class="skeleton skeleton-cell" style="width:100%"></div>'
+    ).join('');
+    // Language strip skeleton
+    $('lang-row').innerHTML = '<div class="skeleton skeleton-bar"></div>';
+    $('lang-legend').innerHTML = '';
+  }
+
   // ---------- init ----------
   async function init() {
+    renderSkeletons();
     renderLoading();
 
     // Load stats and first page of documents in parallel
