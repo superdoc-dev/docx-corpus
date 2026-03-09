@@ -1,2 +1,0 @@
-git fetch origin
-git rebase origin/$(git branch --show-current)
