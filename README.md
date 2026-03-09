@@ -55,6 +55,13 @@ Phase 4: Embed (corpus embed)
 │  extracted/    │ ──► │ transformers   │ ──► │   (pgvector)   │
 │  {hash}.txt    │     │   (Python)     │     │  embedding     │
 └────────────────┘     └────────────────┘     └────────────────┘
+
+Phase 5: Classify (Python ML pipeline)
+┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+│  LLM labels    │     │  ModernBERT    │     │   PostgreSQL   │
+│  3,500 sample  │ ──► │  fine-tuning   │ ──► │  document_type │
+│  (Claude)      │     │  (2 models)    │     │  document_topic│
+└────────────────┘     └────────────────┘     └────────────────┘
 ```
 
 ### Why Common Crawl?
@@ -82,27 +89,29 @@ bun install
 ## Project Structure
 
 ```
-packages/
-  shared/         # Shared utilities (DB client, storage, formatting)
-  scraper/        # Core scraper logic (downloads WARC, validates .docx)
-  extractor/      # Text extraction using Docling (Python)
-  embedder/       # Document embeddings
 apps/
-  cli/            # Unified CLI - corpus <command>
-  cdx-filter/     # AWS Lambda - filters CDX indexes for .docx URLs
-  web/            # Landing page - docxcorp.us
+  cli/              # Unified CLI — corpus <command>
+  cdx-filter/       # AWS Lambda — filters CDX indexes for .docx URLs
+  web/              # Landing page — docxcorp.us
+packages/
+  shared/           # DB client, storage, formatting (Bun)
+  scraper/          # Downloads WARC, validates .docx (Bun)
+  extractor/        # Text extraction via Docling (Bun + Python)
+  embedder/         # Document embeddings (Bun)
+scripts/
+  classification/   # ML classification pipeline (Python)
 db/
-  schema.sql      # PostgreSQL schema (with pgvector)
-  migrations/     # Database migrations
+  schema.sql        # PostgreSQL schema (with pgvector)
+  migrations/       # Database migrations
 ```
 
 **Apps** (entry points)
 
-| App            | Purpose                         | Uses                     |
-| -------------- | ------------------------------- | ------------------------ |
-| **cli**        | `corpus` command                | scraper, extractor, embedder |
-| **cdx-filter** | Filter CDX indexes (Lambda)     | -                        |
-| **web**        | Landing page                    | -                        |
+| App            | Purpose                         | Runtime |
+| -------------- | ------------------------------- | ------- |
+| **cli**        | `corpus` command                | Bun     |
+| **cdx-filter** | Filter CDX indexes (Lambda)     | Bun     |
+| **web**        | Landing page                    | -       |
 
 **Packages** (libraries)
 
@@ -112,6 +121,12 @@ db/
 | **scraper**    | Download and validate .docx files | Bun          |
 | **extractor**  | Extract text (Docling)            | Bun + Python |
 | **embedder**   | Generate embeddings               | Bun          |
+
+**Scripts** (data science)
+
+| Script                    | Purpose                                    | Runtime |
+| ------------------------- | ------------------------------------------ | ------- |
+| **scripts/classification** | Document type + topic classification (ML) | Python  |
 
 ## Usage
 
@@ -172,6 +187,34 @@ bun run corpus embed --batch 100 --verbose
 ```
 
 Uses Google's `gemini-embedding-001` model (3072 dimensions, ~$0.006/1M tokens). Documents are chunked and embeddings are combined via weighted average.
+
+### 5. Classify documents
+
+Classifies documents by **document type** (10 classes) and **topic** (9 classes) using the [FineWeb-Edu](https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1) pattern: LLM labels a sample → train classifier → apply at scale.
+
+```bash
+cd scripts/classification
+
+# Install Python dependencies
+pip install -e .
+
+# Step 1: Sample 3,500 documents (stratified by language, word count, domain)
+python sample.py --total 3500 --output sampled_docs.jsonl
+
+# Step 2: Label with Claude (~$3)
+python label.py --input sampled_docs.jsonl --output labeled_docs.jsonl
+
+# Step 3: Train ModernBERT classifiers (~30min GPU)
+python train.py --input labeled_docs.jsonl --output-dir ./models
+
+# Step 4: Classify full corpus (~800K docs)
+python classify.py --models-dir ./models
+
+# Check results
+python evaluate.py corpus
+```
+
+See [scripts/classification/README.md](scripts/classification/README.md) for full details.
 
 ### Docker
 
@@ -268,6 +311,9 @@ EMBED_INPUT_PREFIX=extracted
 EMBED_BATCH_SIZE=100
 EMBED_CONCURRENCY=20         # Parallel API requests
 GOOGLE_API_KEY=              # Required for embeddings
+
+# Classification (Python scripts only)
+ANTHROPIC_API_KEY=           # Required for LLM labeling step
 ```
 
 ### Rate Limiting

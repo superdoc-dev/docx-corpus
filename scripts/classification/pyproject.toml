@@ -1,0 +1,18 @@
+[project]
+name = "docx-corpus-classifier"
+version = "0.1.0"
+description = "ML classification pipeline for docx-corpus"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.39.0",
+    "psycopg2-binary>=2.9.0",
+    "python-dotenv>=1.0.0",
+    "numpy>=1.26.0",
+    "tqdm>=4.66.0",
+    # ML / Training
+    "transformers>=4.47.0",
+    "torch>=2.5.0",
+    "datasets>=3.0.0",
+    "scikit-learn>=1.5.0",
+    "accelerate>=1.0.0",
+]

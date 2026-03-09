@@ -1,0 +1,114 @@
+{
+  "name": "docx-corpus-v2",
+  "version": "2.0.0",
+  "description": "Two-dimensional taxonomy for .docx document classification. Dimension 1 (document_type) describes the document's form/structure. Dimension 2 (topic) describes its subject domain. Each document gets one label per dimension.",
+  "document_types": [
+    {
+      "id": "legal",
+      "label": "Legal Documents",
+      "description": "Contracts, agreements, legal notices, terms of service, regulations, statutes, and other legally binding or law-related documents",
+      "examples": ["employment agreement", "NDA", "terms and conditions", "legal notice", "legislation", "statute", "regulation"]
+    },
+    {
+      "id": "forms",
+      "label": "Forms & Applications",
+      "description": "Fillable forms, applications, registration documents, surveys, questionnaires, and other documents designed for data collection",
+      "examples": ["application form", "registration form", "survey", "questionnaire", "ballot", "submission form"]
+    },
+    {
+      "id": "reports",
+      "label": "Reports & Analysis",
+      "description": "Research reports, analysis documents, studies, assessments, evaluations, annual reports, and other documents presenting findings or data",
+      "examples": ["annual report", "research paper", "case study", "analysis", "assessment", "evaluation", "white paper"]
+    },
+    {
+      "id": "policies",
+      "label": "Policies & Procedures",
+      "description": "Policy documents, procedures, guidelines, manuals, handbooks, and other documents establishing rules or processes",
+      "examples": ["privacy policy", "employee handbook", "procedure manual", "guidelines", "standard operating procedure"]
+    },
+    {
+      "id": "educational",
+      "label": "Educational Materials",
+      "description": "Curricula, syllabi, lesson plans, educational content, worksheets, study guides, academic papers, theses, and other teaching or learning materials",
+      "examples": ["syllabus", "lesson plan", "course outline", "study guide", "worksheet", "thesis", "dissertation"]
+    },
+    {
+      "id": "correspondence",
+      "label": "Correspondence",
+      "description": "Letters, memos, announcements, communications, press releases, newsletters, and other direct communications",
+      "examples": ["letter", "memo", "press release", "announcement", "notice", "circular", "newsletter"]
+    },
+    {
+      "id": "technical",
+      "label": "Technical Documentation",
+      "description": "Technical specifications, manuals, documentation, standards, API docs, user guides, and other technical reference materials",
+      "examples": ["technical manual", "API documentation", "specifications", "user guide", "technical standard", "datasheet"]
+    },
+    {
+      "id": "administrative",
+      "label": "Administrative Documents",
+      "description": "Meeting minutes, agendas, schedules, organizational documents, resolutions, records, and other administrative materials",
+      "examples": ["meeting minutes", "agenda", "organizational chart", "resolution", "schedule", "roster", "directory"]
+    },
+    {
+      "id": "creative",
+      "label": "Creative & Marketing",
+      "description": "Marketing materials, brochures, proposals, presentations, promotional content, and other persuasive or creative documents",
+      "examples": ["brochure", "proposal", "marketing plan", "presentation script", "pitch deck content", "catalog"]
+    },
+    {
+      "id": "reference",
+      "label": "Reference & Catalogs",
+      "description": "Directories, catalogs, glossaries, FAQs, indices, lists, and other reference or lookup documents",
+      "examples": ["product catalog", "directory", "glossary", "FAQ", "index", "bibliography", "inventory list"]
+    }
+  ],
+  "topics": [
+    {
+      "id": "government",
+      "label": "Government & Public Sector",
+      "description": "Government agencies, public administration, civic affairs, municipal matters, public policy, elections"
+    },
+    {
+      "id": "education",
+      "label": "Education & Academia",
+      "description": "Schools, universities, educational institutions, academic programs, student affairs, research"
+    },
+    {
+      "id": "healthcare",
+      "label": "Healthcare & Medicine",
+      "description": "Medical, health services, hospitals, clinics, public health, pharmaceuticals, biotech"
+    },
+    {
+      "id": "finance",
+      "label": "Finance & Business",
+      "description": "Banking, finance, corporate, business operations, commerce, investment, insurance, real estate"
+    },
+    {
+      "id": "legal_judicial",
+      "label": "Legal & Judicial",
+      "description": "Law firms, courts, legal services, judicial matters, compliance, law enforcement"
+    },
+    {
+      "id": "technology",
+      "label": "Technology & Engineering",
+      "description": "IT, software, tech companies, digital services, engineering, telecommunications, R&D"
+    },
+    {
+      "id": "environment",
+      "label": "Environment & Energy",
+      "description": "Environmental protection, sustainability, conservation, climate, energy, natural resources, agriculture"
+    },
+    {
+      "id": "nonprofit",
+      "label": "Nonprofit & NGO",
+      "description": "Charitable organizations, NGOs, community organizations, social services, international aid"
+    },
+    {
+      "id": "general",
+      "label": "General / Other",
+      "description": "Documents that don't fit clearly into other topic categories, or span multiple domains equally"
+    }
+  ]
+}

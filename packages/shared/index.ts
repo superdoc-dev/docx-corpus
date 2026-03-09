@@ -29,4 +29,5 @@ export {
   type ExtractionData,
   type EmbeddingData,
   type ClassificationData,
+  type LLMClassificationData,
 } from "./db";
