@@ -136,11 +136,14 @@
       cursor: pointer;
     }
     .lang-bar:hover { opacity: 0.85; }
+    .lang-bar.lang-active { outline: 2px solid #2D2D2D; outline-offset: -2px; }
     .lang-legend {
       display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;
       font-size: 0.72rem; color: #9CA3AF;
     }
-    .lang-legend-item { display: flex; align-items: center; gap: 5px; }
+    .lang-legend-item { display: flex; align-items: center; gap: 5px; transition: color 0.15s; }
+    .lang-legend-item:hover { color: #2D2D2D; }
+    .lang-legend-active { color: #F97B6D; font-weight: 600; }
     .lang-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 
     /* Explore table */
@@ -585,6 +588,7 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
       if (data.facets) {
         renderTypesGrid(data.facets.types);
         renderTopicsGrid(data.facets.topics);
+        renderLangStrip(data.facets.languages);
       }
     } catch {
       $('explore-count').textContent = 'API unavailable';
@@ -636,6 +640,44 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
     });
   }
 
+  function renderLangStrip(languages) {
+    const topLangs = languages.slice(0, 10);
+    const otherPct = languages.slice(10).reduce((s, l) => s + l.percentage, 0);
+
+    // Bar: top 10 + "other" segment
+    let langHtml = '';
+    topLangs.forEach((l, i) => {
+      const color = i < 5 ? CORAL_SHADES[i] : GRAY_SHADES[i - 5];
+      const active = filters.lang === l.code;
+      langHtml += `<div class="lang-bar${active ? ' lang-active' : ''}" style="flex:${l.percentage};background:${color}" data-lang="${l.code}" title="${l.name} ${l.percentage}%">${l.code.toUpperCase()}</div>`;
+    });
+    if (otherPct > 0) {
+      langHtml += `<div class="lang-bar" style="flex:${otherPct};background:#d0d0d0;color:#888;font-size:0.6rem">+${languages.length - 10}</div>`;
+    }
+
+    // Legend: ALL languages, clickable
+    let legendHtml = '';
+    languages.forEach((l, i) => {
+      const color = i < 5 ? CORAL_SHADES[i] : i < 10 ? GRAY_SHADES[i - 5] : '#d0d0d0';
+      const active = filters.lang === l.code;
+      legendHtml += `<div class="lang-legend-item${active ? ' lang-legend-active' : ''}" data-lang="${l.code}" style="cursor:pointer"><span class="lang-dot" style="background:${color}"></span>${l.name} ${l.percentage}%</div>`;
+    });
+
+    $('lang-row').innerHTML = langHtml;
+    $('lang-legend').innerHTML = legendHtml;
+
+    // Click handlers for both bars and legend items
+    document.querySelectorAll('[data-lang]').forEach(el => {
+      el.addEventListener('click', function() {
+        filters.lang = filters.lang === this.dataset.lang ? '' : this.dataset.lang;
+        currentPage = 1;
+        updateActiveStates();
+        fetchDocuments();
+        $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
   // ---------- render stats ----------
   function renderStats(stats) {
     const h = stats.hero;
@@ -646,34 +688,7 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
 
     renderTypesGrid(stats.types);
     renderTopicsGrid(stats.topics);
-
-    // Language strip
-    const topLangs = stats.languages.slice(0, 10);
-    const otherPct = stats.languages.slice(10).reduce((s, l) => s + l.percentage, 0);
-
-    let langHtml = '';
-    let legendHtml = '';
-    topLangs.forEach((l, i) => {
-      const color = i < 5 ? CORAL_SHADES[i] : GRAY_SHADES[i - 5];
-      langHtml += `<div class="lang-bar" style="flex:${l.percentage};background:${color}" data-lang="${l.code}" title="${l.name} ${l.percentage}%">${l.code.toUpperCase()}</div>`;
-      legendHtml += `<div class="lang-legend-item"><span class="lang-dot" style="background:${color}"></span>${l.name} ${l.percentage}%</div>`;
-    });
-    if (otherPct > 0) {
-      langHtml += `<div class="lang-bar" style="flex:${otherPct};background:#d0d0d0;color:#888;font-size:0.6rem">+${stats.languages.length - 10}</div>`;
-    }
-
-    $('lang-row').innerHTML = langHtml;
-    $('lang-legend').innerHTML = legendHtml;
-
-    document.querySelectorAll('.lang-bar[data-lang]').forEach(bar => {
-      bar.addEventListener('click', function() {
-        filters.lang = filters.lang === this.dataset.lang ? '' : this.dataset.lang;
-        currentPage = 1;
-        updateActiveStates();
-        fetchDocuments();
-        $('explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
+    renderLangStrip(stats.languages);
   }
 
   function renderSkeletons() {

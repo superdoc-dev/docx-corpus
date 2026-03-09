@@ -195,7 +195,7 @@ function buildFilters(url: URL): { where: string; params: unknown[]; paramIndex:
 function buildFiltersExcluding(url: URL, exclude: string): { where: string; params: unknown[] } {
   const type = exclude === "type" ? "" : (url.searchParams.get("type") || "");
   const topic = exclude === "topic" ? "" : (url.searchParams.get("topic") || "");
-  const lang = url.searchParams.get("lang") || "";
+  const lang = exclude === "lang" ? "" : (url.searchParams.get("lang") || "");
   const minConf = parseFloat(url.searchParams.get("min_confidence") || "0");
 
   const conditions: string[] = ["document_type IS NOT NULL"];
@@ -223,8 +223,9 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
     // Facet queries: exclude own dimension so all options remain visible with counts
     const typeFacet = buildFiltersExcluding(url, "type");
     const topicFacet = buildFiltersExcluding(url, "topic");
+    const langFacet = buildFiltersExcluding(url, "lang");
 
-    const [countResult, rows, typeCounts, topicCounts] = await Promise.all([
+    const [countResult, rows, typeCounts, topicCounts, langCounts] = await Promise.all([
       sql.query(`SELECT COUNT(*)::int AS total FROM documents WHERE ${where}`, params),
       sql.query(
         `SELECT id, original_filename AS filename, document_type, document_topic,
@@ -246,6 +247,13 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
          GROUP BY document_topic ORDER BY count DESC`,
         topicFacet.params
       ),
+      sql.query(
+        `SELECT COALESCE(NULLIF(language, 'unknown'), 'unknown') AS code, COUNT(*)::int AS count
+         FROM documents WHERE ${langFacet.where}
+         GROUP BY COALESCE(NULLIF(language, 'unknown'), 'unknown')
+         ORDER BY count DESC LIMIT 20`,
+        langFacet.params
+      ),
     ]);
 
     const total = countResult[0].total as number;
@@ -259,12 +267,19 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
       confidence: r.classification_confidence,
     }));
 
+    const langTotal = (langCounts as { code: string; count: number }[]).reduce((s, l) => s + l.count, 0);
     const facets = {
       types: (typeCounts as { id: string; count: number }[]).map(t => ({
         id: t.id, label: TYPE_LABELS[t.id] || t.id, count: t.count,
       })),
       topics: (topicCounts as { id: string; count: number }[]).map(t => ({
         id: t.id, label: TOPIC_LABELS[t.id] || t.id, count: t.count,
+      })),
+      languages: (langCounts as { code: string; count: number }[]).map(l => ({
+        code: l.code,
+        name: LANG_NAMES[l.code] || l.code,
+        count: l.count,
+        percentage: Math.round((1000 * l.count) / langTotal) / 10,
       })),
     };
 
