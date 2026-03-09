@@ -8,8 +8,8 @@ Uses the FineWeb-Edu pattern: LLM labels a small sample → train lightweight cl
 
 1. **`sample.py`** — Stratified sampling from PostgreSQL. Samples proportionally across languages (en, ru, cs, pl, es), stratified by word count terciles and source domain diversity.
 2. **`label.py`** — Async LLM labeling with Claude. Supports resume (appends to JSONL). Rate-limited with configurable parallelism.
-3. **`train.py`** — Fine-tunes two independent ModernBERT classifiers (document_type and topic). Outputs models to `./models/`.
-4. **`classify.py`** — Batch inference on the full corpus. Fetches text from R2, runs both models, writes results to PostgreSQL.
+3. **`train.py`** — Fine-tunes two independent xlm-roberta-base classifiers (document_type and topic). Supports `--modal` for cloud GPU training. Outputs models to `./models/`.
+4. **`classify.py`** — Batch inference on the full corpus. Supports `--modal` for parallel cloud workers (20x speedup). Fetches text from R2, runs both models, writes results to PostgreSQL.
 5. **`evaluate.py`** — Quality metrics. Two modes: `labels` (analyzes JSONL) and `corpus` (queries DB).
 
 ## Key files
@@ -24,9 +24,17 @@ Writes to the same `documents` table as the TS pipeline:
 - `document_type` — one of 10 types (legal, forms, reports, etc.)
 - `document_topic` — one of 9 topics (government, education, healthcare, etc.)
 - `classification_confidence` — min(type_confidence, topic_confidence)
-- `classification_model` — e.g. "claude-haiku-4-5" or "modernbert-v2.0.0"
+- `classification_model` — e.g. "claude-haiku-4-5" or "modernbert-2.0.0"
 
 Connection via `DATABASE_URL` env var loaded from `../../.env`.
+
+## Modal (cloud GPU)
+
+Both `train.py` and `classify.py` support a `--modal` flag for cloud execution:
+- Training uses a single GPU (T4 default, configurable with `--gpu`)
+- Classification fans out across `--workers` parallel containers for ~160 docs/s aggregate
+- Models are persisted in a Modal Volume (`classifier-models`)
+- DB credentials are stored in a Modal Secret (`docx-db`)
 
 ## Conventions
 
@@ -36,3 +44,4 @@ Connection via `DATABASE_URL` env var loaded from `../../.env`.
 - Text is fetched via HTTP from the public R2 endpoint, not direct R2 access
 - All scripts support `--help` for usage
 - JSONL files are the interchange format between steps
+- Data files (*.jsonl, models/) are gitignored — store locally in `~/data/docx-corpus/classification/`
