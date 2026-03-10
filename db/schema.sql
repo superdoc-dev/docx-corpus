@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS documents (
     classification_confidence REAL,
     classification_model VARCHAR(50),
 
-    CONSTRAINT valid_status CHECK (status IN ('pending', 'downloading', 'validating', 'uploaded', 'failed'))
+    CONSTRAINT valid_status CHECK (status IN ('uploaded', 'failed', 'duplicate'))
 );
 
 -- Index for common queries

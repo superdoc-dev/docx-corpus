@@ -80,10 +80,19 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
   // Compute hash and save
   const hash = await computeHash(result.content);
 
-  // Check if already exists by hash
+  // Check if already exists by hash (different URL, same file content)
   const existingByHash = await db.getDocument(hash);
   if (existingByHash && existingByHash.status === "uploaded") {
     stats.skipped++;
+    const urlHash = await computeHash(new TextEncoder().encode(record.url));
+    await db.upsertDocument({
+      id: `dup-${urlHash}`,
+      source_url: record.url,
+      crawl_id: crawlId,
+      original_filename: extractFilename(record.url),
+      status: "duplicate",
+      error_message: `duplicate content of ${hash}`,
+    });
     return;
   }
 
@@ -164,10 +173,11 @@ export async function scrape(options: ScrapeOptions) {
   // Initialize database
   const db = await createDb(config.database.url);
 
-  // Pre-load processed URLs for fast duplicate checking (includes both uploaded and failed)
+  // Pre-load processed URLs for fast duplicate checking (includes uploaded, failed, and duplicate)
   const uploadedUrls = force ? new Set<string>() : await db.getUploadedUrls();
   const failedUrls = force ? new Set<string>() : await db.getFailedUrls();
-  const processedUrls = new Set([...uploadedUrls, ...failedUrls]);
+  const duplicateUrls = force ? new Set<string>() : await db.getDuplicateUrls();
+  const processedUrls = new Set([...uploadedUrls, ...failedUrls, ...duplicateUrls]);
 
   // Aggregate stats across all crawls
   const totalStats = { saved: 0, skipped: 0, failed: 0 };

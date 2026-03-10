@@ -1,6 +1,6 @@
 import { SQL } from "bun";
 
-export type DocumentStatus = "pending" | "downloading" | "validating" | "uploaded" | "failed";
+export type DocumentStatus = "uploaded" | "failed" | "duplicate";
 
 export interface DocumentRecord {
   id: string; // SHA-256 hash
@@ -83,7 +83,7 @@ export interface DbClient {
   getDocumentByUrl(url: string): Promise<DocumentRecord | null>;
   getUploadedUrls(): Promise<Set<string>>;
   getFailedUrls(): Promise<Set<string>>;
-  getPendingDocuments(limit: number): Promise<DocumentRecord[]>;
+  getDuplicateUrls(): Promise<Set<string>>;
   getDocumentsByStatus(status: DocumentStatus, limit?: number): Promise<DocumentRecord[]>;
   getStats(): Promise<{ status: string; count: number }[]>;
   getAllDocuments(limit?: number): Promise<DocumentRecord[]>;
@@ -189,10 +189,11 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
       return new Set(rows.map((r) => r.source_url));
     },
 
-    async getPendingDocuments(limit: number) {
-      return sql<DocumentRecord[]>`
-        SELECT * FROM documents WHERE status = 'pending' LIMIT ${limit}
+    async getDuplicateUrls() {
+      const rows = await sql<{ source_url: string }[]>`
+        SELECT source_url FROM documents WHERE status = 'duplicate'
       `;
+      return new Set(rows.map((r) => r.source_url));
     },
 
     async getDocumentsByStatus(status: DocumentStatus, limit = 100) {
