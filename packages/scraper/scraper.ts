@@ -84,15 +84,18 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
   const existingByHash = await db.getDocument(hash);
   if (existingByHash && existingByHash.status === "uploaded") {
     stats.skipped++;
-    const urlHash = await computeHash(new TextEncoder().encode(record.url));
-    await db.upsertDocument({
-      id: `dup-${urlHash}`,
-      source_url: record.url,
-      crawl_id: crawlId,
-      original_filename: extractFilename(record.url),
-      status: "duplicate",
-      error_message: `duplicate content of ${hash}`,
-    });
+    // Only create duplicate record if it's actually a different URL
+    if (existingByHash.source_url !== record.url) {
+      const urlHash = await computeHash(new TextEncoder().encode(record.url));
+      await db.upsertDocument({
+        id: `dup-${urlHash}`,
+        source_url: record.url,
+        crawl_id: crawlId,
+        original_filename: extractFilename(record.url),
+        status: "duplicate",
+        error_message: `duplicate content of ${hash}`,
+      });
+    }
     return;
   }
 
