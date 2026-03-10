@@ -17,7 +17,7 @@ COPY packages/embedder/package.json ./packages/embedder/
 COPY apps/cli/package.json ./apps/cli/
 
 # Install TS dependencies
-RUN bun install --ignore-scripts --no-frozen-lockfile
+RUN bun install --ignore-scripts --no-frozen-lockfile --production
 
 # Install Python dependencies (extractor)
 COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
