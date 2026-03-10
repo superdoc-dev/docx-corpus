@@ -15,15 +15,24 @@ COPY packages/scraper/package.json ./packages/scraper/
 COPY packages/extractor/package.json ./packages/extractor/
 COPY packages/embedder/package.json ./packages/embedder/
 COPY apps/cli/package.json ./apps/cli/
-COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
 
-# Install all dependencies
+# Install TS dependencies
 RUN bun install --ignore-scripts --no-frozen-lockfile
+
+# Install Python dependencies (extractor)
+COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
 RUN cd packages/extractor/python && uv sync
 
-# Copy source files
+# Install Python dependencies (classification)
+COPY scripts/classification/pyproject.toml ./scripts/classification/
+RUN cd scripts/classification && uv venv && uv pip install -e .
+
+# Install Python dependencies (export — uses inline script deps, uv handles it at runtime)
+
+# Copy all source files
 COPY tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY apps/cli/ ./apps/cli/
+COPY scripts/ ./scripts/
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
