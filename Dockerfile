@@ -21,7 +21,7 @@ RUN bun install --ignore-scripts --no-frozen-lockfile
 
 # Install Python dependencies (extractor)
 COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
-RUN cd packages/extractor/python && uv sync
+RUN cd packages/extractor/python && uv sync --torch-backend cpu --no-cache
 
 # Install Python dependencies (classification)
 COPY scripts/classification/pyproject.toml ./scripts/classification/
