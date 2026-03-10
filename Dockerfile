@@ -16,8 +16,9 @@ COPY packages/extractor/package.json ./packages/extractor/
 COPY packages/embedder/package.json ./packages/embedder/
 COPY apps/cli/package.json ./apps/cli/
 
-# Install TS dependencies
-RUN bun install --ignore-scripts --no-frozen-lockfile --production
+# Install TS dependencies (strip devDeps — biome/lefthook not needed in container)
+RUN python3 -c "import json; p=json.load(open('package.json')); p.pop('devDependencies',None); json.dump(p,open('package.json','w'),indent=2)"
+RUN bun install --ignore-scripts --no-frozen-lockfile
 
 # Install Python dependencies (extractor)
 COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
@@ -27,7 +28,9 @@ RUN cd packages/extractor/python && uv venv && \
 
 # Install Python dependencies (classification)
 COPY scripts/classification/pyproject.toml ./scripts/classification/
-RUN cd scripts/classification && uv venv && uv pip install -e .
+RUN cd scripts/classification && uv venv && \
+    uv pip install torch --index-url https://download.pytorch.org/whl/cpu --no-cache && \
+    uv pip install -e . --no-cache
 
 # Install Python dependencies (export — uses inline script deps, uv handles it at runtime)
 
