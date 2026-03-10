@@ -38,6 +38,9 @@ bun install
 All pipeline stages are accessible through a single CLI:
 
 ```bash
+corpus cdx-filter                         # Show available vs filtered crawls
+corpus cdx-filter --crawl CC-MAIN-2026-08 # Filter a specific crawl via Lambda
+corpus cdx-filter --latest 3              # Filter 3 newest missing crawls
 corpus crawls                              # List available crawls from R2
 corpus scrape --crawl CC-MAIN-2025-51      # Scrape a specific crawl
 corpus scrape --crawl 3 --batch 100        # Latest 3 crawls, 100 docs each
@@ -89,11 +92,25 @@ db/
 Pre-filters Common Crawl CDX indexes for `.docx` URLs. Runs in AWS Lambda (us-east-1) for direct S3 access — minutes instead of days.
 
 ```bash
-cd apps/cdx-filter
-./invoke-all.sh CC-MAIN-2025-51
+corpus cdx-filter                          # Show what's available vs filtered
+corpus cdx-filter --crawl CC-MAIN-2026-08  # Filter one crawl
+corpus cdx-filter --all                    # Filter all missing crawls
 ```
 
-See [apps/cdx-filter/README.md](apps/cdx-filter/README.md) for setup.
+**AWS setup**: The Lambda function needs AWS credentials configured locally. See [apps/cdx-filter/README.md](apps/cdx-filter/README.md) for Lambda deployment.
+
+```bash
+# Option 1: AWS CLI profile (recommended)
+aws configure --profile docx-corpus
+export AWS_PROFILE=docx-corpus
+
+# Option 2: Environment variables
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_REGION=us-east-1
+```
+
+The AWS IAM user/role needs `lambda:InvokeFunction` permission on the `cdx-filter` function.
 
 ### 2. Scraping
 
@@ -204,6 +221,9 @@ STORAGE_PATH=./corpus
 
 # Embeddings (optional)
 GOOGLE_API_KEY=
+
+# AWS (for cdx-filter Lambda invocation)
+AWS_PROFILE=docx-corpus  # or set AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY
 
 # Classification (for LLM labeling step only)
 ANTHROPIC_API_KEY=
