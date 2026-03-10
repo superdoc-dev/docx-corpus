@@ -986,7 +986,7 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
 
       function escHtml(s) {
         if (!s) return '';
-        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
 
       // ---------- preview ----------

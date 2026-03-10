@@ -288,7 +288,7 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("handleDocuments error:", message);
-    return json({ error: message }, 500, origin);
+    return json({ error: "Internal server error" }, 500, origin);
   }
 }
 
@@ -299,11 +299,10 @@ const R2_BASE = "https://docxcorp.us/documents/";
 async function handleManifest(url: URL, env: Env, origin: string): Promise<Response> {
   try {
     const sql = neon(env.DATABASE_URL);
-    const { where, params } = buildFilters(url);
-
+    const { where, params, paramIndex } = buildFilters(url);
     const rows = await sql.query(
-      `SELECT id FROM documents WHERE ${where} ORDER BY id`,
-      params
+      `SELECT id FROM documents WHERE ${where} ORDER BY id LIMIT $${paramIndex}`,
+      [...params, 100000]
     ) as { id: string }[];
 
     const body = rows.map((r) => `${R2_BASE}${r.id}.docx`).join("\n") + "\n";
@@ -329,6 +328,6 @@ async function handleManifest(url: URL, env: Env, origin: string): Promise<Respo
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("handleManifest error:", message);
-    return json({ error: message }, 500, origin);
+    return json({ error: "Internal server error" }, 500, origin);
   }
 }
