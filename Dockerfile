@@ -18,7 +18,7 @@ COPY apps/cli/package.json ./apps/cli/
 COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
 
 # Install all dependencies
-RUN bun install && cd packages/extractor/python && uv sync
+RUN bun install --ignore-scripts && cd packages/extractor/python && uv sync
 
 # Copy source files
 COPY tsconfig.base.json ./
