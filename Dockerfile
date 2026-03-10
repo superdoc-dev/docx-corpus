@@ -18,7 +18,7 @@ COPY apps/cli/package.json ./apps/cli/
 COPY packages/extractor/python/pyproject.toml packages/extractor/python/uv.lock ./packages/extractor/python/
 
 # Install all dependencies
-RUN bun install --production --ignore-scripts
+RUN bun install --ignore-scripts --no-frozen-lockfile
 RUN cd packages/extractor/python && uv sync
 
 # Copy source files
