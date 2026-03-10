@@ -24,6 +24,7 @@ export {
 export { getLatestCrawlId, getCrawlIds } from "./commoncrawl/index";
 export { streamCdxFromR2, type CdxRecord } from "./commoncrawl/cdx-r2";
 export { listFilteredCrawls, type FilteredCrawl } from "./commoncrawl/crawls";
+export { getAllCrawlIds, invokeCdxFilter, type CdxFilterResult } from "./commoncrawl/cdx-filter";
 export { fetchWarcRecord, parseWarcRecord, findPattern, type WarcResult, type FetchOptions } from "./commoncrawl/warc";
 
 // Validation utilities

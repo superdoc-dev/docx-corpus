@@ -11,6 +11,7 @@
     "build": "bun build index.ts --outdir dist --target bun"
   },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.1006.0",
     "@aws-sdk/client-s3": "^3.971.0",
     "@docx-corpus/shared": "workspace:*",
     "p-limit": "^7.2.0"

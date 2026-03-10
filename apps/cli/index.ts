@@ -5,6 +5,7 @@ import { runExtract } from "./commands/extract";
 import { runEmbed } from "./commands/embed";
 import { runClassify } from "./commands/classify";
 import { runCrawls } from "./commands/crawls";
+import { runCdxFilter } from "./commands/cdx-filter";
 import { runExport } from "./commands/export";
 import { runStatus } from "./commands/status";
 
@@ -17,6 +18,7 @@ Usage
   corpus <command> [options]
 
 Commands
+  cdx-filter  Filter Common Crawl indexes for .docx URLs (Lambda)
   scrape      Download .docx files from Common Crawl
   extract     Extract text from DOCX files using Docling
   embed       Generate embeddings for extracted documents
@@ -55,6 +57,9 @@ async function main() {
   const commandArgs = args.slice(1);
 
   switch (command) {
+    case "cdx-filter":
+      await runCdxFilter(commandArgs);
+      break;
     case "scrape":
       await runScrape(commandArgs);
       break;
