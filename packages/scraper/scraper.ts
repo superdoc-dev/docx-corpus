@@ -59,9 +59,10 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
     return;
   }
 
-  // Clean up any previous failed-* record for this URL (from a prior failed attempt)
+  // Clean up any previous failed-* record for this URL in THIS crawl (from a prior failed attempt)
   const urlHash = await computeHash(new TextEncoder().encode(record.url));
-  await db.deleteDocument(`failed-${urlHash}`);
+  const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
+  await db.deleteDocument(`failed-${urlHash}`, crawlId);
 
   // Mark URL as processed so duplicate CDX entries are skipped
   processedUrls.add(record.url);
@@ -92,7 +93,7 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
   if (existingByHash && existingByHash.source_url !== record.url) {
     stats.skipped++;
     await db.upsertDocument({
-      id: `dup-${urlHash}`,
+      id: `dup-${crawlScopedHash}`,
       source_url: record.url,
       crawl_id: crawlId,
       original_filename: extractFilename(record.url),
@@ -272,9 +273,9 @@ export async function scrape(options: ScrapeOptions) {
           stats.skipped++;
           // Create cross-crawl dup record if URL exists in DB but not under this crawl
           if (!crawlUrls.has(record.url)) {
-            const urlHash = await computeHash(new TextEncoder().encode(record.url));
+            const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
             await db.upsertDocument({
-              id: `dup-${urlHash}`,
+              id: `dup-${crawlScopedHash}`,
               source_url: record.url,
               crawl_id: crawlId,
               original_filename: extractFilename(record.url),
@@ -299,6 +300,7 @@ export async function scrape(options: ScrapeOptions) {
           force,
           onError,
         });
+        crawlUrls.add(record.url);
         updateProgress();
       }).finally(() => tasks.delete(task));
 

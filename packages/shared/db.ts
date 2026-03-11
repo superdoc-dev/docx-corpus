@@ -79,7 +79,7 @@ export interface LLMClassificationData {
 export interface DbClient {
   // Scraping methods (existing)
   upsertDocument(doc: Partial<DocumentRecord> & { id: string }): Promise<void>;
-  deleteDocument(id: string): Promise<void>;
+  deleteDocument(id: string, crawlId?: string): Promise<void>;
   getDocument(id: string): Promise<DocumentRecord | null>;
   getDocumentByUrl(url: string): Promise<DocumentRecord | null>;
   getUploadedUrls(): Promise<Set<string>>;
@@ -163,8 +163,12 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
       }
     },
 
-    async deleteDocument(id: string) {
-      await sql`DELETE FROM documents WHERE id = ${id}`;
+    async deleteDocument(id: string, crawlId?: string) {
+      if (crawlId) {
+        await sql`DELETE FROM documents WHERE id = ${id} AND crawl_id = ${crawlId}`;
+      } else {
+        await sql`DELETE FROM documents WHERE id = ${id}`;
+      }
     },
 
     async getDocument(id: string) {

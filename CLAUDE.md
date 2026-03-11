@@ -48,7 +48,7 @@ IDs are content-addressed for storage mapping (`documents/{id}.docx`):
 | Uploaded | `{sha256(content)}` | Maps to R2 storage key |
 | Download failed | `failed-{sha256(url)}` | No content available, use URL hash |
 | Validation failed | `{sha256(content)}` | Content exists but isn't valid docx |
-| Content duplicate | `dup-{sha256(url)}` | Content hash would collide with original |
+| Content duplicate | `dup-{sha256(url+crawlId)}` | Scoped per crawl so each crawl keeps its own dup record |
 
 ### Dedup paths
 
