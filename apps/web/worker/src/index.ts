@@ -302,7 +302,7 @@ async function handleManifest(url: URL, env: Env, origin: string): Promise<Respo
     const { where, params, paramIndex } = buildFilters(url);
     const rows = await sql.query(
       `SELECT id FROM documents WHERE ${where} ORDER BY id LIMIT $${paramIndex}`,
-      [...params, 100000]
+      [...params, 2000000]
     ) as { id: string }[];
 
     const body = rows.map((r) => `${R2_BASE}${r.id}.docx`).join("\n") + "\n";
