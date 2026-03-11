@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
 interface ParsedFlags {
-  batchSize?: number;
   crawlIds?: string[];
   crawlCount?: number;
   verbose?: boolean;
@@ -14,9 +13,7 @@ function parseFlags(args: string[]): ParsedFlags {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
-    if (arg === "--batch" && args[i + 1]) {
-      flags.batchSize = parseInt(args[++i], 10);
-    } else if (arg === "--crawl" && args[i + 1]) {
+    if (arg === "--crawl" && args[i + 1]) {
       const value = args[++i];
       // Bare number = count of latest crawls
       if (/^\d+$/.test(value)) {
@@ -98,13 +95,6 @@ describe("parseFlags", () => {
     });
   });
 
-  describe("--batch", () => {
-    test("parses batch size", () => {
-      const flags = parseFlags(["--batch", "500"]);
-      expect(flags.batchSize).toBe(500);
-    });
-  });
-
   describe("--force", () => {
     test("parses --force flag", () => {
       const flags = parseFlags(["--force"]);
@@ -133,24 +123,20 @@ describe("parseFlags", () => {
     test("parses all flags together", () => {
       const flags = parseFlags([
         "--crawl", "3",
-        "--batch", "100",
         "--force",
         "--verbose",
       ]);
       expect(flags.crawlCount).toBe(3);
-      expect(flags.batchSize).toBe(100);
       expect(flags.force).toBe(true);
       expect(flags.verbose).toBe(true);
     });
 
     test("parses crawl ID with other flags", () => {
       const flags = parseFlags([
-        "--batch", "50",
         "--crawl", "CC-MAIN-2025-51,CC-MAIN-2025-48",
         "-f",
       ]);
       expect(flags.crawlIds).toEqual(["CC-MAIN-2025-51", "CC-MAIN-2025-48"]);
-      expect(flags.batchSize).toBe(50);
       expect(flags.force).toBe(true);
     });
   });
@@ -190,11 +176,6 @@ describe("parseFlags", () => {
       const flags = parseFlags(["--crawl"]);
       expect(flags.crawlIds).toBeUndefined();
       expect(flags.crawlCount).toBeUndefined();
-    });
-
-    test("ignores --batch without value", () => {
-      const flags = parseFlags(["--batch"]);
-      expect(flags.batchSize).toBeUndefined();
     });
   });
 });

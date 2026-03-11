@@ -33,7 +33,7 @@ Options
 
 Examples
   corpus crawls                        # List available crawls
-  corpus scrape --crawl 3 --batch 100  # Scrape latest 3 crawls
+  corpus scrape --crawl 3              # Scrape latest 3 crawls
   corpus extract -b 100                # Extract text
   corpus classify                      # Classify all pending
   corpus export --push                 # Push to HuggingFace

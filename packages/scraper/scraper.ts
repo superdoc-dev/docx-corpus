@@ -128,7 +128,6 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
 
 export interface ScrapeOptions {
   config: Config;
-  batchSize: number;
   verbose?: boolean;
   force?: boolean;
   crawlIds?: string[];
@@ -136,14 +135,13 @@ export interface ScrapeOptions {
 }
 
 export async function scrape(options: ScrapeOptions) {
-  const { config, batchSize, verbose, force, crawlIds, version } = options;
+  const { config, verbose, force, crawlIds, version } = options;
   const startTime = Date.now();
   const useCloud = hasCloudflareCredentials(config);
 
-  // Catch unhandled rejections so they don't silently crash the process
-  process.on("unhandledRejection", (err) => {
-    console.error("\n[FATAL] Unhandled rejection:", err);
-  });
+  // Keep-alive: prevent Bun from exiting when event loop has no native I/O pending
+  // (Bun may drain the event loop while async generators/promises are still active)
+  const keepAlive = setInterval(() => {}, 60_000);
 
   header("docx-corpus", version);
 
@@ -161,7 +159,6 @@ export async function scrape(options: ScrapeOptions) {
   }
 
   section("Configuration");
-  keyValue("Batch size", batchSize === Infinity ? "all" : `${batchSize} documents per crawl`);
   keyValue(
     "Storage",
     useCloud ? `R2 (${config.cloudflare.r2BucketName})` : `local (${config.storage.localPath})`,
@@ -252,8 +249,8 @@ export async function scrape(options: ScrapeOptions) {
       const { errorCount } = rateLimiter.getStats();
 
       const lines = formatProgress({
-        saved: Math.min(stats.saved, batchSize),
-        total: batchSize,
+        saved: stats.saved,
+        total: Infinity,
         docsPerSec: currentDocsPerSec,
         currentRps: rateLimiter.getCurrentRps(),
         discovered: stats.discovered,
@@ -274,8 +271,6 @@ export async function scrape(options: ScrapeOptions) {
 
     try {
       for await (const record of streamCdxFromR2(config, crawlId)) {
-        if (stats.saved >= batchSize) break;
-
         stats.discovered++;
 
         // Fast skip: URL already processed (outside downloadLimit for instant throughput)
@@ -362,6 +357,8 @@ export async function scrape(options: ScrapeOptions) {
     if (manifest.uploaded) keyValue("Uploaded", "R2");
     blank();
   }
+
+  clearInterval(keepAlive);
 
   const duration = Date.now() - startTime;
   console.log(`Done in ${formatDuration(duration)}`);
