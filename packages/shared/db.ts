@@ -79,11 +79,13 @@ export interface LLMClassificationData {
 export interface DbClient {
   // Scraping methods (existing)
   upsertDocument(doc: Partial<DocumentRecord> & { id: string }): Promise<void>;
+  deleteDocument(id: string): Promise<void>;
   getDocument(id: string): Promise<DocumentRecord | null>;
   getDocumentByUrl(url: string): Promise<DocumentRecord | null>;
   getUploadedUrls(): Promise<Set<string>>;
   getFailedUrls(): Promise<Set<string>>;
   getDuplicateUrls(): Promise<Set<string>>;
+  getUrlsForCrawl(crawlId: string): Promise<Set<string>>;
   getDocumentsByStatus(status: DocumentStatus, limit?: number): Promise<DocumentRecord[]>;
   getStats(): Promise<{ status: string; count: number }[]>;
   getAllDocuments(limit?: number): Promise<DocumentRecord[]>;
@@ -161,6 +163,10 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
       }
     },
 
+    async deleteDocument(id: string) {
+      await sql`DELETE FROM documents WHERE id = ${id}`;
+    },
+
     async getDocument(id: string) {
       const rows = await sql<DocumentRecord[]>`
         SELECT * FROM documents WHERE id = ${id}
@@ -192,6 +198,13 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
     async getDuplicateUrls() {
       const rows = await sql<{ source_url: string }[]>`
         SELECT source_url FROM documents WHERE status = 'duplicate'
+      `;
+      return new Set(rows.map((r) => r.source_url));
+    },
+
+    async getUrlsForCrawl(crawlId: string) {
+      const rows = await sql<{ source_url: string }[]>`
+        SELECT source_url FROM documents WHERE crawl_id = ${crawlId}
       `;
       return new Set(rows.map((r) => r.source_url));
     },
