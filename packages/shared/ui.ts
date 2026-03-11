@@ -54,6 +54,7 @@ export interface ProgressStats {
   total: number;
   docsPerSec: number;
   currentRps?: number;
+  discovered?: number;
   skipped?: number;
   failed?: number;
   retried?: number;
@@ -61,13 +62,14 @@ export interface ProgressStats {
 }
 
 export function formatProgress(stats: ProgressStats): string[] {
-  const { saved, total, docsPerSec, currentRps, skipped, failed, retried, elapsedMs } = stats;
+  const { saved, total, docsPerSec, currentRps, discovered, skipped, failed, retried, elapsedMs } = stats;
 
   const lines: string[] = [];
 
   // Line 1: Progress bar with count and percentage
+  const processed = saved + (skipped || 0) + (failed || 0);
   if (total === Infinity) {
-    lines.push(`━━━━━━━━━━━━━━━━━━━━ ${saved} saved`);
+    lines.push(`━━━━━━━━━━━━━━━━━━━━ ${saved} saved${discovered ? ` (${discovered} scanned)` : ""}`);
   } else {
     const bar = progressBar(saved, total);
     const pct = total > 0 ? ((saved / total) * 100).toFixed(1) : "0.0";

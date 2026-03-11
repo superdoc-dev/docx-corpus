@@ -182,9 +182,13 @@ export async function scrape(options: ScrapeOptions) {
 
   // Pre-load processed URLs for fast duplicate checking
   // Failed URLs are excluded so they get retried (different WARC capture might succeed)
+  section("Loading");
   const uploadedUrls = force ? new Set<string>() : await db.getUploadedUrls();
+  keyValue("Uploaded", `${uploadedUrls.size} URLs`);
   const duplicateUrls = force ? new Set<string>() : await db.getDuplicateUrls();
+  keyValue("Duplicate", `${duplicateUrls.size} URLs`);
   const processedUrls = new Set([...uploadedUrls, ...duplicateUrls]);
+  keyValue("Total", `${processedUrls.size} known URLs`);
 
   // Aggregate stats across all crawls
   const totalStats = { saved: 0, skipped: 0, failed: 0 };
@@ -193,6 +197,7 @@ export async function scrape(options: ScrapeOptions) {
   for (const crawlId of resolvedCrawlIds) {
     // Pre-load URLs already tracked under this crawl for cross-crawl dedup
     const crawlUrls = force ? new Set<string>() : await db.getUrlsForCrawl(crawlId);
+    keyValue("Crawl URLs", `${crawlUrls.size} tracked in ${crawlId}`);
 
     const crawlStartTime = Date.now();
 
@@ -246,6 +251,7 @@ export async function scrape(options: ScrapeOptions) {
         total: batchSize,
         docsPerSec: currentDocsPerSec,
         currentRps: rateLimiter.getCurrentRps(),
+        discovered: stats.discovered,
         skipped: stats.skipped,
         failed: stats.failed,
         retried: errorCount,
@@ -261,33 +267,50 @@ export async function scrape(options: ScrapeOptions) {
 
     const tasks: Set<Promise<void>> = new Set();
 
+    // Batch cross-crawl dup inserts for performance
+    const pendingDups: { id: string; url: string; filename: string }[] = [];
+    const DUP_BATCH_SIZE = 100;
+
+    const flushDups = async () => {
+      if (pendingDups.length === 0) return;
+      const batch = pendingDups.splice(0);
+      for (const dup of batch) {
+        await db.upsertDocument({
+          id: dup.id,
+          source_url: dup.url,
+          crawl_id: crawlId,
+          original_filename: dup.filename,
+          status: "duplicate",
+          error_message: "cross-crawl duplicate",
+        });
+      }
+    };
+
     for await (const record of streamCdxFromR2(config, crawlId)) {
       if (stats.saved >= batchSize) break;
 
       stats.discovered++;
+
+      // Fast skip: URL already processed (outside downloadLimit for instant throughput)
+      if (!force && processedUrls.has(record.url)) {
+        stats.skipped++;
+        if (!crawlUrls.has(record.url)) {
+          const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
+          pendingDups.push({
+            id: `dup-${crawlScopedHash}`,
+            url: record.url,
+            filename: extractFilename(record.url),
+          });
+          crawlUrls.add(record.url);
+          if (pendingDups.length >= DUP_BATCH_SIZE) await flushDups();
+        }
+        updateProgress();
+        continue;
+      }
+
       updateProgress();
 
       const task = downloadLimit(async () => {
-        // Check duplicates BEFORE rate limiting (instant skip)
-        if (!force && processedUrls.has(record.url)) {
-          stats.skipped++;
-          // Create cross-crawl dup record if URL exists in DB but not under this crawl
-          if (!crawlUrls.has(record.url)) {
-            const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
-            await db.upsertDocument({
-              id: `dup-${crawlScopedHash}`,
-              source_url: record.url,
-              crawl_id: crawlId,
-              original_filename: extractFilename(record.url),
-              status: "duplicate",
-              error_message: "cross-crawl duplicate",
-            });
-            crawlUrls.add(record.url);
-          }
-          updateProgress();
-          return;
-        }
-
         await rateLimiter.acquire();
         await processRecord(record, {
           db,
@@ -312,6 +335,7 @@ export async function scrape(options: ScrapeOptions) {
     }
 
     await Promise.all(tasks);
+    await flushDups();
     clearLines(prevLineCount);
 
     // Accumulate totals
