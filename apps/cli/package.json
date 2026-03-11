@@ -1,6 +1,6 @@
 {
   "name": "@docx-corpus/cli",
-  "version": "0.17.2",
+  "version": "0.17.3",
   "type": "module",
   "bin": {
     "corpus": "./index.ts"
