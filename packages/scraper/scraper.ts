@@ -286,52 +286,65 @@ export async function scrape(options: ScrapeOptions) {
       }
     };
 
-    for await (const record of streamCdxFromR2(config, crawlId)) {
-      if (stats.saved >= batchSize) break;
+    try {
+      for await (const record of streamCdxFromR2(config, crawlId)) {
+        if (stats.saved >= batchSize) break;
 
-      stats.discovered++;
+        stats.discovered++;
 
-      // Fast skip: URL already processed (outside downloadLimit for instant throughput)
-      if (!force && processedUrls.has(record.url)) {
-        stats.skipped++;
-        if (!crawlUrls.has(record.url)) {
-          const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
-          pendingDups.push({
-            id: `dup-${crawlScopedHash}`,
-            url: record.url,
-            filename: extractFilename(record.url),
-          });
-          crawlUrls.add(record.url);
-          if (pendingDups.length >= DUP_BATCH_SIZE) await flushDups();
+        // Fast skip: URL already processed (outside downloadLimit for instant throughput)
+        if (!force && processedUrls.has(record.url)) {
+          stats.skipped++;
+          if (!crawlUrls.has(record.url)) {
+            const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
+            pendingDups.push({
+              id: `dup-${crawlScopedHash}`,
+              url: record.url,
+              filename: extractFilename(record.url),
+            });
+            crawlUrls.add(record.url);
+            if (pendingDups.length >= DUP_BATCH_SIZE) await flushDups();
+          }
+          updateProgress();
+          continue;
         }
+
         updateProgress();
-        continue;
+
+        const task = downloadLimit(async () => {
+          try {
+            await rateLimiter.acquire();
+            await processRecord(record, {
+              db,
+              storage,
+              config,
+              crawlId,
+              stats,
+              rateLimiter,
+              processedUrls,
+              force,
+              onError,
+            });
+            crawlUrls.add(record.url);
+            updateProgress();
+          } catch (err) {
+            stats.failed++;
+            clearLines(prevLineCount);
+            logError(`Error processing ${record.url}: ${err instanceof Error ? err.message : String(err)}`);
+            prevLineCount = 0;
+          }
+        }).finally(() => tasks.delete(task));
+
+        tasks.add(task);
+
+        if (tasks.size >= config.crawl.concurrency * 2) {
+          await Promise.race(tasks);
+        }
       }
-
-      updateProgress();
-
-      const task = downloadLimit(async () => {
-        await rateLimiter.acquire();
-        await processRecord(record, {
-          db,
-          storage,
-          config,
-          crawlId,
-          stats,
-          rateLimiter,
-          processedUrls,
-          force,
-          onError,
-        });
-        crawlUrls.add(record.url);
-        updateProgress();
-      }).finally(() => tasks.delete(task));
-
-      tasks.add(task);
-
-      if (tasks.size >= config.crawl.concurrency * 2) {
-        await Promise.race(tasks);
-      }
+    } catch (err) {
+      clearLines(prevLineCount);
+      logError(`CDX stream error: ${err instanceof Error ? err.message : String(err)}`);
+      prevLineCount = 0;
     }
 
     await Promise.all(tasks);
