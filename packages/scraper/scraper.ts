@@ -142,6 +142,9 @@ export async function scrape(options: ScrapeOptions) {
   // Keep-alive: prevent Bun from exiting when event loop has no native I/O pending
   // (Bun may drain the event loop while async generators/promises are still active)
   const keepAlive = setInterval(() => {}, 60_000);
+  const cleanup = () => { clearInterval(keepAlive); process.exit(0); };
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
 
   header("docx-corpus", version);
 
