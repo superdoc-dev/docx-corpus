@@ -140,6 +140,11 @@ export async function scrape(options: ScrapeOptions) {
   const startTime = Date.now();
   const useCloud = hasCloudflareCredentials(config);
 
+  // Catch unhandled rejections so they don't silently crash the process
+  process.on("unhandledRejection", (err) => {
+    console.error("\n[FATAL] Unhandled rejection:", err);
+  });
+
   header("docx-corpus", version);
 
   // Resolve crawl IDs: from param, config, or fetch latest
@@ -267,25 +272,6 @@ export async function scrape(options: ScrapeOptions) {
 
     const tasks: Set<Promise<void>> = new Set();
 
-    // Batch cross-crawl dup inserts for performance
-    const pendingDups: { id: string; url: string; filename: string }[] = [];
-    const DUP_BATCH_SIZE = 100;
-
-    const flushDups = async () => {
-      if (pendingDups.length === 0) return;
-      const batch = pendingDups.splice(0);
-      for (const dup of batch) {
-        await db.upsertDocument({
-          id: dup.id,
-          source_url: dup.url,
-          crawl_id: crawlId,
-          original_filename: dup.filename,
-          status: "duplicate",
-          error_message: "cross-crawl duplicate",
-        });
-      }
-    };
-
     try {
       for await (const record of streamCdxFromR2(config, crawlId)) {
         if (stats.saved >= batchSize) break;
@@ -295,15 +281,18 @@ export async function scrape(options: ScrapeOptions) {
         // Fast skip: URL already processed (outside downloadLimit for instant throughput)
         if (!force && processedUrls.has(record.url)) {
           stats.skipped++;
+          // Create cross-crawl dup record if URL exists in DB but not under this crawl
           if (!crawlUrls.has(record.url)) {
             const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
-            pendingDups.push({
+            await db.upsertDocument({
               id: `dup-${crawlScopedHash}`,
-              url: record.url,
-              filename: extractFilename(record.url),
+              source_url: record.url,
+              crawl_id: crawlId,
+              original_filename: extractFilename(record.url),
+              status: "duplicate",
+              error_message: "cross-crawl duplicate",
             });
             crawlUrls.add(record.url);
-            if (pendingDups.length >= DUP_BATCH_SIZE) await flushDups();
           }
           updateProgress();
           continue;
@@ -348,7 +337,6 @@ export async function scrape(options: ScrapeOptions) {
     }
 
     await Promise.all(tasks);
-    await flushDups();
     clearLines(prevLineCount);
 
     // Accumulate totals
