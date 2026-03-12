@@ -5,6 +5,7 @@ interface ParsedFlags {
   crawlCount?: number;
   verbose?: boolean;
   force?: boolean;
+  retryFailed?: boolean;
 }
 
 function parseFlags(args: string[]): ParsedFlags {
@@ -35,6 +36,8 @@ function parseFlags(args: string[]): ParsedFlags {
       flags.verbose = true;
     } else if (arg === "--force" || arg === "-f") {
       flags.force = true;
+    } else if (arg === "--retry-failed") {
+      flags.retryFailed = true;
     }
   }
 

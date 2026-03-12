@@ -136,12 +136,13 @@ export interface ScrapeOptions {
   config: Config;
   verbose?: boolean;
   force?: boolean;
+  retryFailed?: boolean;
   crawlIds?: string[];
   version: string;
 }
 
 export async function scrape(options: ScrapeOptions) {
-  const { config, verbose, force, crawlIds, version } = options;
+  const { config, verbose, force, retryFailed, crawlIds, version } = options;
   const startTime = Date.now();
   const useCloud = hasCloudflareCredentials(config);
 
@@ -175,6 +176,7 @@ export async function scrape(options: ScrapeOptions) {
   keyValue("Crawl(s)", resolvedCrawlIds.join(", "));
   keyValue("Workers", config.crawl.concurrency);
   if (force) keyValue("Force", "re-process all URLs");
+  if (retryFailed) keyValue("Retry", "re-download failed URLs");
   if (verbose) keyValue("Verbose", "enabled");
   blank();
 
@@ -191,12 +193,14 @@ export async function scrape(options: ScrapeOptions) {
   // Initialize database
   const db = await createDb(config.database.url);
 
-  // Pre-load processed URL hashes for fast duplicate checking
-  // Failed URLs are excluded so they get retried (different WARC capture might succeed)
-  // Uses md5 hashes instead of full URLs to reduce network transfer (~6s vs ~14s)
+  // Pre-load known URL hashes for fast skip checking
+  // --retry-failed: exclude failed URLs so they get re-downloaded
+  // --force: skip loading entirely, re-process all URLs
   section("Loading");
-  const processedHashes = force ? new Set<string>() : await db.getProcessedUrlHashes();
-  keyValue("Processed", `${processedHashes.size} hashes (uploaded + duplicate)`);
+  const processedHashes = force
+    ? new Set<string>()
+    : await db.getProcessedUrlHashes({ excludeFailed: retryFailed });
+  keyValue("Processed", `${processedHashes.size} hashes`);
 
   // Aggregate stats across all crawls
   const totalStats = { saved: 0, skipped: 0, failed: 0 };

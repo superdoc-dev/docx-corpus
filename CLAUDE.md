@@ -54,11 +54,11 @@ IDs are content-addressed for storage mapping (`documents/{id}.docx`):
 
 The scraper handles three dedup scenarios in order:
 
-1. **URL-dedup** (instant, no download) — URL already in `processedUrls` Set (loaded from all crawls at startup). If the URL exists under a different `crawl_id`, creates a cross-crawl `duplicate` record under the current crawl. If already under the current crawl, silently skips.
+1. **URL-dedup** (instant, no download) — URL already in `processedHashes` Set (md5 hashes loaded from all crawls at startup). Includes uploaded, duplicate, AND failed URLs by default. If the URL exists under a different `crawl_id`, creates a cross-crawl `duplicate` record under the current crawl. If already under the current crawl, silently skips.
 
 2. **Content-dedup** (requires WARC download) — URL is new but content hash matches an existing document. Creates a `duplicate` record pointing to the original.
 
-3. **Same-URL retry** (within same crawl) — Same URL appears multiple times in CDX files (different WARC captures). After a successful WARC download, the URL is added to `processedUrls` so subsequent entries are skipped. Failed downloads do NOT add to `processedUrls`, allowing retry from a different WARC capture.
+3. **Same-URL retry** (within same crawl) — Same URL appears multiple times in CDX files (different WARC captures). After a successful WARC download, the URL is added to `processedHashes` so subsequent entries are skipped.
 
 ### Stale record cleanup
 
@@ -67,8 +67,9 @@ When a WARC download succeeds, the scraper deletes any previous `failed-{urlHash
 ### Re-run safety
 
 Running the scraper on the same crawl again is safe:
-- `--force` flag: re-downloads everything but checks `source_url` before creating dup records, so existing records aren't duplicated
-- Without `--force`: all existing URLs are in `processedUrls` and skipped instantly
+- `--force`: re-downloads everything from scratch
+- `--retry-failed`: re-downloads only previously failed URLs
+- Default: all known URLs (uploaded + duplicate + failed) are skipped instantly
 
 ## Database
 

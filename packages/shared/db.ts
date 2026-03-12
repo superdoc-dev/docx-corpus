@@ -82,7 +82,7 @@ export interface DbClient {
   deleteDocument(id: string, crawlId?: string): Promise<void>;
   getDocument(id: string): Promise<DocumentRecord | null>;
   getDocumentByUrl(url: string): Promise<DocumentRecord | null>;
-  getProcessedUrlHashes(): Promise<Set<string>>;
+  getProcessedUrlHashes(opts?: { excludeFailed?: boolean }): Promise<Set<string>>;
   upsertDuplicateBatch(records: { id: string; sourceUrl: string; crawlId: string; filename: string }[]): Promise<void>;
   getUploadedUrls(): Promise<Set<string>>;
   getFailedUrls(): Promise<Set<string>>;
@@ -187,10 +187,14 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
       return rows[0] || null;
     },
 
-    async getProcessedUrlHashes() {
-      const rows = await sql<{ h: string }[]>`
-        SELECT md5(source_url) as h FROM documents WHERE status IN ('uploaded', 'duplicate')
-      `;
+    async getProcessedUrlHashes(opts?: { excludeFailed?: boolean }) {
+      const rows = opts?.excludeFailed
+        ? await sql<{ h: string }[]>`
+            SELECT md5(source_url) as h FROM documents WHERE status IN ('uploaded', 'duplicate')
+          `
+        : await sql<{ h: string }[]>`
+            SELECT md5(source_url) as h FROM documents
+          `;
       return new Set(rows.map((r) => r.h));
     },
 

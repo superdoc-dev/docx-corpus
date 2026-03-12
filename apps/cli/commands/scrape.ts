@@ -5,6 +5,7 @@ interface ParsedFlags {
   crawlCount?: number;
   verbose?: boolean;
   force?: boolean;
+  retryFailed?: boolean;
 }
 
 function parseFlags(args: string[]): ParsedFlags {
@@ -35,6 +36,8 @@ function parseFlags(args: string[]): ParsedFlags {
       flags.verbose = true;
     } else if (arg === "--force" || arg === "-f") {
       flags.force = true;
+    } else if (arg === "--retry-failed") {
+      flags.retryFailed = true;
     }
   }
 
@@ -52,8 +55,9 @@ Options
                     <n>         Latest n crawls (e.g., --crawl 3)
                     <id>        Single crawl ID
                     <id>,<id>   Comma-separated list
-  --force         Re-process URLs already in database
-  --verbose       Show detailed logs for debugging
+  --force           Re-process all URLs from scratch
+  --retry-failed    Re-download only previously failed URLs
+  --verbose         Show detailed logs for debugging
 
 Environment Variables
   CRAWL_ID             Common Crawl index ID (e.g., CC-MAIN-2025-51)
@@ -101,6 +105,7 @@ export async function runScrape(args: string[]) {
     config,
     verbose: flags.verbose,
     force: flags.force,
+    retryFailed: flags.retryFailed,
     crawlIds,
     version: VERSION,
   });
