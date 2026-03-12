@@ -51,6 +51,10 @@ CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
 CREATE INDEX IF NOT EXISTS idx_documents_crawl_id ON documents(crawl_id);
 CREATE INDEX IF NOT EXISTS idx_documents_source_url ON documents(source_url);
 
+-- Covering indexes for scraper URL loading (index-only scans)
+CREATE INDEX IF NOT EXISTS idx_documents_status_url ON documents(status, source_url);
+CREATE INDEX IF NOT EXISTS idx_documents_crawl_url ON documents(crawl_id, source_url);
+
 -- Indexes for extraction/embedding/classification queries
 CREATE INDEX IF NOT EXISTS idx_documents_extracted ON documents(extracted_at) WHERE extracted_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_documents_embedded ON documents(embedded_at) WHERE embedded_at IS NOT NULL;

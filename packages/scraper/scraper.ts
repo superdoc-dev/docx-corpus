@@ -22,6 +22,12 @@ import {
 } from "@docx-corpus/shared";
 import { computeHash, extractFilename, validateDocx } from "./validation";
 
+function md5Url(url: string): string {
+  const hasher = new Bun.CryptoHasher("md5");
+  hasher.update(url);
+  return hasher.digest("hex");
+}
+
 interface ProcessContext {
   db: Awaited<ReturnType<typeof createDb>>;
   storage: Storage;
@@ -29,13 +35,13 @@ interface ProcessContext {
   crawlId: string;
   stats: { saved: number; skipped: number; failed: number };
   rateLimiter: RateLimiter;
-  processedUrls: Set<string>;
+  processedHashes: Set<string>;
   force?: boolean;
   onError?: (status: number, url: string, message: string) => void;
 }
 
 async function processRecord(record: CdxRecord, ctx: ProcessContext) {
-  const { db, storage, config, crawlId, stats, rateLimiter, processedUrls, onError } = ctx;
+  const { db, storage, config, crawlId, stats, rateLimiter, processedHashes, onError } = ctx;
 
   // Download from WARC
   let result: WarcResult;
@@ -65,7 +71,7 @@ async function processRecord(record: CdxRecord, ctx: ProcessContext) {
   await db.deleteDocument(`failed-${urlHash}`, crawlId);
 
   // Mark URL as processed so duplicate CDX entries are skipped
-  processedUrls.add(record.url);
+  processedHashes.add(md5Url(record.url));
 
   // Validate
   const validation = validateDocx(result.content);
@@ -185,15 +191,12 @@ export async function scrape(options: ScrapeOptions) {
   // Initialize database
   const db = await createDb(config.database.url);
 
-  // Pre-load processed URLs for fast duplicate checking
+  // Pre-load processed URL hashes for fast duplicate checking
   // Failed URLs are excluded so they get retried (different WARC capture might succeed)
+  // Uses md5 hashes instead of full URLs to reduce network transfer (~6s vs ~14s)
   section("Loading");
-  const uploadedUrls = force ? new Set<string>() : await db.getUploadedUrls();
-  keyValue("Uploaded", `${uploadedUrls.size} URLs`);
-  const duplicateUrls = force ? new Set<string>() : await db.getDuplicateUrls();
-  keyValue("Duplicate", `${duplicateUrls.size} URLs`);
-  const processedUrls = new Set([...uploadedUrls, ...duplicateUrls]);
-  keyValue("Total", `${processedUrls.size} known URLs`);
+  const processedHashes = force ? new Set<string>() : await db.getProcessedUrlHashes();
+  keyValue("Processed", `${processedHashes.size} hashes (uploaded + duplicate)`);
 
   // Aggregate stats across all crawls
   const totalStats = { saved: 0, skipped: 0, failed: 0 };
@@ -272,25 +275,39 @@ export async function scrape(options: ScrapeOptions) {
 
     const tasks: Set<Promise<void>> = new Set();
 
+    // Batch cross-crawl dup inserts to avoid per-record DB round trips
+    type DupRecord = { id: string; sourceUrl: string; crawlId: string; filename: string };
+    const pendingDups: DupRecord[] = [];
+    const DUP_BATCH_SIZE = 100;
+
+    const flushDups = async () => {
+      if (pendingDups.length === 0) return;
+      const batch = pendingDups.splice(0);
+      await db.upsertDuplicateBatch(batch);
+    };
+
     try {
       for await (const record of streamCdxFromR2(config, crawlId)) {
         stats.discovered++;
 
         // Fast skip: URL already processed (outside downloadLimit for instant throughput)
-        if (!force && processedUrls.has(record.url)) {
+        if (!force && processedHashes.has(md5Url(record.url))) {
           stats.skipped++;
-          // Create cross-crawl dup record if URL exists in DB but not under this crawl
+          // Queue cross-crawl dup record if URL exists in DB but not under this crawl
           if (!crawlUrls.has(record.url)) {
-            const crawlScopedHash = await computeHash(new TextEncoder().encode(record.url + crawlId));
-            await db.upsertDocument({
+            const hasher = new Bun.CryptoHasher("sha256");
+            hasher.update(record.url + crawlId);
+            const crawlScopedHash = hasher.digest("hex");
+            pendingDups.push({
               id: `dup-${crawlScopedHash}`,
-              source_url: record.url,
-              crawl_id: crawlId,
-              original_filename: extractFilename(record.url),
-              status: "duplicate",
-              error_message: "cross-crawl duplicate",
+              sourceUrl: record.url,
+              crawlId,
+              filename: extractFilename(record.url),
             });
             crawlUrls.add(record.url);
+            if (pendingDups.length >= DUP_BATCH_SIZE) {
+              await flushDups();
+            }
           }
           updateProgress();
           continue;
@@ -308,7 +325,7 @@ export async function scrape(options: ScrapeOptions) {
               crawlId,
               stats,
               rateLimiter,
-              processedUrls,
+              processedHashes,
               force,
               onError,
             });
@@ -334,6 +351,8 @@ export async function scrape(options: ScrapeOptions) {
       prevLineCount = 0;
     }
 
+    // Flush remaining cross-crawl dup records
+    await flushDups();
     await Promise.all(tasks);
     clearLines(prevLineCount);
 

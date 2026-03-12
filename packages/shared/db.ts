@@ -82,6 +82,8 @@ export interface DbClient {
   deleteDocument(id: string, crawlId?: string): Promise<void>;
   getDocument(id: string): Promise<DocumentRecord | null>;
   getDocumentByUrl(url: string): Promise<DocumentRecord | null>;
+  getProcessedUrlHashes(): Promise<Set<string>>;
+  upsertDuplicateBatch(records: { id: string; sourceUrl: string; crawlId: string; filename: string }[]): Promise<void>;
   getUploadedUrls(): Promise<Set<string>>;
   getFailedUrls(): Promise<Set<string>>;
   getDuplicateUrls(): Promise<Set<string>>;
@@ -183,6 +185,30 @@ export async function createDb(databaseUrl: string): Promise<DbClient> {
         SELECT * FROM documents WHERE source_url = ${url}
       `;
       return rows[0] || null;
+    },
+
+    async getProcessedUrlHashes() {
+      const rows = await sql<{ h: string }[]>`
+        SELECT md5(source_url) as h FROM documents WHERE status IN ('uploaded', 'duplicate')
+      `;
+      return new Set(rows.map((r) => r.h));
+    },
+
+    async upsertDuplicateBatch(records) {
+      if (records.length === 0) return;
+      const values = records.map((_, i) => {
+        const b = i * 6;
+        return `($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5}, $${b + 6})`;
+      }).join(", ");
+      const params = records.flatMap((r) => [
+        r.id, r.sourceUrl, r.crawlId, r.filename, "duplicate", "cross-crawl duplicate",
+      ]);
+      await sql.unsafe(
+        `INSERT INTO documents (id, source_url, crawl_id, original_filename, status, error_message)
+         VALUES ${values}
+         ON CONFLICT (id) DO NOTHING`,
+        params
+      );
     },
 
     async getUploadedUrls() {
