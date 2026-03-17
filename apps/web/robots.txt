@@ -1,0 +1,24 @@
+# https://docxcorp.us/robots.txt
+
+User-agent: *
+Allow: /
+Sitemap: https://docxcorp.us/sitemap.xml
+
+# AI-friendly content available at /llms.txt
+# See https://llmstxt.org for the specification
+
+# Block AI training crawlers (we allow retrieval bots like GPTBot, ClaudeBot, Amazonbot)
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /

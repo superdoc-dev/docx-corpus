@@ -1,0 +1,44 @@
+# docx-corpus
+
+> The largest classified corpus of Word documents on the public web.
+
+docx-corpus is an open dataset of 736K+ .docx files collected from the public web, classified into 10 document types and 9 topics across 46+ languages. It is built for document processing research, NLP benchmarking, and training models that work with real-world Word documents.
+
+Documents are classified using ModernBERT with an average confidence of 82%.
+
+Built by [SuperDoc](https://www.superdoc.dev), the document rendering engine.
+
+## Document Types
+
+- [Legal](https://docxcorp.us/types/legal): Contracts, agreements, legal notices, court filings
+- [Forms](https://docxcorp.us/types/forms): Application forms, surveys, questionnaires, fillable templates
+- [Educational](https://docxcorp.us/types/educational): Course materials, syllabi, assignments, lecture notes
+- [Administrative](https://docxcorp.us/types/administrative): Meeting minutes, agendas, organizational documents
+- [Policies](https://docxcorp.us/types/policies): Policy documents, procedures, guidelines, handbooks
+- [Correspondence](https://docxcorp.us/types/correspondence): Letters, memos, formal communications
+- [Reports](https://docxcorp.us/types/reports): Annual reports, research reports, financial reports
+- [Reference](https://docxcorp.us/types/reference): Reference materials, glossaries, directories, catalogs
+- [Technical](https://docxcorp.us/types/technical): Technical documentation, specifications, user manuals
+- [Creative](https://docxcorp.us/types/creative): Creative writing, marketing materials, newsletters
+
+## Topics
+
+- [Government](https://docxcorp.us/topics/government): Public administration and civic organizations
+- [Education](https://docxcorp.us/topics/education): Schools, universities, research institutions
+- [Healthcare](https://docxcorp.us/topics/healthcare): Hospitals, clinics, health organizations
+- [General](https://docxcorp.us/topics/general): Cross-sector documents
+- [Legal / Judicial](https://docxcorp.us/topics/legal_judicial): Law firms, courts, regulatory bodies
+- [Finance](https://docxcorp.us/topics/finance): Banks, investment firms, insurance
+- [Environment](https://docxcorp.us/topics/environment): Environmental agencies, sustainability
+- [Nonprofit](https://docxcorp.us/topics/nonprofit): NGOs, charities, foundations
+- [Technology](https://docxcorp.us/topics/technology): Tech companies, software, IT
+
+## Links
+
+- Homepage: https://docxcorp.us
+- Browse all types: https://docxcorp.us/types
+- Browse all topics: https://docxcorp.us/topics
+- GitHub: https://github.com/superdoc-dev/docx-corpus
+- HuggingFace: https://huggingface.co/datasets/superdoc-dev/docx-corpus
+- API: https://api.docxcorp.us
+- Takedown requests: help@docxcorp.us
