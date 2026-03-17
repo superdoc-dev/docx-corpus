@@ -24,4 +24,5 @@ jobs:
           R2_BUCKET: s3://${{ secrets.R2_BUCKET_NAME }}
         run: |
           aws s3 cp apps/web/index.html "$R2_BUCKET/index.html" --endpoint-url "$R2_ENDPOINT"
+          aws s3 cp apps/web/sitemap.xml "$R2_BUCKET/sitemap.xml" --endpoint-url "$R2_ENDPOINT"
           aws s3 cp apps/web/public/ "$R2_BUCKET/public/" --recursive --endpoint-url "$R2_ENDPOINT"

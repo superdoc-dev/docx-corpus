@@ -15,11 +15,55 @@
   <title>docx-corpus — The largest classified corpus of Word documents</title>
   <meta name="description"
     content="736K+ .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages. Open dataset for document processing research.">
+  <link rel="canonical" href="https://docxcorp.us">
   <meta property="og:title" content="docx-corpus">
   <meta property="og:description"
     content="The largest classified corpus of Word documents. 736K+ files across 46+ languages.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://docxcorp.us">
+  <meta property="og:image" content="https://docxcorp.us/public/logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="docx-corpus — The largest classified corpus of Word documents">
+  <meta name="twitter:description"
+    content="736K+ .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.">
+  <meta name="twitter:image" content="https://docxcorp.us/public/logo.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "name": "docx-corpus",
+    "description": "The largest classified corpus of Word documents. 736K+ .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.",
+    "url": "https://docxcorp.us",
+    "license": "https://github.com/superdoc-dev/docx-corpus/blob/main/LICENSE",
+    "creator": {
+      "@type": "Organization",
+      "name": "SuperDoc",
+      "url": "https://superdoc.dev"
+    },
+    "distribution": [
+      {
+        "@type": "DataDownload",
+        "encodingFormat": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "contentUrl": "https://docxcorp.us"
+      }
+    ],
+    "keywords": ["docx", "word documents", "NLP", "document processing", "corpus", "dataset", "OOXML"],
+    "inLanguage": ["en", "de", "fr", "es", "pt", "zh", "ja", "ko", "ar"],
+    "measurementTechnique": "Automated classification using ModernBERT",
+    "variableMeasured": [
+      {
+        "@type": "PropertyValue",
+        "name": "document_type",
+        "description": "Document type classification (e.g., report, letter, resume)"
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "document_topic",
+        "description": "Document topic classification (e.g., business, education, legal)"
+      }
+    ]
+  }
+  </script>
   <link rel="icon" type="image/x-icon" href="/public/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
