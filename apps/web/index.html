@@ -1003,8 +1003,14 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
   <script src="https://cdn.jsdelivr.net/npm/superdoc/dist/superdoc.umd.js"></script>
   <script>
     (function () {
-      // ---------- state ----------
-      let filters = { type: '', topic: '', lang: '', minConf: 0 };
+      // ---------- state (seed from URL params) ----------
+      const _params = new URLSearchParams(window.location.search);
+      let filters = {
+        type: _params.get('type') || '',
+        topic: _params.get('topic') || '',
+        lang: _params.get('lang') || '',
+        minConf: parseFloat(_params.get('min_confidence') || '0'),
+      };
       let currentPage = 1;
       const PAGE_SIZE = 25;
 
@@ -1366,6 +1372,14 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
         });
 
         $('manifest-btn').addEventListener('click', downloadManifest);
+
+        // Scroll to explore section if URL has filters or #explore/#download hash
+        const hasFilters = filters.type || filters.topic || filters.lang || filters.minConf > 0;
+        const hash = window.location.hash;
+        if (hasFilters || hash === '#explore' || hash === '#download') {
+          const target = $('explore');
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        }
 
         // Preview modal controls
         $('preview-close').addEventListener('click', closePreview);

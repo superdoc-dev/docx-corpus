@@ -508,7 +508,6 @@ function renderPage(data: PageData): string {
       <p class="hero-description">
         A collection of ${fmt(total)}+ ${label.toLowerCase()} Word documents from the public web.
         ${esc(description)}
-        Classified using ModernBERT with ${avgConfidence}% average confidence across ${langCount} languages.
       </p>
       <p class="hero-by">Built by 🦋 <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a></p>
       <div class="numbers">
