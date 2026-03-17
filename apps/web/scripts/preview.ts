@@ -22,6 +22,18 @@ Bun.serve({
       return new Response(file);
     }
 
+    // Clean URLs: /types/legal → /types/legal.html (generated pages)
+    const htmlFile = Bun.file(WEB_DIR + path + ".html");
+    if (await htmlFile.exists()) {
+      return new Response(htmlFile, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+    }
+
+    // Directory index: /types → /types/index.html
+    const indexFile = Bun.file(WEB_DIR + path + "/index.html");
+    if (await indexFile.exists()) {
+      return new Response(indexFile, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+    }
+
     return new Response("Not found", { status: 404 });
   },
 });

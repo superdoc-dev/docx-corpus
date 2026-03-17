@@ -7,7 +7,6 @@ on:
     paths:
       - "apps/web/**"
       - "!apps/web/worker/**"
-      - "!apps/web/scripts/**"
 
 jobs:
   deploy:
@@ -16,6 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Generate pages
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: bun run apps/web/scripts/generate-pages.ts
+
       - name: Upload site to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -23,6 +29,27 @@ jobs:
           R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
           R2_BUCKET: s3://${{ secrets.R2_BUCKET_NAME }}
         run: |
+          # Static files
           aws s3 cp apps/web/index.html "$R2_BUCKET/index.html" --endpoint-url "$R2_ENDPOINT"
           aws s3 cp apps/web/sitemap.xml "$R2_BUCKET/sitemap.xml" --endpoint-url "$R2_ENDPOINT"
           aws s3 cp apps/web/public/ "$R2_BUCKET/public/" --recursive --endpoint-url "$R2_ENDPOINT"
+
+          # Generated type pages (clean URLs: /types/legal, not /types/legal.html)
+          for f in apps/web/types/*.html; do
+            name=$(basename "$f" .html)
+            if [ "$name" = "index" ]; then
+              aws s3 cp "$f" "$R2_BUCKET/types" --content-type "text/html; charset=utf-8" --endpoint-url "$R2_ENDPOINT"
+            else
+              aws s3 cp "$f" "$R2_BUCKET/types/$name" --content-type "text/html; charset=utf-8" --endpoint-url "$R2_ENDPOINT"
+            fi
+          done
+
+          # Generated topic pages
+          for f in apps/web/topics/*.html; do
+            name=$(basename "$f" .html)
+            if [ "$name" = "index" ]; then
+              aws s3 cp "$f" "$R2_BUCKET/topics" --content-type "text/html; charset=utf-8" --endpoint-url "$R2_ENDPOINT"
+            else
+              aws s3 cp "$f" "$R2_BUCKET/topics/$name" --content-type "text/html; charset=utf-8" --endpoint-url "$R2_ENDPOINT"
+            fi
+          done

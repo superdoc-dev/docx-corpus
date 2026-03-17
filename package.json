@@ -15,7 +15,9 @@
     "build": "bun run --cwd packages/scraper build && bun run --cwd apps/cli build",
     "release:cli": "bun run --cwd apps/cli release",
     "setup:extractor": "bun run --cwd packages/extractor setup",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "dev:web": "bun run apps/web/scripts/preview.ts",
+    "dev:web:generate": "bun run apps/web/scripts/generate-pages.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.6",
