@@ -30,6 +30,7 @@ jobs:
           R2_BUCKET: s3://${{ secrets.R2_BUCKET_NAME }}
         run: |
           # Static files
+          aws s3 cp apps/web/og-image.png "$R2_BUCKET/og-image.png" --endpoint-url "$R2_ENDPOINT"
           aws s3 cp apps/web/index.html "$R2_BUCKET/index.html" --endpoint-url "$R2_ENDPOINT"
           aws s3 cp apps/web/sitemap.xml "$R2_BUCKET/sitemap.xml" --endpoint-url "$R2_ENDPOINT"
           aws s3 cp apps/web/robots.txt "$R2_BUCKET/robots.txt" --endpoint-url "$R2_ENDPOINT"

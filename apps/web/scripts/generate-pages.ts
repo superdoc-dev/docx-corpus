@@ -303,11 +303,13 @@ function sharedHead(title: string, description: string, canonicalPath: string, k
   <meta property="og:description" content="${esc(description)}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="${url}">
-  <meta property="og:image" content="${SITE}/public/logo.png">
+  <meta property="og:image" content="${SITE}/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(title)}">
   <meta name="twitter:description" content="${esc(description)}">
-  <meta name="twitter:image" content="${SITE}/public/logo.png">
+  <meta name="twitter:image" content="${SITE}/og-image.png">
   <link rel="icon" type="image/x-icon" href="/public/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
