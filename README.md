@@ -261,4 +261,4 @@ MIT
 
 ---
 
-Built by 🦋 [SuperDoc](https://superdoc.dev)
+Built by [SuperDoc](https://superdoc.dev) — the document engine for DOCX files.
