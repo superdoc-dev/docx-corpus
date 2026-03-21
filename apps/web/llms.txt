@@ -6,7 +6,7 @@ docx-corpus is an open dataset of 736K+ .docx files collected from the public we
 
 Documents are classified using ModernBERT with an average confidence of 82%.
 
-Built by [SuperDoc](https://www.superdoc.dev), the document rendering engine.
+Built by [SuperDoc](https://www.superdoc.dev), the document engine for DOCX files.
 
 ## Document Types
 
