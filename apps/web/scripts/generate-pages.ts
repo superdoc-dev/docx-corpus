@@ -334,7 +334,7 @@ function sharedHeader(activeKind: "type" | "topic"): string {
 function sharedFooter(): string {
   return `
   <div class="site-footer">
-    <span>Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=footer">SuperDoc</a> — the document engine for DOCX files.</span>
+    <span>Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=footer">SuperDoc</a> — DOCX editing and tooling.</span>
     <span>Takedown requests: <a href="mailto:help@docxcorp.us">help@docxcorp.us</a></span>
   </div>`;
 }
@@ -511,7 +511,7 @@ function renderPage(data: PageData): string {
         A collection of ${fmt(total)}+ ${label.toLowerCase()} Word documents from the public web.
         ${esc(description)}
       </p>
-      <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a> — the document engine for DOCX files.</p>
+      <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a> — DOCX editing and tooling.</p>
       <div class="numbers">
         <div><div class="num-val">${fmt(total)}</div><div class="num-label">documents</div></div>
         <div><div class="num-val">${langCount}</div><div class="num-label">languages</div></div>
@@ -592,7 +592,7 @@ function renderIndexPage(
         The docx-corpus dataset classifies documents into ${items.length} ${kindPlural.toLowerCase()}.
         Click on any ${kind} to explore its documents, language distribution, and download options.
       </p>
-      <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a> — the document engine for DOCX files.</p>
+      <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a> — DOCX editing and tooling.</p>
     </section>
     <div class="index-grid">${cards}
     </div>

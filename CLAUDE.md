@@ -1,6 +1,6 @@
 # docx-corpus
 
-The largest open corpus of .docx files (~800K documents) for document processing research. Built by [SuperDoc](https://superdoc.dev) — the document engine for DOCX files.
+The largest open corpus of .docx files (~800K documents) for document processing research. Built by [SuperDoc](https://superdoc.dev) — DOCX editing and tooling.
 
 ## Architecture
 
