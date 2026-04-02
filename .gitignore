@@ -11,6 +11,7 @@ dist/
 .env
 .env.local
 .dev.vars
+.mcp.json
 
 # Local corpus cache
 corpus/
