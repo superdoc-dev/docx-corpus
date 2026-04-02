@@ -206,7 +206,8 @@ _Use on homepage hero, GitHub README, HuggingFace dataset card._
 ### Colors
 
 **Primary — Coral**
-`#F97B6D` — Signature accent. Links, highlights, badge backgrounds, the "docx" half of the two-tone wordmark.
+`#F97B6D` — Decorative accent. Bar fills, badge backgrounds, hover states, borders, active indicators.
+`#D4594C` — Coral text. Links, brand accent text, kicker labels — use whenever coral appears as text on a white background (WCAG AA 4.56:1).
 
 **Text — Charcoal**
 `#2D2D2D` — Headings, body copy, the "corpus" half of the wordmark.
@@ -214,7 +215,7 @@ _Use on homepage hero, GitHub README, HuggingFace dataset card._
 **Supporting palette**:
 | Role | Hex | Usage |
 |---|---|---|
-| Muted | `#9CA3AF` | Secondary text, metadata, counts |
+| Muted | `#6B7280` | Secondary text, metadata, counts (WCAG AA 4.6:1) |
 | Background | `#FFFFFF` | Page background, cards |
 | Dark background | `#18181B` | Dark mode surfaces |
 | Dark text | `#E5E5E5` | Dark mode body text |
