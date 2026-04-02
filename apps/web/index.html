@@ -70,7 +70,6 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
-  <link href="https://cdn.jsdelivr.net/npm/superdoc/dist/style.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -1002,7 +1001,6 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/superdoc/dist/superdoc.umd.js"></script>
   <script>
     (function () {
       // ---------- state (seed from URL params) ----------
@@ -1043,6 +1041,30 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
         return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
 
+      // ---------- lazy-load SuperDoc ----------
+      let superdocLoaded = false;
+      let superdocLoading = null;
+
+      function loadSuperdoc() {
+        if (superdocLoaded) return Promise.resolve();
+        if (superdocLoading) return superdocLoading;
+
+        superdocLoading = new Promise(function (resolve, reject) {
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://cdn.jsdelivr.net/npm/superdoc/dist/style.css';
+          document.head.appendChild(link);
+
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/superdoc/dist/superdoc.umd.js';
+          script.onload = function () { superdocLoaded = true; resolve(); };
+          script.onerror = function () { reject(new Error('Failed to load SuperDoc')); };
+          document.body.appendChild(script);
+        });
+
+        return superdocLoading;
+      }
+
       // ---------- preview ----------
       let currentSuperdoc = null;
 
@@ -1053,6 +1075,7 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
         $('preview-title').textContent = name;
         $('preview-dl').href = url;
         $('preview-loading').style.display = 'flex';
+        $('preview-loading').textContent = 'Loading preview…';
         $('preview-container').innerHTML = '';
         $('preview-overlay').classList.add('open');
         document.body.style.overflow = 'hidden';
@@ -1063,23 +1086,27 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
           currentSuperdoc = null;
         }
 
-        try {
-          currentSuperdoc = new SuperDocLibrary.SuperDoc({
-            selector: '#preview-container',
-            document: url,
-            documentMode: 'viewing',
-            role: 'viewer',
-            hideToolbar: true,
-            onReady: function () {
-              $('preview-loading').style.display = 'none';
-            },
-            onContentError: function () {
-              $('preview-loading').textContent = 'Could not render this document';
-            },
-          });
-        } catch {
+        loadSuperdoc().then(function () {
+          try {
+            currentSuperdoc = new SuperDocLibrary.SuperDoc({
+              selector: '#preview-container',
+              document: url,
+              documentMode: 'viewing',
+              role: 'viewer',
+              hideToolbar: true,
+              onReady: function () {
+                $('preview-loading').style.display = 'none';
+              },
+              onContentError: function () {
+                $('preview-loading').textContent = 'Could not render this document';
+              },
+            });
+          } catch {
+            $('preview-loading').textContent = 'Could not load SuperDoc viewer';
+          }
+        }).catch(function () {
           $('preview-loading').textContent = 'Could not load SuperDoc viewer';
-        }
+        });
       }
 
       function closePreview() {
