@@ -467,7 +467,7 @@ function renderPage(data: PageData): string {
   const filterParam = kind === "type" ? `type=${id}` : `topic=${id}`;
 
   const title = `${label} Word Documents — docx-corpus`;
-  const metaDesc = `${fmt(total)}+ ${label.toLowerCase()} .docx files across ${langCount} languages. Open dataset for NLP and document processing research. Download from docx-corpus.`;
+  const metaDesc = `${fmt(total)}+ real ${label.toLowerCase()} .docx files across ${langCount} languages. Open dataset for document processing research.`;
 
   const langItems = languages.map((l) => ({
     label: LANG_NAMES[l.code] || l.code,
@@ -508,7 +508,7 @@ function renderPage(data: PageData): string {
       <div class="hero-kicker">${esc(kindLabel)}</div>
       <h1>${esc(label)} Documents</h1>
       <p class="hero-description">
-        A collection of ${fmt(total)}+ ${label.toLowerCase()} Word documents from the public web.
+        ${fmt(total)}+ real ${label.toLowerCase()} Word documents from the public web.
         ${esc(description)}
       </p>
       <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a> — DOCX editing and tooling.</p>
@@ -589,8 +589,8 @@ function renderIndexPage(
       <div class="hero-kicker">Browse by ${kind === "type" ? "document type" : "topic"}</div>
       <h1>Document ${kindPlural}</h1>
       <p class="hero-description">
-        The docx-corpus dataset classifies documents into ${items.length} ${kindPlural.toLowerCase()}.
-        Click on any ${kind} to explore its documents, language distribution, and download options.
+        ${items.length} ${kindPlural.toLowerCase()} across 46+ languages.
+        Click any ${kind} to explore its documents, language distribution, and download options.
       </p>
       <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a> — DOCX editing and tooling.</p>
     </section>

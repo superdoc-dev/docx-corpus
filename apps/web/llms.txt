@@ -1,12 +1,14 @@
 # docx-corpus
 
-> The largest classified corpus of Word documents on the public web.
+> Every Word document on the public web. Classified and open.
 
-docx-corpus is an open dataset of 736K+ .docx files collected from the public web, classified into 10 document types and 9 topics across 46+ languages. It is built for document processing research, NLP benchmarking, and training models that work with real-world Word documents.
+The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages. Built for document processing research, NLP benchmarking, and training models that work with real-world Word documents.
+
+The entire document AI ecosystem runs on scanned images and PDFs. The format people actually write in had no dataset — until docx-corpus.
 
 Documents are classified using ModernBERT with an average confidence of 82%.
 
-Built by [SuperDoc](https://www.superdoc.dev), DOCX editing and tooling.
+Built by [SuperDoc](https://www.superdoc.dev) — DOCX editing and tooling.
 
 ## Document Types
 

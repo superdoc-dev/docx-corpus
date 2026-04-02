@@ -5,7 +5,9 @@
 [![codecov](https://codecov.io/gh/superdoc-dev/docx-corpus/graph/badge.svg)](https://codecov.io/gh/superdoc-dev/docx-corpus)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-The largest open corpus of classified Word documents. 736K+ `.docx` files from the public web, classified into 10 document types and 9 topics across 46+ languages.
+The largest open corpus of classified Word documents. 736K+ real `.docx` files from the public web, classified into 10 document types and 9 topics across 46+ languages.
+
+The entire document AI research ecosystem runs on scanned images and PDFs. The format people actually write in had no dataset. This is that dataset.
 
 **[docxcorp.us](https://docxcorp.us)** · **[HuggingFace](https://huggingface.co/datasets/superdoc-dev/docx-corpus)** · **[API](https://api.docxcorp.us/stats)**
 
@@ -186,7 +188,7 @@ Uses Google Gemini `gemini-embedding-001` (3072 dimensions).
 
 ## Web & API
 
-**[docxcorp.us](https://docxcorp.us)** — Browse, filter, and preview documents with SuperDoc.
+**[docxcorp.us](https://docxcorp.us)** — Browse, filter, and preview documents with [SuperDoc](https://superdoc.dev) — DOCX editing and tooling.
 
 **API** (Cloudflare Worker):
 
