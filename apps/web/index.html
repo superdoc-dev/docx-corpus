@@ -498,7 +498,7 @@
     .dtable .fhash {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.68rem;
-      color: #ccc;
+      color: #6B7280;
     }
 
     .doc-link {
@@ -525,12 +525,12 @@
 
     .label-type {
       background: #fef0ee;
-      color: #C9493D;
+      color: #A3362B;
     }
 
     .label-topic {
       background: #f0f4ff;
-      color: #6b8cce;
+      color: #4A6BA8;
     }
 
     .mono {
@@ -540,11 +540,11 @@
     }
 
     .conf-g {
-      color: #059669;
+      color: #047857;
     }
 
     .conf-y {
-      color: #d97706;
+      color: #b45309;
     }
 
     .conf-r {
@@ -1331,7 +1331,7 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
           langHtml += `<div class="lang-bar${active ? ' lang-active' : ''}" style="flex:${l.percentage};background:${color}" data-lang="${l.code}" title="${l.name} ${l.percentage}%">${l.code.toUpperCase()}</div>`;
         });
         if (otherPct > 0) {
-          langHtml += `<div class="lang-bar" style="flex:${otherPct};background:#d0d0d0;color:#888;font-size:0.6rem">+${languages.length - 10}</div>`;
+          langHtml += `<div class="lang-bar" style="flex:${otherPct};background:#d0d0d0;color:#4B5563;font-size:0.6rem">+${languages.length - 10}</div>`;
         }
 
         // Legend: ALL languages, clickable
