@@ -246,9 +246,9 @@ function sharedStyles(): string {
     .bar-label { font-size: 0.78rem; font-weight: 500; width: 90px; flex-shrink: 0; text-align: right; }
     .bar-track { flex: 1; height: 24px; background: #f9fafb; border-radius: 4px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 0.68rem; font-weight: 600; color: white; font-family: 'JetBrains Mono', monospace; min-width: 20px; }
-    .bar-fill.primary { background: #F97B6D; }
-    .bar-fill.muted { background: #FDB5AD; }
-    .bar-fill.light { background: #FDD8D4; color: #6B7280; }
+    .bar-fill.primary { background: #C9493D; }
+    .bar-fill.muted { background: #D4706A; }
+    .bar-fill.light { background: #E8A19C; color: #4B2B27; }
     .related-section { padding: 0 0 40px; border-bottom: 1px solid #f0f0f0; margin-bottom: 40px; }
     .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
     .related-card { padding: 16px 20px; border: 1px solid #f0f0f0; border-radius: 8px; text-decoration: none; transition: border-color 0.15s; display: block; }
@@ -313,7 +313,8 @@ function sharedHead(title: string, description: string, canonicalPath: string, k
   <link rel="icon" type="image/x-icon" href="/public/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
   <style>${sharedStyles()}</style>`;
 }
 
@@ -498,7 +499,7 @@ function renderPage(data: PageData): string {
 </head>
 <body>
   ${sharedHeader(kind)}
-  <div class="container">
+  <main class="container">
     <div class="breadcrumb">
       <a href="/">Home</a><span class="sep">/</span>
       <a href="/${urlPrefix}">${kindPlural}</a><span class="sep">/</span>
@@ -536,7 +537,7 @@ function renderPage(data: PageData): string {
         <a href="/?${filterParam}#download" class="btn-primary">Generate Manifest &darr;</a>
       </div>
     </section>
-  </div>
+  </main>
   ${sharedFooter()}
 </body>
 </html>`;
@@ -580,7 +581,7 @@ function renderIndexPage(
 </head>
 <body>
   ${sharedHeader(kind)}
-  <div class="container">
+  <main class="container">
     <div class="breadcrumb">
       <a href="/">Home</a><span class="sep">/</span>
       ${kindPlural}
@@ -596,7 +597,7 @@ function renderIndexPage(
     </section>
     <div class="index-grid">${cards}
     </div>
-  </div>
+  </main>
   ${sharedFooter()}
 </body>
 </html>`;
