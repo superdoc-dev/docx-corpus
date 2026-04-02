@@ -216,22 +216,22 @@ function sharedStyles(): string {
     header { display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; max-width: 1200px; margin: 0 auto; }
     .brand { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.02em; }
     .brand a { text-decoration: none; color: #2D2D2D; }
-    .brand .accent { color: #D4594C; }
+    .brand .accent { color: #C9493D; }
     .links { display: flex; gap: 24px; }
     .links a { text-decoration: none; color: #6B7280; font-size: 0.82rem; font-weight: 500; transition: color 0.15s; }
     .links a:hover { color: #2D2D2D; }
-    .links a.active { color: #D4594C; }
+    .links a.active { color: #C9493D; }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
     .breadcrumb { font-size: 0.78rem; color: #6B7280; padding: 16px 0 0; }
     .breadcrumb a { color: #6B7280; text-decoration: none; }
-    .breadcrumb a:hover { color: #D4594C; }
+    .breadcrumb a:hover { color: #C9493D; }
     .breadcrumb .sep { margin: 0 6px; }
     .hero { padding: 40px 0 48px; border-bottom: 1px solid #f0f0f0; margin-bottom: 40px; }
-    .hero-kicker { font-size: 0.72rem; font-weight: 600; color: #D4594C; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+    .hero-kicker { font-size: 0.72rem; font-weight: 600; color: #C9493D; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
     .hero h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 16px; max-width: 700px; }
     .hero-description { font-size: 1rem; color: #6B7280; line-height: 1.7; max-width: 640px; margin-bottom: 12px; }
     .hero-by { font-size: 0.85rem; color: #6B7280; margin-bottom: 32px; }
-    .hero-by a { color: #D4594C; text-decoration: none; font-weight: 600; }
+    .hero-by a { color: #C9493D; text-decoration: none; font-weight: 600; }
     .hero-by a:hover { text-decoration: underline; }
     .numbers { display: flex; gap: 48px; }
     .num-val { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; }
@@ -266,12 +266,12 @@ function sharedStyles(): string {
     tbody tr:hover { background: #fafafa; }
     .url-cell { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #6B7280; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; }
-    .badge-type { background: #FEF0EE; color: #D4594C; }
+    .badge-type { background: #FEF0EE; color: #C9493D; }
     .badge-topic { background: #EEF2FF; color: #6366F1; }
     .badge-lang { background: #F0FDF4; color: #16A34A; }
-    .badge-conf { background: #fef8f7; color: #D4594C; font-family: 'JetBrains Mono', monospace; }
+    .badge-conf { background: #fef8f7; color: #C9493D; font-family: 'JetBrains Mono', monospace; }
     .view-all-row { text-align: center; padding: 20px 0; }
-    .view-all-row a { color: #D4594C; text-decoration: none; font-weight: 600; font-size: 0.85rem; }
+    .view-all-row a { color: #C9493D; text-decoration: none; font-weight: 600; font-size: 0.85rem; }
     .view-all-row a:hover { text-decoration: underline; }
     .cta-section { padding: 40px 0; border-bottom: 1px solid #f0f0f0; }
     .cta-box { background: #fef8f7; border: 1px solid #fdd8d4; border-radius: 12px; padding: 32px; display: flex; align-items: center; justify-content: space-between; }
@@ -574,7 +574,7 @@ function renderIndexPage(
     .index-card { padding: 24px; border: 1px solid #f0f0f0; border-radius: 12px; text-decoration: none; transition: border-color 0.15s; display: block; }
     .index-card:hover { border-color: #F97B6D; }
     .index-card-label { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
-    .index-card-count { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #D4594C; margin-bottom: 8px; }
+    .index-card-count { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #C9493D; margin-bottom: 8px; }
     .index-card-desc { font-size: 0.82rem; color: #6B7280; line-height: 1.5; }
   </style>
 </head>
