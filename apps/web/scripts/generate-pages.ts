@@ -490,7 +490,14 @@ function renderPage(data: PageData): string {
     "name": "docx-corpus — ${esc(label)} Documents",
     "description": "${esc(metaDesc)}",
     "url": "${SITE}/${urlPrefix}/${id}",
-    "isPartOf": { "@type": "Dataset", "name": "docx-corpus", "url": "${SITE}" },
+    "isPartOf": {
+      "@type": "Dataset",
+      "name": "docx-corpus",
+      "description": "The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.",
+      "url": "${SITE}",
+      "license": "https://github.com/superdoc-dev/docx-corpus/blob/main/LICENSE",
+      "creator": { "@type": "Organization", "name": "SuperDoc", "url": "https://superdoc.dev" }
+    },
     "license": "https://github.com/superdoc-dev/docx-corpus/blob/main/LICENSE",
     "creator": { "@type": "Organization", "name": "SuperDoc", "url": "https://superdoc.dev" },
     "keywords": ["docx", "${label.toLowerCase()}", "word documents", "dataset", "NLP", "document processing"]
@@ -570,6 +577,23 @@ function renderIndexPage(
   return `<!DOCTYPE html>
 <html lang="en">
 <head>${sharedHead(title, description, `/${urlPrefix}`, kind, "")}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "${esc(title)}",
+    "description": "${esc(description)}",
+    "url": "${SITE}/${urlPrefix}",
+    "isPartOf": {
+      "@type": "Dataset",
+      "name": "docx-corpus",
+      "description": "The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.",
+      "url": "${SITE}",
+      "license": "https://github.com/superdoc-dev/docx-corpus/blob/main/LICENSE",
+      "creator": { "@type": "Organization", "name": "SuperDoc", "url": "https://superdoc.dev" }
+    }
+  }
+  </script>
   <style>
     .index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding-bottom: 64px; }
     .index-card { padding: 24px; border: 1px solid #f0f0f0; border-radius: 12px; text-decoration: none; transition: border-color 0.15s; display: block; }
