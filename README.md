@@ -128,6 +128,10 @@ corpus scrape --crawl CC-MAIN-2025-51 --force  # Re-process existing
 - Content-addressed storage (`documents/{sha256}.docx`)
 - Deduplication by content hash
 
+#### Known issue: WARC trailing bytes (fixed for new scrapes)
+
+Documents scraped before [`477d1b9`](https://github.com/superdoc-dev/docx-corpus/commit/477d1b9) may contain a 4-byte WARC record terminator (`\r\n\r\n`) after ZIP EOCD. Future scrapes are fixed; if you have older local copies, run `python3 scripts/fix_trailing_warc_bytes.py` to inspect or repair them. This was confirmed to trigger Word for Mac's unreadable-content warning for the sample in [#8](https://github.com/superdoc-dev/docx-corpus/issues/8).
+
 ### 3. Extraction
 
 Extracts text using Docling (persistent Python subprocess), detects language with lingua.
