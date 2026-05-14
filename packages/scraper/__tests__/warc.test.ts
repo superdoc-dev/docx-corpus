@@ -44,25 +44,31 @@ describe("findPattern", () => {
 });
 
 describe("parseWarcRecord", () => {
-  // Helper to build WARC record bytes
+  // Helper to build WARC record bytes with accurate WARC Content-Length
+  // (the parser bounds httpData by this value, so test fixtures must be honest).
   function buildWarcRecord(options: {
     httpStatus?: number;
     contentType?: string;
     body?: Uint8Array | string;
+    appendRecordTerminator?: boolean;
   }): Uint8Array {
-    const { httpStatus = 200, contentType = "text/plain", body = "" } = options;
+    const { httpStatus = 200, contentType = "text/plain", body = "", appendRecordTerminator = false } = options;
     const bodyBytes = typeof body === "string" ? new TextEncoder().encode(body) : body;
 
-    // WARC header ends with \r\n\r\n
-    const warcHeader = `WARC/1.0\r\nWARC-Type: response\r\nContent-Length: 100\r\n\r\n`;
-    // HTTP header ends with \r\n\r\n
     const httpHeader = `HTTP/1.1 ${httpStatus} OK\r\nContent-Type: ${contentType}\r\n\r\n`;
+    const httpBytes = new TextEncoder().encode(httpHeader);
+    const warcContentLength = httpBytes.length + bodyBytes.length;
 
-    const parts = [
+    const warcHeader = `WARC/1.0\r\nWARC-Type: response\r\nContent-Length: ${warcContentLength}\r\n\r\n`;
+
+    const parts: Uint8Array[] = [
       new TextEncoder().encode(warcHeader),
-      new TextEncoder().encode(httpHeader),
+      httpBytes,
       bodyBytes,
     ];
+    if (appendRecordTerminator) {
+      parts.push(new Uint8Array([13, 10, 13, 10]));
+    }
 
     const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
     const result = new Uint8Array(totalLength);
@@ -165,6 +171,114 @@ describe("parseWarcRecord", () => {
     const result = parseWarcRecord(data);
     expect(result.content.length).toBe(0);
     expect(result.contentLength).toBe(0);
+  });
+
+  test("respects HTTP Content-Length and excludes WARC record terminator", () => {
+    // WARC records end with \r\n\r\n after the content block. If the parser
+    // slices "everything after HTTP headers" it includes those 4 bytes. The
+    // body itself is exactly HTTP Content-Length bytes; anything after is
+    // record structure and must not appear in the returned content.
+    const httpHeader = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\n`;
+    const body = "hello";
+    const httpBytes = new TextEncoder().encode(httpHeader);
+    const bodyBytes = new TextEncoder().encode(body);
+    const warcContentLength = httpBytes.length + bodyBytes.length;
+    const warcHeader = `WARC/1.0\r\nWARC-Type: response\r\nContent-Length: ${warcContentLength}\r\n\r\n`;
+
+    const parts = [
+      new TextEncoder().encode(warcHeader),
+      httpBytes,
+      bodyBytes,
+      new Uint8Array([13, 10, 13, 10]), // WARC record terminator (outside Content-Length)
+    ];
+    const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
+    const data = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const part of parts) {
+      data.set(part, offset);
+      offset += part.length;
+    }
+
+    const result = parseWarcRecord(data);
+    expect(new TextDecoder().decode(result.content)).toBe("hello");
+    expect(result.contentLength).toBe(5);
+  });
+
+  test("WARC Content-Length alone excludes record terminator (no HTTP Content-Length)", () => {
+    // Responses without HTTP Content-Length (e.g. chunked Transfer-Encoding)
+    // must still avoid pulling the WARC \r\n\r\n separator into the body.
+    // The WARC content-block length is structural and bounds httpData.
+    const httpHeader = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n`;
+    const body = "no-http-clen";
+    const httpBytes = new TextEncoder().encode(httpHeader);
+    const bodyBytes = new TextEncoder().encode(body);
+    const warcContentLength = httpBytes.length + bodyBytes.length;
+    const warcHeader = `WARC/1.0\r\nWARC-Type: response\r\nContent-Length: ${warcContentLength}\r\n\r\n`;
+
+    const parts = [
+      new TextEncoder().encode(warcHeader),
+      httpBytes,
+      bodyBytes,
+      new Uint8Array([13, 10, 13, 10]), // WARC record terminator
+    ];
+    const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
+    const data = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const part of parts) {
+      data.set(part, offset);
+      offset += part.length;
+    }
+
+    const result = parseWarcRecord(data);
+    expect(new TextDecoder().decode(result.content)).toBe("no-http-clen");
+  });
+
+  test("falls back to slicing to end when no Content-Length present at all", () => {
+    // Defensive: if WARC Content-Length is missing too (malformed input),
+    // preserve legacy behaviour and take everything after HTTP headers.
+    const warcHeader = `WARC/1.0\r\nWARC-Type: response\r\n\r\n`;
+    const httpHeader = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n`;
+    const body = "no-clen-anywhere";
+
+    const parts = [
+      new TextEncoder().encode(warcHeader),
+      new TextEncoder().encode(httpHeader),
+      new TextEncoder().encode(body),
+    ];
+    const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
+    const data = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const part of parts) {
+      data.set(part, offset);
+      offset += part.length;
+    }
+
+    const result = parseWarcRecord(data);
+    expect(new TextDecoder().decode(result.content)).toBe("no-clen-anywhere");
+  });
+
+  test("falls back when Content-Length exceeds available data", () => {
+    // Defensive: if a malformed WARC record claims Content-Length larger than
+    // the buffer, don't read past the end. Fall back to slice-to-end.
+    const warcHeader = `WARC/1.0\r\nWARC-Type: response\r\n\r\n`;
+    const httpHeader = `HTTP/1.1 200 OK\r\nContent-Length: 9999999\r\n\r\n`;
+    const body = "short";
+
+    const parts = [
+      new TextEncoder().encode(warcHeader),
+      new TextEncoder().encode(httpHeader),
+      new TextEncoder().encode(body),
+    ];
+    const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
+    const data = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const part of parts) {
+      data.set(part, offset);
+      offset += part.length;
+    }
+
+    const result = parseWarcRecord(data);
+    expect(new TextDecoder().decode(result.content)).toBe("short");
   });
 
   test("handles missing Content-Type header", () => {

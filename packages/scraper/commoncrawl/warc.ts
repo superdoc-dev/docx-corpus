@@ -156,9 +156,33 @@ export function parseWarcRecord(data: Uint8Array): WarcResult {
     throw new Error("Invalid WARC record: no WARC header separator found");
   }
 
-  // Skip WARC headers, now we're at the HTTP response
+  // Parse the WARC headers we care about. The WARC Content-Length is
+  // mandatory per spec and bounds the WARC content block; the trailing
+  // record separator (\r\n\r\n) sits OUTSIDE this length. Bounding by
+  // WARC Content-Length first means the record terminator can't leak
+  // into the body even when no HTTP Content-Length is present.
+  const warcHeaderText = decoder.decode(data.slice(0, doubleCrlf));
+  let warcContentLength: number | null = null;
+  for (const line of warcHeaderText.split("\r\n")) {
+    const m = line.match(/^Content-Length:\s*(\d+)/i);
+    if (m) {
+      warcContentLength = parseInt(m[1], 10);
+      break;
+    }
+  }
+
+  // Bound the HTTP region by WARC Content-Length when present and sane.
+  // If absent or invalid, fall back to slicing through end of buffer
+  // (legacy behaviour; preserves backwards-compat with malformed inputs).
   const httpStart = doubleCrlf + 4;
-  const httpData = data.slice(httpStart);
+  const availableFromHttpStart = data.length - httpStart;
+  const warcBlockEnd =
+    warcContentLength !== null &&
+    warcContentLength >= 0 &&
+    warcContentLength <= availableFromHttpStart
+      ? httpStart + warcContentLength
+      : data.length;
+  const httpData = data.slice(httpStart, warcBlockEnd);
 
   // Find the double CRLF that separates HTTP headers from body
   const httpHeaderEnd = findPattern(httpData, [13, 10, 13, 10]);
@@ -174,19 +198,30 @@ export function parseWarcRecord(data: Uint8Array): WarcResult {
   const statusMatch = httpLines[0].match(/HTTP\/[\d.]+\s+(\d+)/);
   const httpStatus = statusMatch ? parseInt(statusMatch[1], 10) : 0;
 
-  // Find Content-Type header
+  // Find Content-Type and Content-Length headers
   let contentType = "";
+  let httpContentLength: number | null = null;
   for (const line of httpLines) {
-    const match = line.match(/^Content-Type:\s*(.+)/i);
-    if (match) {
-      contentType = match[1].trim();
-      break;
-    }
+    const ctMatch = line.match(/^Content-Type:\s*(.+)/i);
+    if (ctMatch && !contentType) contentType = ctMatch[1].trim();
+    const clMatch = line.match(/^Content-Length:\s*(\d+)/i);
+    if (clMatch && httpContentLength === null) httpContentLength = parseInt(clMatch[1], 10);
   }
 
-  // Extract body (after HTTP headers)
+  // Extract body. Within the WARC-bounded httpData, prefer HTTP
+  // Content-Length when present (exact entity body, matches CC's
+  // payload digest). Otherwise slice to the end of the bounded block
+  // (chunked or no-Content-Length responses still avoid the WARC
+  // record separator because httpData was already bounded above).
   const bodyStart = httpHeaderEnd + 4;
-  const content = httpData.slice(bodyStart);
+  const availableInHttp = httpData.length - bodyStart;
+  const sliceEnd =
+    httpContentLength !== null &&
+    httpContentLength >= 0 &&
+    httpContentLength <= availableInHttp
+      ? bodyStart + httpContentLength
+      : httpData.length;
+  const content = httpData.slice(bodyStart, sliceEnd);
 
   return {
     content,
