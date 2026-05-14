@@ -100,32 +100,53 @@ def open_r2():
     )
 
 
-def select_batch(conn, batch_size: int, retry_errors: bool) -> list[str]:
+def select_batch(
+    conn, batch_size: int, retry_errors: bool,
+    id_start: str | None = None, id_end: str | None = None,
+) -> list[str]:
     """Return up to batch_size raw_ids that haven't been inspected yet
     (or that have status='error' if retry_errors=True). Ordered by id
-    for deterministic progress."""
+    for deterministic progress.
+
+    id_start / id_end define a half-open range [id_start, id_end) for
+    sharding parallel runs. Use indexed string range comparisons (NOT LIKE)
+    so the documents PK btree on id is usable.
+    """
+    where_extra = []
+    params: list = []
+    if id_start is not None:
+        where_extra.append("AND d.id >= %s")
+        params.append(id_start)
+    if id_end is not None:
+        where_extra.append("AND d.id < %s")
+        params.append(id_end)
+    range_clause = " ".join(where_extra)
+
     if retry_errors:
-        sql = """
+        sql = f"""
             SELECT d.id
             FROM documents d
             LEFT JOIN document_corrections c ON c.raw_id = d.id
             WHERE d.status = 'uploaded'
               AND (c.raw_id IS NULL OR c.status = 'error')
+              {range_clause}
             ORDER BY d.id
             LIMIT %s
         """
     else:
-        sql = """
+        sql = f"""
             SELECT d.id
             FROM documents d
             LEFT JOIN document_corrections c ON c.raw_id = d.id
             WHERE d.status = 'uploaded'
               AND c.raw_id IS NULL
+              {range_clause}
             ORDER BY d.id
             LIMIT %s
         """
+    params.append(batch_size)
     with conn.cursor() as cur:
-        cur.execute(sql, (batch_size,))
+        cur.execute(sql, tuple(params))
         return [row[0] for row in cur.fetchall()]
 
 
@@ -210,6 +231,13 @@ def main(argv: list[str] | None = None) -> int:
                     help="Cap total objects processed in this run.")
     ap.add_argument("--retry-errors", action="store_true",
                     help="Also revisit raw_ids with status='error' from prior runs.")
+    ap.add_argument("--id-start", default=None,
+                    help="Lower bound (inclusive) on raw_id for sharding. Hex string. "
+                         "Run multiple shards in parallel with disjoint ranges, e.g. "
+                         "8 shards: 0-2, 2-4, 4-6, 6-8, 8-a, a-c, c-e, e-g.")
+    ap.add_argument("--id-end", default=None,
+                    help="Upper bound (exclusive) on raw_id. Use 'g' as the topmost "
+                         "exclusive bound to capture all 'f...' IDs.")
     ap.add_argument("--verbose", action="store_true",
                     help="Print per-file outcome to stderr.")
     args = ap.parse_args(argv)
@@ -248,7 +276,10 @@ def main(argv: list[str] | None = None) -> int:
         while args.limit is None or total_processed < args.limit:
             remaining = None if args.limit is None else args.limit - total_processed
             batch_size = min(args.batch, remaining) if remaining is not None else args.batch
-            ids = select_batch(conn, batch_size, args.retry_errors)
+            ids = select_batch(
+                conn, batch_size, args.retry_errors,
+                id_start=args.id_start, id_end=args.id_end,
+            )
             if not ids:
                 break
 
