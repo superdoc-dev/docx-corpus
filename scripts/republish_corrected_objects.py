@@ -176,7 +176,13 @@ def r2_put(s3, bucket: str, key: str, body: bytes) -> None:
 
 
 def inspect(s3, bucket: str, raw_id: str) -> Inspection:
-    """Read raw_id from R2 and run the fixer's candidate_trimmed."""
+    """Read raw_id from R2 and run the fixer's candidate_trimmed.
+
+    Catches anything raised from candidate_trimmed so a single malformed
+    archive can't kill a long-running backfill. The row gets recorded as
+    'error' with the exception type and message; re-runs with --retry-errors
+    can revisit it after the bug is patched.
+    """
     key = f"documents/{raw_id}.docx"
     try:
         data = r2_get(s3, bucket, key)
@@ -185,7 +191,13 @@ def inspect(s3, bucket: str, raw_id: str) -> Inspection:
             raw_id=raw_id, raw_size=0, candidate=None,
             fixer_status="error", error=f"r2 get: {e.response['Error'].get('Code', 'unknown')}",
         )
-    candidate, status = fixer.candidate_trimmed(data)
+    try:
+        candidate, status = fixer.candidate_trimmed(data)
+    except Exception as e:
+        return Inspection(
+            raw_id=raw_id, raw_size=len(data), candidate=None,
+            fixer_status="error", error=f"inspect: {type(e).__name__}: {e}",
+        )
     return Inspection(raw_id=raw_id, raw_size=len(data), candidate=candidate, fixer_status=status)
 
 

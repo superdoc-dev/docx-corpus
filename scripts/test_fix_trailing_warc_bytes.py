@@ -89,6 +89,21 @@ class CandidateTrimmedTests(unittest.TestCase):
         # if it does, status must be skipped-testzip-failed.
         self.assertIn(status, ("skipped-testzip-failed", "trimmed"))
 
+    def test_value_error_in_testzip_returns_skipped(self):
+        # Real-world repro: a corpus file with EOCD locatable + correct
+        # trailing CRLFCRLF, but with a corrupt CDH local_header_offset
+        # that points before start of file. testzip() raises
+        # ValueError("negative seek value -2"). Must not propagate.
+        data = bytearray(make_minimal_docx())
+        cdh = data.index(b"PK\x01\x02")
+        # local_header_offset is at CDH + 42 (4-byte uint32 LE).
+        # Set it to a huge value that wraps to a negative seek inside zipfile.
+        struct.pack_into("<I", data, cdh + 42, 0xFFFFFFFE)
+        data += b"\r\n\r\n"
+        candidate, status = fixer.candidate_trimmed(bytes(data))
+        self.assertIsNone(candidate)
+        self.assertEqual(status, "skipped-testzip-failed")
+
 
 class AtomicWriteTests(unittest.TestCase):
     def test_atomic_write_replaces_file(self):

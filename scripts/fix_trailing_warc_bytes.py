@@ -104,13 +104,16 @@ def candidate_trimmed(data: bytes) -> tuple[bytes | None, str]:
         return None, "skipped-excess-differs"
 
     candidate = data[:valid_end]
-    # Verify candidate is still a valid ZIP that opens cleanly
+    # Verify candidate is still a valid ZIP that opens cleanly. testzip can
+    # raise more than BadZipFile on malformed-but-EOCD-locatable archives,
+    # e.g. ValueError("negative seek value") when a local file header offset
+    # is corrupt. Treat anything raised here as "untrustworthy candidate".
     try:
         with zipfile.ZipFile(io.BytesIO(candidate)) as zf:
             bad = zf.testzip()
             if bad is not None:
                 return None, "skipped-testzip-failed"
-    except zipfile.BadZipFile:
+    except (zipfile.BadZipFile, ValueError, OSError, EOFError, IndexError):
         return None, "skipped-testzip-failed"
 
     return candidate, "trimmed"
