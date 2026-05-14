@@ -11,6 +11,9 @@ The entire document AI research ecosystem runs on scanned images and PDFs. The f
 
 **[docxcorp.us](https://docxcorp.us)** · **[HuggingFace](https://huggingface.co/datasets/superdoc-dev/docx-corpus)** · **[API](https://api.docxcorp.us/stats)**
 
+> [!IMPORTANT]
+> **WARC trailing bytes fixed for new scrapes** — Documents scraped before [`477d1b9`](https://github.com/superdoc-dev/docx-corpus/commit/477d1b9) may contain a 4-byte WARC record terminator (`\r\n\r\n`) after ZIP EOCD. Future scrapes are fixed; use `python3 scripts/fix_trailing_warc_bytes.py` to inspect or repair older local copies. This was confirmed to trigger Word for Mac's unreadable-content warning for the sample in [#8](https://github.com/superdoc-dev/docx-corpus/issues/8).
+
 ## How It Works
 
 ```
@@ -127,10 +130,6 @@ corpus scrape --crawl CC-MAIN-2025-51 --force  # Re-process existing
 - Adaptive rate limiting (backs off on 503/429, recovers on success)
 - Content-addressed storage (`documents/{sha256}.docx`)
 - Deduplication by content hash
-
-#### Known issue: WARC trailing bytes (fixed for new scrapes)
-
-Documents scraped before [`477d1b9`](https://github.com/superdoc-dev/docx-corpus/commit/477d1b9) may contain a 4-byte WARC record terminator (`\r\n\r\n`) after ZIP EOCD. Future scrapes are fixed; if you have older local copies, run `python3 scripts/fix_trailing_warc_bytes.py` to inspect or repair them. This was confirmed to trigger Word for Mac's unreadable-content warning for the sample in [#8](https://github.com/superdoc-dev/docx-corpus/issues/8).
 
 ### 3. Extraction
 
