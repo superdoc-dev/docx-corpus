@@ -66,3 +66,24 @@ CREATE INDEX IF NOT EXISTS idx_documents_topic ON documents(document_topic) WHER
 -- Vector similarity search index (IVFFlat for approximate nearest neighbor)
 -- Note: Run this AFTER populating embeddings for better index quality
 -- CREATE INDEX IF NOT EXISTS idx_documents_embedding ON documents USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+-- Tracking table for republished/corrected R2 objects (see migration 006).
+-- Records the result of inspecting each documents/{raw_id}.docx for the
+-- pre-477d1b9 WARC trailing-bytes bug and (when republished) the new
+-- documents/{corrected_id}.docx key.
+CREATE TABLE IF NOT EXISTS document_corrections (
+    raw_id TEXT PRIMARY KEY,
+    corrected_id TEXT,
+    status TEXT NOT NULL,                              -- corrected | already_clean | skipped | error
+    reason TEXT,
+    raw_file_size_bytes BIGINT,
+    corrected_file_size_bytes BIGINT,
+    correction_type TEXT NOT NULL DEFAULT 'warc_trailing_crlf',
+    inspected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    corrected_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_corrections_status
+  ON document_corrections(status);
+CREATE INDEX IF NOT EXISTS idx_document_corrections_corrected_id
+  ON document_corrections(corrected_id);
