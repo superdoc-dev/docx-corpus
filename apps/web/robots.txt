@@ -2,7 +2,6 @@
 
 User-agent: *
 Allow: /
-Disallow: /documents/
 Sitemap: https://docxcorp.us/sitemap.xml
 
 # AI-friendly content available at /llms.txt
