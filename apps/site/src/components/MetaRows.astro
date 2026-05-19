@@ -1,0 +1,30 @@
+---
+export interface MetaRow {
+  /** Left column uppercase key */
+  key: string;
+  /** Right column value text. Linked when href is present, plain text otherwise. */
+  label: string;
+  /** Optional href - turns label into an anchor */
+  href?: string;
+  /** Optional trailing prose text appended after the (possibly linked) label,
+   *  e.g. " · Parquet, bulk download" */
+  suffix?: string;
+  /** Render in body sans-serif instead of mono (default: mono) */
+  prose?: boolean;
+}
+export interface Props {
+  rows: MetaRow[];
+}
+const { rows } = Astro.props;
+---
+
+<div class="meta">
+  {rows.map(r => (
+    <div class="meta-row">
+      <span class="k">{r.key}</span>
+      <span class={r.prose ? 'v prose' : 'v'}>
+        {r.href ? <a href={r.href}>{r.label}</a> : r.label}{r.suffix}
+      </span>
+    </div>
+  ))}
+</div>

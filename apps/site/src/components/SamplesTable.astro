@@ -1,0 +1,43 @@
+---
+export interface SampleRow {
+  id: string;
+  filename: string;
+  /** Either type or topic - the "other dimension" label for context */
+  otherLabel: string;
+  language: string;
+  confidence: number;
+}
+export interface Props {
+  rows: SampleRow[];
+  /** Header for the otherLabel column (e.g. "Topic" on a type page, "Type" on a topic page) */
+  otherHeader: string;
+}
+const { rows, otherHeader } = Astro.props;
+---
+
+<table class="sample">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Filename</th>
+      <th>{otherHeader}</th>
+      <th>Lang</th>
+      <th class="right">Conf</th>
+    </tr>
+  </thead>
+  <tbody>
+    {rows.map(r => (
+      <tr>
+        <td class="mono">{r.id.slice(0, 12)}</td>
+        <td>{r.filename}</td>
+        <td>{r.otherLabel}</td>
+        <td class="mono">{r.language}</td>
+        <td class="right mono">{r.confidence.toFixed(2)}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+<p style="font-size:12px;color:var(--muted);margin-top:8px;">
+  ID column shows the first 12 characters of the SHA-256 content hash; the full hash is the stable reference.
+  Real public-web filenames vary widely: descriptive, numeric, or URL-fragment shaped.
+</p>

@@ -1,0 +1,19 @@
+---
+import { routes } from '../lib/routes';
+
+export interface Props {
+  active?: 'dataset' | 'classification' | 'quality' | 'download' | null;
+}
+
+const { active = null } = Astro.props;
+---
+
+<header class="site-header">
+  <div class="brand"><a href={routes.home()}><span class="accent">docx</span>-corpus</a></div>
+  <nav class="site-nav">
+    <a href={routes.dataset()} class={active === 'dataset' ? 'active' : undefined}>Dataset</a>
+    <a href={routes.classification()} class={active === 'classification' ? 'active' : undefined}>Classification</a>
+    <a href={routes.quality()} class={active === 'quality' ? 'active' : undefined}>Quality</a>
+    <a href={routes.download()} class={active === 'download' ? 'active' : undefined}>Download</a>
+  </nav>
+</header>

@@ -1,0 +1,16 @@
+---
+export interface Stat {
+  value: string;
+  label: string;
+}
+export interface Props {
+  stats: Stat[];
+}
+const { stats } = Astro.props;
+---
+
+<div class="stats-row">
+  {stats.map(s => (
+    <div class="stat"><span class="val">{s.value}</span>{s.label}</div>
+  ))}
+</div>

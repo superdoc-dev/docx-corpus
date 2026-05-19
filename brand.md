@@ -180,6 +180,7 @@ _Use on homepage hero, GitHub README, HuggingFace dataset card._
 8. One sentence, one fact. Don't overload.
 9. Developer-native language. Assume the reader knows what an API is.
 10. Let the data speak. The numbers are impressive enough without embellishment.
+11. Concision. If a sentence doesn't change the reader's decision, cut it. Tables before paragraphs when data is comparable. Lead with the answer, not the setup. If a page scrolls beyond two screens, the second screen is probably noise.
 
 **Identity boundaries**:
 - We are not a startup. We are an open data project maintained by a company that builds DOCX tooling.
@@ -242,3 +243,59 @@ Usage: Code snippets, CLI commands, API examples, document IDs, hash values.
 **Anti-reference brands**: Salesforce (enterprise bloat, confusing UI, everything is a "platform"), Jira (complexity worship, configuration over convention, vendor lock-in aesthetic).
 
 **Direction**: The visual identity communicates research infrastructure, not product marketing. Dense data tables over hero images. Monospace where it matters. Generous whitespace, flat surfaces, no decoration. The design should feel like a well-maintained research dataset's documentation page — clear, navigable, trustworthy. Coral adds warmth to what would otherwise be austere. The confidence comes from the data, not the design.
+
+### Implementation tokens
+
+Locked decisions for the web app. Reference: `mockups/design-system/option-a-restrained.html`.
+
+**Type scale**
+| Token | Size | Weight | Usage |
+|---|---|---|---|
+| `--text-xs` | 11px | 600 | Section labels, kickers, table headers (always uppercase, letter-spacing 0.08em) |
+| `--text-mono-sm` | 12.5px | 400 | Inline counts, table mono cells, code |
+| `--text-sm` | 13px | 400-500 | Nav, table body, footer |
+| `--text-base` | 14px | 400 | Body copy |
+| `--text-md` | 15px | 400 | Subheads, lede |
+| `--text-mono-lg` | 18px | 500 | Hero stat values (JetBrains Mono) |
+| `--text-h2` | 18px | 600 | Section headings (h2) |
+| `--text-h1` | 32px | 700 | Page headings (h1), letter-spacing -0.02em |
+
+**Layout**
+- Content width: **640px** max. One column. No side rails.
+- Page padding: 32px horizontal, 56px top / 80px bottom.
+- Section spacing: 56px between sections.
+
+**Coral usage rules**
+- Brand mark `docx`: coral text (`#C9493D`).
+- Inline links: coral text.
+- **Nothing else.** No coral kickers, no coral numbers, no coral hover states. Coral punctuates rare elements; muted gray (`#6B7280`) carries the rest.
+
+**Dividers and surfaces**
+- Hairline `1px solid var(--border)` (`#E5E7EB`) for all dividers.
+- Tables: borderless body; header has a single `1px solid var(--text)` underline.
+- Type grids: 2-column with a center vertical hairline and bottom hairlines per row.
+- No card shadows, no gradients, no rounded surfaces beyond 3px on code blocks.
+
+**Stats presentation**
+- Inline horizontal row, separated by 40px gap, top + bottom hairlines.
+- Stat values in JetBrains Mono 18px medium, label in muted 13px below.
+- Never use big stat cards or 2×2 grids — that's Option B territory.
+
+**Tables**
+- Header row: 11px uppercase muted labels, 1px underline (charcoal).
+- Body cells: 13px, 10px vertical padding, hairline between rows.
+- Mono cells for IDs, codes, numeric values.
+- No zebra, no hover background.
+
+**Code blocks**
+- Background `#F9FAFB`, 1px border `#E5E7EB`, 3px border-radius.
+- 12.5px JetBrains Mono. Comments in muted gray.
+- Never dark theme.
+
+**Section labels**
+- Small uppercase muted text above each section, optionally followed by a mono count: `DOCUMENT TYPES · 10`.
+- No h2 inside the label — h2 is its own line when used.
+
+**Kickers**
+- `OPEN RESEARCH DATASET` above the h1 in the hero. Same style as section labels.
+- Muted color, NOT coral.

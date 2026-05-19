@@ -1,0 +1,311 @@
+/* docx-corpus design system - Option A (Restrained) - locked per brand.md */
+
+:root {
+  --coral: #F97B6D;
+  --coral-text: #C9493D;
+  --text: #2D2D2D;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  --bg: #FFFFFF;
+  --code-bg: #F9FAFB;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+}
+a { color: var(--coral-text); text-decoration: none; font-weight: 500; }
+a:hover { text-decoration: underline; }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+
+/* Shared header */
+.site-header {
+  max-width: 640px; margin: 0 auto;
+  padding: 24px 32px;
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--border);
+}
+.brand { font-size: 15px; font-weight: 600; color: var(--text); }
+.brand .accent { color: var(--coral-text); }
+.brand a { color: var(--text); font-weight: 600; }
+.site-nav { display: flex; gap: 20px; font-size: 13px; }
+.site-nav a { color: var(--muted); font-weight: 500; }
+.site-nav a.active { color: var(--text); }
+
+/* Main */
+main { max-width: 640px; margin: 0 auto; padding: 56px 32px 80px; }
+
+/* Breadcrumb */
+.crumb {
+  font-size: 12px; color: var(--muted);
+  margin-bottom: 24px;
+}
+.crumb a { color: var(--muted); font-weight: 400; }
+.crumb .sep { margin: 0 6px; opacity: 0.6; }
+
+/* Hero */
+.hero { margin-bottom: 48px; }
+.kicker {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
+  line-height: 1.2; margin: 0 0 16px; max-width: 580px;
+}
+.hero .sub { font-size: 15px; color: var(--muted); max-width: 540px; margin: 0 0 8px; }
+.hero .byline { font-size: 13px; color: var(--muted); margin: 0; }
+.hero .byline a { color: var(--coral-text); }
+
+/* Stats row */
+.stats-row {
+  margin-top: 32px;
+  display: flex; gap: 40px; flex-wrap: wrap;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.stat { font-size: 13px; color: var(--muted); }
+.stat .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 500; color: var(--text);
+  display: block; line-height: 1.2;
+}
+
+/* Section */
+section { margin-bottom: 48px; padding-top: 8px; }
+.section-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 16px;
+}
+.section-label .count {
+  color: var(--text); font-family: 'JetBrains Mono', monospace;
+  font-weight: 400; text-transform: none; letter-spacing: 0;
+}
+section h2 {
+  font-size: 18px; font-weight: 600; margin: 0 0 12px;
+}
+section p { margin: 0 0 12px; }
+section ul { padding-left: 18px; margin: 0 0 12px; }
+section li { margin: 4px 0; }
+
+/* Two-column grid (types, topics) */
+.grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0;
+  border-top: 1px solid var(--border);
+}
+.grid-cell {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.grid-cell .name { font-size: 14px; color: var(--text); }
+.grid-cell .name a { color: var(--text); font-weight: 500; }
+.grid-cell .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; color: var(--muted);
+}
+.grid-cell:nth-child(2n-1) {
+  padding-right: 32px; border-right: 1px solid var(--border);
+}
+.grid-cell:nth-child(2n) { padding-left: 32px; }
+
+/* Language bar */
+.lang-bar {
+  display: flex; height: 6px; border-radius: 1px;
+  overflow: hidden; margin: 16px 0 12px;
+}
+.lang-bar div { background: var(--coral); }
+.lang-bar div:nth-child(2) { background: #FDA59B; }
+.lang-bar div:nth-child(3) { background: #FCC9C0; }
+.lang-bar div:nth-child(4) { background: #FEDDD6; }
+.lang-bar div:nth-child(5) { background: #E5E7EB; }
+.lang-legend {
+  font-size: 12px; color: var(--muted);
+  display: flex; flex-wrap: wrap; gap: 16px;
+}
+.lang-legend span code { color: var(--text); margin-right: 4px; background: none; padding: 0; }
+
+/* Confidence histogram */
+.histo { display: flex; flex-direction: column; gap: 4px; }
+.histo-row {
+  display: grid; grid-template-columns: 70px 1fr 70px;
+  gap: 12px; align-items: center; font-size: 12.5px;
+}
+.histo-row .range { font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+.histo-row .barwrap { height: 6px; background: #F3F4F6; border-radius: 1px; overflow: hidden; }
+.histo-row .barwrap div { height: 100%; background: var(--coral); }
+.histo-row .pct {
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right; color: var(--muted);
+}
+
+/* Table */
+table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+thead th {
+  text-align: left; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+  padding: 8px 0; border-bottom: 1px solid var(--text);
+}
+tbody td {
+  padding: 10px 0; font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tbody td.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--muted);
+}
+tbody td.right { text-align: right; }
+tbody tr:last-child td { border-bottom: none; }
+
+/* Inline code + pre */
+code:not(pre code) {
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 12px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+pre .c { color: var(--muted); }
+
+/* Key:value metadata block */
+.meta {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+}
+.meta-row {
+  display: grid; grid-template-columns: 160px 1fr;
+  gap: 16px; padding: 4px 0;
+  font-size: 13px;
+}
+.meta-row .k {
+  color: var(--muted); text-transform: uppercase;
+  font-size: 11px; letter-spacing: 0.06em; padding-top: 4px;
+}
+.meta-row .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; color: var(--text);
+}
+.meta-row .v.prose {
+  font-family: 'Inter', sans-serif; font-size: 13px;
+}
+
+/* See also */
+.see-also {
+  margin-top: 56px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px; color: var(--muted);
+}
+.see-also a { margin-right: 16px; }
+
+/* Footer */
+.site-footer {
+  max-width: 640px; margin: 0 auto;
+  padding: 32px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  font-size: 12px; color: var(--muted);
+}
+.site-footer a { color: var(--muted); font-weight: 500; }
+
+/* Browse list (homepage About-style 19 links) */
+.browse-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px; }
+.browse-pair h3 {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  margin: 0 0 8px;
+}
+.browse-pair ul { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+.browse-pair li { padding: 3px 0; }
+
+/* Limitations list - numbered, bullet-free */
+.limits { padding-left: 0; list-style: none; counter-reset: lim; }
+.limits li {
+  counter-increment: lim;
+  padding: 8px 0 8px 32px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  font-size: 13px;
+}
+.limits li::before {
+  content: counter(lim, decimal-leading-zero);
+  position: absolute; left: 0; top: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--muted);
+}
+.limits li:last-child { border-bottom: none; }
+.limits li strong { color: var(--text); font-weight: 600; }
+
+/* Wide variant for data-dense pages (homepage explorer).
+   Apply body.wide to widen header/main/footer to 960px while keeping
+   all other tokens identical. Content pages stay at 640px default. */
+body.wide .site-header,
+body.wide main,
+body.wide .site-footer {
+  max-width: 960px;
+}
+/* In wide mode, render type/topic grids at 5 columns instead of 2
+   so dense data takes advantage of the extra room. */
+body.wide .grid { grid-template-columns: repeat(5, 1fr); }
+body.wide .grid-cell:nth-child(n) {
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+body.wide .grid-cell:nth-child(5n) { border-right: none; padding-right: 0; }
+body.wide .grid-cell:nth-child(5n+1) { padding-left: 0; }
+
+/* Tables that don't compress well on narrow viewports get a min-width so
+   their columns stay legible instead of collapsing into each other. The
+   `section { overflow-x: auto }` mobile rule lets users scroll horizontally
+   inside the section without breaking the surrounding layout.
+   - `table.schema` - field/type/description schemas (3 cols, wide description)
+   - `table.sample` - id/filename/other/lang/conf sample documents (5 cols) */
+table.schema { min-width: 620px; }
+table.sample { min-width: 520px; }
+
+/* Mobile rules. The 640px max-width fits 320px viewports because of
+   the 32px page padding. These rules tighten the chrome and let
+   tables/code overflow gracefully. */
+@media (max-width: 640px) {
+  .site-header,
+  main,
+  .site-footer { padding-left: 20px; padding-right: 20px; }
+  .site-header { flex-wrap: wrap; gap: 12px 16px; }
+  .site-nav { gap: 14px; font-size: 12px; flex-wrap: wrap; }
+  main { padding-top: 32px; padding-bottom: 56px; }
+  .hero h1 { font-size: 26px; }
+  .hero .sub { font-size: 14px; }
+  .stats-row { gap: 24px; flex-wrap: wrap; }
+  .grid { grid-template-columns: 1fr; }
+  .grid-cell:nth-child(2n-1) { padding-right: 0; border-right: none; }
+  .grid-cell:nth-child(2n) { padding-left: 0; }
+  .browse-pair { grid-template-columns: 1fr; gap: 16px; }
+  /* Tables can overflow horizontally; users scroll inside them */
+  section { overflow-x: auto; }
+  table { min-width: 100%; }
+  pre { font-size: 11.5px; }
+  body.wide .grid { grid-template-columns: repeat(2, 1fr); }
+  body.wide .grid-cell:nth-child(n) { border-right: none; padding-left: 0; padding-right: 0; }
+  body.wide .grid-cell:nth-child(2n-1) { border-right: 1px solid var(--border); padding-right: 16px; }
+  body.wide .grid-cell:nth-child(2n) { padding-left: 16px; }
+}

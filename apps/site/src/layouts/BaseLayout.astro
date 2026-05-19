@@ -1,0 +1,82 @@
+---
+import { canonicalUrl, stringifyLd, breadcrumbList } from '../lib/seo';
+import '../styles/design.css';
+
+export interface Props {
+  title: string;
+  description: string;
+  canonicalPath: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  twitterDescription?: string;
+  ogImage?: string;
+  robots?: string;
+  structuredData?: object;
+  breadcrumbs?: { name: string; path: string }[];
+  bodyClass?: string;
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  ogTitle = title,
+  ogDescription = description,
+  twitterDescription = ogDescription,
+  ogImage = '/og-image.png',
+  robots,
+  structuredData,
+  breadcrumbs,
+  bodyClass,
+} = Astro.props;
+
+const canonical = canonicalUrl(canonicalPath);
+const ogImageUrl = canonicalUrl(ogImage);
+const breadcrumbLd = breadcrumbs?.length ? breadcrumbList(breadcrumbs) : null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9QG5MXVL5"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-C9QG5MXVL5');
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {robots && <meta name="robots" content={robots} />}
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={twitterDescription} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+    {structuredData && (
+      <script type="application/ld+json" set:html={stringifyLd(structuredData)} />
+    )}
+    {breadcrumbLd && (
+      <script type="application/ld+json" set:html={stringifyLd(breadcrumbLd)} />
+    )}
+  </head>
+  <body class={bodyClass}>
+    <slot />
+  </body>
+</html>

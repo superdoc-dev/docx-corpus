@@ -1,27 +1,24 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import DocPageLayout from '../layouts/DocPageLayout.astro';
+import MetaRows from '../components/MetaRows.astro';
+import SeeAlso from '../components/SeeAlso.astro';
+import { routes } from '../lib/routes';
 import { canonicalUrl } from '../lib/seo';
+import { getCorpusStats } from '../lib/data';
 
-const post = await import('../../content/dataset.md');
-const { frontmatter, Content } = post;
+const stats = await getCorpusStats();
 
-const breadcrumbs = [
-  { name: 'Home', path: '/' },
-  { name: 'Dataset', path: '/dataset' },
-];
+const title = 'Dataset · docx-corpus';
+const description = 'Schema, coverage, and access methods for docx-corpus. 736K classified Word documents from Common Crawl.';
 
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
   name: 'docx-corpus',
-  description: frontmatter.description,
-  url: canonicalUrl('/dataset'),
+  description: 'The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 76 languages.',
+  url: canonicalUrl(routes.dataset()),
   license: 'https://opendatacommons.org/licenses/by/1-0/',
-  creator: {
-    '@type': 'Organization',
-    name: 'SuperDoc',
-    url: 'https://superdoc.dev',
-  },
+  creator: { '@type': 'Organization', name: 'SuperDoc', url: 'https://superdoc.dev' },
   distribution: [
     {
       '@type': 'DataDownload',
@@ -33,12 +30,79 @@ const structuredData = {
 };
 ---
 
-<Layout
-  title={frontmatter.title}
-  description={frontmatter.description}
-  canonicalPath={frontmatter.canonicalPath}
+<DocPageLayout
+  title={title}
+  description={description}
+  canonicalPath={routes.dataset()}
   structuredData={structuredData}
-  breadcrumbs={breadcrumbs}
+  active="dataset"
+  crumb={[{ name: 'Home', path: routes.home() }, { name: 'Dataset' }]}
 >
-  <Content />
-</Layout>
+  <div class="hero">
+    <div class="kicker">Dataset card</div>
+    <h1>What's in docx-corpus</h1>
+    <p class="sub">Schema, coverage, and access methods. Real numbers from <code>api.docxcorp.us/stats</code> + direct DB queries.</p>
+  </div>
+
+  <section>
+    <div class="section-label">Counts <span class="count">· {stats.totalClassified.toLocaleString()} classified</span></div>
+    <table>
+      <thead><tr><th>Bucket</th><th class="right">Count</th></tr></thead>
+      <tbody>
+        <tr><td>Total uploaded</td><td class="right mono">1,101,537</td></tr>
+        <tr><td>Classified (type + topic + language)</td><td class="right mono">{stats.totalClassified.toLocaleString()}</td></tr>
+        <tr><td>Extracted, awaiting classification</td><td class="right mono">267,539</td></tr>
+        <tr><td>Uploaded, awaiting extraction</td><td class="right mono">93,440</td></tr>
+        <tr><td>Extracted with empty text</td><td class="right mono">4,316</td></tr>
+        <tr><td>Duplicate (cross-crawl)</td><td class="right mono">241,993</td></tr>
+        <tr><td>Failed (WARC or invalid .docx)</td><td class="right mono">117,862</td></tr>
+      </tbody>
+    </table>
+    <p>The classified subset is what the browser, API, and HuggingFace dataset expose by default. The pipeline-backlog buckets move into the classified set as extraction and classification catch up. Failed, duplicate, and empty-text rows stay in the database for accounting and do not reach the classified set under the current pipeline.</p>
+  </section>
+
+  <section>
+    <div class="section-label">Per-document schema</div>
+    <table class="schema">
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">id</td><td class="mono">string</td><td>SHA-256 of raw .docx bytes; also the R2 storage key</td></tr>
+        <tr><td class="mono">filename</td><td class="mono">string</td><td>Original filename from source URL</td></tr>
+        <tr><td class="mono">type</td><td class="mono">enum (10)</td><td>Form/structure label, see <a href={routes.classification()}>classification</a></td></tr>
+        <tr><td class="mono">topic</td><td class="mono">enum (9)</td><td>Subject domain label</td></tr>
+        <tr><td class="mono">language</td><td class="mono">ISO 639-1</td><td>Detected by lingua, {stats.languageCount} distinct values</td></tr>
+        <tr><td class="mono">word_count</td><td class="mono">int</td><td>Median 566, mean 2,795</td></tr>
+        <tr><td class="mono">confidence</td><td class="mono">float</td><td><code>min(type_conf, topic_conf)</code>, see <a href={routes.quality()}>quality</a></td></tr>
+        <tr><td class="mono">url</td><td class="mono">string</td><td><code>https://docxcorp.us/documents/&#123;id&#125;.docx</code></td></tr>
+      </tbody>
+    </table>
+    <p>Extracted text available at <code>https://docxcorp.us/extracted/&#123;id&#125;.txt</code>. Raw .docx and extracted text both return <code>X-Robots-Tag: noindex</code>.</p>
+  </section>
+
+  <section>
+    <div class="section-label">Access</div>
+    <MetaRows rows={[
+      { key: 'HuggingFace', href: 'https://huggingface.co/datasets/superdoc-dev/docx-corpus', label: 'superdoc-dev/docx-corpus', suffix: ' · Parquet, bulk download', prose: true },
+      { key: 'REST API', href: 'https://api.docxcorp.us/stats', label: 'api.docxcorp.us', suffix: ' · faceted queries', prose: true },
+      { key: 'Manifest', href: 'https://api.docxcorp.us/manifest', label: 'api.docxcorp.us/manifest', suffix: ' · URL list for wget/curl', prose: true },
+      { key: 'Per document', label: 'docxcorp.us/documents/{id}.docx' },
+    ]} />
+    <p>See <a href={routes.download()}>/download</a> for code examples.</p>
+  </section>
+
+  <section>
+    <div class="section-label">License</div>
+    <p>Dataset metadata: <a href="https://opendatacommons.org/licenses/by/1-0/">ODC-BY 1.0</a>. Pipeline source: MIT. Individual document copyright remains with the original author. Takedown: <a href="mailto:help@docxcorp.us">help@docxcorp.us</a>.</p>
+  </section>
+
+  <section>
+    <div class="section-label">Citing</div>
+    <p>docx-corpus (2026). Open corpus of classified Word documents from the public web. <a href={canonicalUrl(routes.home())}>https://docxcorp.us</a>. Built by SuperDoc.</p>
+  </section>
+
+  <SeeAlso links={[
+    { label: '/classification', href: routes.classification() },
+    { label: '/quality', href: routes.quality() },
+    { label: '/download', href: routes.download() },
+  ]} />
+</DocPageLayout>

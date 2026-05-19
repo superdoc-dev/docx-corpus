@@ -1,0 +1,22 @@
+---
+export interface Bin {
+  range: string;
+  pct: number; // 0-100
+  pctWidth?: number; // 0-100, optional explicit bar width (defaults to pct normalized to max)
+}
+export interface Props {
+  bins: Bin[];
+}
+const { bins } = Astro.props;
+const maxPct = Math.max(...bins.map(b => b.pct));
+---
+
+<div class="histo">
+  {bins.map(b => (
+    <div class="histo-row">
+      <span class="range">{b.range}</span>
+      <div class="barwrap"><div style={`width:${((b.pctWidth ?? b.pct) / maxPct * 100).toFixed(1)}%`}></div></div>
+      <span class="pct">{b.pct.toFixed(1)}%</span>
+    </div>
+  ))}
+</div>
