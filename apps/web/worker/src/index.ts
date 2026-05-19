@@ -41,12 +41,12 @@ const LANG_NAMES: Record<string, string> = {
 function corsHeaders(origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
-function json(data: unknown, status: number, origin: string, cacheSeconds = 0): Response {
+function jsonHeaders(origin: string, cacheSeconds = 0): HeadersInit {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...corsHeaders(origin),
@@ -54,7 +54,11 @@ function json(data: unknown, status: number, origin: string, cacheSeconds = 0): 
   if (cacheSeconds > 0) {
     headers["Cache-Control"] = `public, max-age=${cacheSeconds}`;
   }
-  return new Response(JSON.stringify(data), { status, headers });
+  return headers;
+}
+
+function json(data: unknown, status: number, origin: string, cacheSeconds = 0): Response {
+  return new Response(JSON.stringify(data), { status, headers: jsonHeaders(origin, cacheSeconds) });
 }
 
 export default {
@@ -67,18 +71,24 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
-    if (request.method !== "GET") {
+    const isHead = request.method === "HEAD";
+
+    if (request.method !== "GET" && !isHead) {
       return json({ error: "Method not allowed" }, 405, origin);
     }
 
     switch (url.pathname) {
       case "/stats":
+        if (isHead) return new Response(null, { status: 200, headers: jsonHeaders(origin, 300) });
         return handleStats(env, origin);
       case "/documents":
+        if (isHead) return new Response(null, { status: 200, headers: jsonHeaders(origin) });
         return handleDocuments(url, env, origin);
       case "/manifest":
+        if (isHead) return headManifest(url, origin);
         return handleManifest(url, env, origin);
       default:
+        if (isHead) return new Response(null, { status: 404, headers: jsonHeaders(origin) });
         return json({ error: "Not found" }, 404, origin);
     }
   },
@@ -296,6 +306,32 @@ async function handleDocuments(url: URL, env: Env, origin: string): Promise<Resp
 
 const R2_BASE = "https://docxcorp.us/documents/";
 
+function manifestFilename(url: URL): string {
+  const parts = ["docx-corpus"];
+  const type = url.searchParams.get("type");
+  const topic = url.searchParams.get("topic");
+  const lang = url.searchParams.get("lang");
+  if (type) parts.push(type);
+  if (topic) parts.push(topic);
+  if (lang) parts.push(lang);
+  return `${parts.join("-")}-manifest.txt`;
+}
+
+function manifestHeaders(url: URL, origin: string): HeadersInit {
+  return {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Content-Disposition": `attachment; filename="${manifestFilename(url)}"`,
+    ...corsHeaders(origin),
+  };
+}
+
+function headManifest(url: URL, origin: string): Response {
+  return new Response(null, {
+    status: 200,
+    headers: manifestHeaders(url, origin),
+  });
+}
+
 async function handleManifest(url: URL, env: Env, origin: string): Promise<Response> {
   try {
     const sql = neon(env.DATABASE_URL);
@@ -307,23 +343,9 @@ async function handleManifest(url: URL, env: Env, origin: string): Promise<Respo
 
     const body = rows.map((r) => `${R2_BASE}${r.id}.docx`).join("\n") + "\n";
 
-    // Build a descriptive filename
-    const parts = ["docx-corpus"];
-    const type = url.searchParams.get("type");
-    const topic = url.searchParams.get("topic");
-    const lang = url.searchParams.get("lang");
-    if (type) parts.push(type);
-    if (topic) parts.push(topic);
-    if (lang) parts.push(lang);
-    const filename = `${parts.join("-")}-manifest.txt`;
-
     return new Response(body, {
       status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        ...corsHeaders(origin),
-      },
+      headers: manifestHeaders(url, origin),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
