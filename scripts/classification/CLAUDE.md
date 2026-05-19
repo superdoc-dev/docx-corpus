@@ -24,7 +24,7 @@ Writes to the same `documents` table as the TS pipeline:
 - `document_type` — one of 10 types (legal, forms, reports, etc.)
 - `document_topic` — one of 9 topics (government, education, healthcare, etc.)
 - `classification_confidence` — min(type_confidence, topic_confidence)
-- `classification_model` — e.g. "claude-haiku-4-5" or "modernbert-2.0.0"
+- `classification_model` — e.g. "claude-haiku-4-5" or "xlm-roberta-base-v2" (format: `{base_model}-{taxonomy_version}`, see `_classification_model_name` in `classify.py`)
 
 Connection via `DATABASE_URL` env var loaded from `../../.env`.
 

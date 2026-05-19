@@ -25,7 +25,7 @@ Common Crawl (3B+ URLs/month)
     ↓
 [3. extract]     Extract text + detect language (Docling + lingua)
     ↓
-[4. classify]    Classify by type + topic (ModernBERT, FineWeb-Edu pattern)
+[4. classify]    Classify by type + topic (XLM-RoBERTa, FineWeb-Edu pattern)
     ↓
 [5. export]      Push to HuggingFace / serve via API
 ```
@@ -88,7 +88,7 @@ db/
 | **scraper** | Download, validate, deduplicate .docx files | Bun |
 | **extractor** | Extract text + detect language (Docling) | Bun + Python |
 | **embedder** | Generate embeddings (Gemini) | Bun |
-| **classification** | Type + topic classification (ModernBERT) | Python |
+| **classification** | Type + topic classification (XLM-RoBERTa) | Python |
 
 ## Pipeline Details
 

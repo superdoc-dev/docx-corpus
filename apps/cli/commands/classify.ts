@@ -71,7 +71,7 @@ corpus classify - Classify documents by type and topic
 Usage
   corpus classify [options]
 
-Runs the trained ModernBERT classifiers on all unclassified documents.
+Runs the trained XLM-RoBERTa classifiers on all unclassified documents.
 Wraps scripts/classification/classify.py — requires Python 3.11+ with
 classification dependencies installed.
 

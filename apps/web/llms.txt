@@ -6,7 +6,7 @@ The largest open corpus of classified Word documents. 736K+ real .docx files fro
 
 The entire document AI ecosystem runs on scanned images and PDFs. The format people actually write in had no dataset — until docx-corpus.
 
-Documents are classified using ModernBERT with an average confidence of 82%.
+Documents are classified using fine-tuned XLM-RoBERTa text classifiers with an average confidence of 82%.
 
 Built by [SuperDoc](https://www.superdoc.dev) — DOCX editing and tooling.
 

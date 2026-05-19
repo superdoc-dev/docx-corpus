@@ -46,6 +46,19 @@ DEFAULT_MAX_CHARS = 2000
 # ---------------------------------------------------------------------------
 
 
+def _classification_model_name(base_model: str | None, taxonomy_version: str | None) -> str:
+    """Derive the `classification_model` column value from training metadata.
+
+    `base_model` is the HuggingFace model id used for fine-tuning (e.g.
+    "xlm-roberta-base"). `taxonomy_version` is the taxonomy revision the
+    classifier was trained against (e.g. "v2"). The HF org/name slash is
+    flattened so the value is safe for a single-token text column.
+    """
+    base = (base_model or "unknown").replace("/", "-")
+    version = taxonomy_version or "v0"
+    return f"{base}-{version}"
+
+
 def load_classifier(model_dir: str, device: torch.device):
     """Load a trained classifier and tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
@@ -174,9 +187,11 @@ def run_local(args):
     if os.path.exists(config_path):
         with open(config_path) as f:
             train_config = json.load(f)
-        model_name = f"modernbert-{train_config.get('taxonomy_version', 'v2')}"
+        model_name = _classification_model_name(
+            train_config.get("base_model"), train_config.get("taxonomy_version")
+        )
     else:
-        model_name = "modernbert-v2"
+        model_name = "unknown"
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -338,10 +353,13 @@ def run_modal(args):
         print(f"[Worker {worker_id}/{total_workers}] {len(doc_ids):,} docs, device={gpu_name}")
 
         cfg_path = "/models/training_config.json"
-        model_name = "modernbert-v2"
+        model_name = "unknown"
         if os.path.exists(cfg_path):
             with open(cfg_path) as f:
-                model_name = f"modernbert-{json.load(f).get('taxonomy_version', 'v2')}"
+                cfg = json.load(f)
+            model_name = _classification_model_name(
+                cfg.get("base_model"), cfg.get("taxonomy_version")
+            )
 
         type_tok = AutoTokenizer.from_pretrained("/models/document_type/best")
         type_mdl = AutoModelForSequenceClassification.from_pretrained("/models/document_type/best").to(device).eval()

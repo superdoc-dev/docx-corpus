@@ -27,7 +27,7 @@ Each stage writes to the same PostgreSQL database (`documents` table):
 1. **Scrape** (TS) — Common Crawl → .docx files in R2 (`status = 'uploaded'`)
 2. **Extract** (TS) — Docling → text in R2 (`extracted_at`, `word_count`, `language`)
 3. **Embed** (TS) — Google API → pgvector (`embedding`, `embedded_at`)
-4. **Classify** (Python) — ModernBERT → labels (`document_type`, `document_topic`)
+4. **Classify** (Python) — XLM-RoBERTa → labels (`document_type`, `document_topic`)
 
 ## Scraper deduplication
 
