@@ -6,8 +6,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deploy-site.yml"
-      - "apps/web/**"
-      - "!apps/web/worker/**"
+      - "apps/site/**"
 
 jobs:
   deploy:
@@ -28,7 +27,7 @@ jobs:
       - name: Build site
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: bun run --cwd apps/web build
+        run: bun run --cwd apps/site build
 
       - name: Upload site to R2
         env:
@@ -45,15 +44,15 @@ jobs:
           # with stale-while-revalidate for 1 hour. A Cloudflare Cache Rule on
           # the zone enables caching for these specific paths (extensionless
           # HTML isn't cached by Cloudflare default); see infrastructure notes
-          # in apps/web/README.md. Static assets (favicons, og-image, logo)
+          # in apps/site/README.md. Static assets (favicons, og-image, logo)
           # keep Cloudflare's default static-asset cache behavior - no header.
           CACHE_HTML="public, max-age=300, stale-while-revalidate=3600"
 
           # Non-HTML assets: copy the finite Astro output directly. Do not use
           # `aws s3 sync` at the bucket root because the same bucket also stores
           # the million-plus scraper-managed /documents/ and /extracted/ objects.
-          find apps/web/dist -type f ! -name "*.html" -print0 | while IFS= read -r -d '' f; do
-            rel="${f#apps/web/dist/}"
+          find apps/site/dist -type f ! -name "*.html" -print0 | while IFS= read -r -d '' f; do
+            rel="${f#apps/site/dist/}"
             case "$rel" in
               sitemap.xml|robots.txt|llms.txt)
                 aws s3 cp "$f" "$R2_BUCKET/$rel" \
@@ -70,8 +69,8 @@ jobs:
           # HTML files: upload to extensionless keys to match canonical URLs.
           # /classification.html -> r2://classification, /types/legal.html -> r2://types/legal.
           # index.html is the one exception; it stays as a static homepage at /.
-          find apps/web/dist -name "*.html" -print0 | while IFS= read -r -d '' f; do
-            rel="${f#apps/web/dist/}"
+          find apps/site/dist -name "*.html" -print0 | while IFS= read -r -d '' f; do
+            rel="${f#apps/site/dist/}"
             if [ "$rel" = "index.html" ]; then
               key="index.html"
             else

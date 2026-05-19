@@ -47,8 +47,8 @@
         "typescript": "^5.9.3",
       },
     },
-    "apps/web": {
-      "name": "@docx-corpus/web",
+    "apps/site": {
+      "name": "@docx-corpus/site",
       "version": "0.0.0",
       "dependencies": {
         "@neondatabase/serverless": "^1.0.0",
@@ -265,7 +265,7 @@
 
     "@docx-corpus/shared": ["@docx-corpus/shared@workspace:packages/shared"],
 
-    "@docx-corpus/web": ["@docx-corpus/web@workspace:apps/web"],
+    "@docx-corpus/site": ["@docx-corpus/site@workspace:apps/site"],
 
     "@emmetio/abbreviation": ["@emmetio/abbreviation@2.3.3", "", { "dependencies": { "@emmetio/scanner": "^1.0.4" } }, "sha512-mgv58UrU3rh4YgbE/TzgLQwJ3pFsHHhCLqY20aJq+9comytTXUDNGG/SMtSeMJdkpxgXSXunBGLD8Boka3JyVA=="],
 

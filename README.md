@@ -66,7 +66,8 @@ Run `corpus <command> --help` for detailed options.
 apps/
   cli/              # Unified CLI — corpus <command>
   cdx-filter/       # AWS Lambda — filters CDX indexes for .docx URLs
-  web/              # Landing page (docxcorp.us) + Cloudflare Worker API
+  site/             # Static Astro site for docxcorp.us
+  api/              # Cloudflare Worker API for api.docxcorp.us
 packages/
   shared/           # DB client, storage abstraction, formatting
   scraper/          # Downloads WARC, validates .docx, deduplicates
@@ -84,7 +85,8 @@ db/
 |-------|------|---------|
 | **cli** | `corpus` command — orchestrates everything | Bun |
 | **cdx-filter** | Filter Common Crawl CDX indexes (Lambda) | Node.js |
-| **web** | docxcorp.us landing page + API worker | Static + CF Worker |
+| **site** | docxcorp.us landing page and dataset pages | Static Astro |
+| **api** | api.docxcorp.us `/stats`, `/documents`, `/manifest` | Cloudflare Worker |
 | **scraper** | Download, validate, deduplicate .docx files | Bun |
 | **extractor** | Extract text + detect language (Docling) | Bun + Python |
 | **embedder** | Generate embeddings (Gemini) | Bun |
@@ -244,8 +246,8 @@ docker compose up -d
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/docx_corpus \
   bun run corpus status
 
-# Run web API locally
-cd apps/web/worker
+# Run API locally
+cd apps/api
 npx wrangler dev
 ```
 
