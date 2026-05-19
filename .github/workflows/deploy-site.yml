@@ -41,13 +41,30 @@ jobs:
         run: |
           set -euo pipefail
 
+          # HTML pages and the three metadata files share a 5-minute edge TTL
+          # with stale-while-revalidate for 1 hour. A Cloudflare Cache Rule on
+          # the zone enables caching for these specific paths (extensionless
+          # HTML isn't cached by Cloudflare default); see infrastructure notes
+          # in apps/web/README.md. Static assets (favicons, og-image, logo)
+          # keep Cloudflare's default static-asset cache behavior - no header.
+          CACHE_HTML="public, max-age=300, stale-while-revalidate=3600"
+
           # Non-HTML assets: copy the finite Astro output directly. Do not use
           # `aws s3 sync` at the bucket root because the same bucket also stores
           # the million-plus scraper-managed /documents/ and /extracted/ objects.
           find apps/web/dist -type f ! -name "*.html" -print0 | while IFS= read -r -d '' f; do
             rel="${f#apps/web/dist/}"
-            aws s3 cp "$f" "$R2_BUCKET/$rel" \
-              --endpoint-url "$R2_ENDPOINT"
+            case "$rel" in
+              sitemap.xml|robots.txt|llms.txt)
+                aws s3 cp "$f" "$R2_BUCKET/$rel" \
+                  --cache-control "$CACHE_HTML" \
+                  --endpoint-url "$R2_ENDPOINT"
+                ;;
+              *)
+                aws s3 cp "$f" "$R2_BUCKET/$rel" \
+                  --endpoint-url "$R2_ENDPOINT"
+                ;;
+            esac
           done
 
           # HTML files: upload to extensionless keys to match canonical URLs.
@@ -62,5 +79,6 @@ jobs:
             fi
             aws s3 cp "$f" "$R2_BUCKET/$key" \
               --content-type "text/html; charset=utf-8" \
+              --cache-control "$CACHE_HTML" \
               --endpoint-url "$R2_ENDPOINT"
           done
