@@ -40,12 +40,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Non-HTML assets: sync with their natural extensions and content types.
-          # No --delete: the bucket also holds /documents/ and /extracted/ which
-          # are scraper-managed and must not be touched by this workflow.
-          aws s3 sync apps/web/dist/ "$R2_BUCKET/" \
-            --exclude "*.html" \
-            --endpoint-url "$R2_ENDPOINT"
+          # Non-HTML assets: copy the finite Astro output directly. Do not use
+          # `aws s3 sync` at the bucket root because the same bucket also stores
+          # the million-plus scraper-managed /documents/ and /extracted/ objects.
+          find apps/web/dist -type f ! -name "*.html" -print0 | while IFS= read -r -d '' f; do
+            rel="${f#apps/web/dist/}"
+            aws s3 cp "$f" "$R2_BUCKET/$rel" \
+              --endpoint-url "$R2_ENDPOINT"
+          done
 
           # HTML files: upload to extensionless keys to match canonical URLs.
           # /classification.html -> r2://classification, /types/legal.html -> r2://types/legal.
