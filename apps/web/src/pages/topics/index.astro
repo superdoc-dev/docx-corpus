@@ -1,0 +1,40 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getTopicFacets } from '../../lib/data';
+
+const topics = await getTopicFacets();
+const totalTopics = topics.length;
+const totalDocs = topics.reduce((s, t) => s + t.count, 0);
+
+const breadcrumbs = [
+  { name: 'Home', path: '/' },
+  { name: 'Topics', path: '/topics' },
+];
+
+const title = `Topics in docx-corpus: ${totalTopics} subject areas, ${totalDocs.toLocaleString()} Word documents`;
+const description = `Browse docx-corpus by topic. ${totalTopics} subject areas covering ${totalDocs.toLocaleString()} classified Word documents from Common Crawl.`;
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalPath="/topics"
+  breadcrumbs={breadcrumbs}
+>
+  <h1>Browse by topic</h1>
+  <p>{totalDocs.toLocaleString()} classified Word documents across {totalTopics} topics. Each topic label describes the document's subject domain; types describe its form or structure. See <a href="/classification">/classification</a> for definitions and methodology.</p>
+
+  <table>
+    <thead>
+      <tr><th>Topic</th><th style="text-align:right">Count</th></tr>
+    </thead>
+    <tbody>
+      {topics.map(t => (
+        <tr>
+          <td><a href={`/topics/${t.id}`}>{t.label}</a></td>
+          <td style="text-align:right; font-family: 'JetBrains Mono', monospace;">{t.count.toLocaleString()}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</Layout>

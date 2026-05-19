@@ -1,0 +1,108 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getTypeFacets, getTopicFacets, TYPE_LABELS, TOPIC_LABELS } from '../../lib/data';
+import { neon } from '@neondatabase/serverless';
+import { canonicalUrl } from '../../lib/seo';
+
+const sql = neon(import.meta.env.DATABASE_URL);
+
+export async function getStaticPaths() {
+  const types = await getTypeFacets();
+  return types.map(t => ({ params: { type: t.id }, props: { typeFacet: t } }));
+}
+
+const { type } = Astro.params;
+const { typeFacet } = Astro.props;
+
+// per-type language breakdown (top 10)
+const langRows = await sql`
+  SELECT language AS code, COUNT(*)::int AS count
+  FROM documents
+  WHERE document_type = ${type} AND language IS NOT NULL
+  GROUP BY language
+  ORDER BY count DESC
+  LIMIT 10
+` as { code: string; count: number }[];
+
+// per-type topic breakdown
+const topicRows = await sql`
+  SELECT document_topic AS id, COUNT(*)::int AS count
+  FROM documents
+  WHERE document_type = ${type} AND document_topic IS NOT NULL
+  GROUP BY document_topic
+  ORDER BY count DESC
+` as { id: string; count: number }[];
+
+const label = typeFacet.label;
+const count = typeFacet.count;
+const langCount = langRows.length;
+const topLangs = langRows.slice(0, 5).map(l => l.code).join(', ');
+
+const title = `${label} Word documents: ${count.toLocaleString()} classified .docx files`;
+const description = `${count.toLocaleString()}+ ${label.toLowerCase()} Word documents from the public web, in ${langCount}+ languages including ${topLangs}. Free open dataset from docx-corpus.`;
+
+const breadcrumbs = [
+  { name: 'Home', path: '/' },
+  { name: 'Types', path: '/types' },
+  { name: label, path: `/types/${type}` },
+];
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: `docx-corpus - ${label} Documents`,
+  description,
+  url: canonicalUrl(`/types/${type}`),
+  isPartOf: {
+    '@type': 'Dataset',
+    name: 'docx-corpus',
+    url: canonicalUrl('/'),
+    license: 'https://opendatacommons.org/licenses/by/1-0/',
+    creator: { '@type': 'Organization', name: 'SuperDoc', url: 'https://superdoc.dev' },
+  },
+  license: 'https://opendatacommons.org/licenses/by/1-0/',
+  creator: { '@type': 'Organization', name: 'SuperDoc', url: 'https://superdoc.dev' },
+};
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalPath={`/types/${type}`}
+  structuredData={structuredData}
+  breadcrumbs={breadcrumbs}
+>
+  <h1>{label} Word documents</h1>
+  <p>{count.toLocaleString()} classified <code>{type}</code> documents from the public web. See <a href="/classification">/classification</a> for what this label covers.</p>
+
+  <h2>Topic breakdown</h2>
+  <table>
+    <thead><tr><th>Topic</th><th style="text-align:right">Count</th></tr></thead>
+    <tbody>
+      {topicRows.map(r => (
+        <tr>
+          <td><a href={`/topics/${r.id}`}>{TOPIC_LABELS[r.id] ?? r.id}</a></td>
+          <td style="text-align:right; font-family: 'JetBrains Mono', monospace;">{r.count.toLocaleString()}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Top languages</h2>
+  <table>
+    <thead><tr><th>Language</th><th style="text-align:right">Count</th></tr></thead>
+    <tbody>
+      {langRows.map(l => (
+        <tr>
+          <td><code>{l.code}</code></td>
+          <td style="text-align:right; font-family: 'JetBrains Mono', monospace;">{l.count.toLocaleString()}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Access</h2>
+  <p>Filter the API by this type:</p>
+  <pre><code>curl &quot;https://api.docxcorp.us/manifest?type={type}&quot; -o {type}-manifest.txt</code></pre>
+  <p>See <a href="/download">/download</a> for full access patterns.</p>
+</Layout>

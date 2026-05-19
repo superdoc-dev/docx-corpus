@@ -19,8 +19,9 @@ dev/
 
 # Generated web data (local only)
 apps/web/data/
-apps/web/types/
-apps/web/topics/
+
+# Astro
+apps/web/.astro/
 
 # Tests
 coverage/

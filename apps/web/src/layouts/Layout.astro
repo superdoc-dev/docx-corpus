@@ -1,0 +1,156 @@
+---
+import { canonicalUrl, stringifyLd, breadcrumbList } from '../lib/seo';
+
+export interface Props {
+  title: string;
+  description: string;
+  canonicalPath: string;
+  ogImage?: string;
+  robots?: string;
+  structuredData?: object;
+  breadcrumbs?: { name: string; path: string }[];
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  ogImage = '/og-image.png',
+  robots,
+  structuredData,
+  breadcrumbs,
+} = Astro.props;
+
+const canonical = canonicalUrl(canonicalPath);
+const ogImageUrl = canonicalUrl(ogImage);
+const breadcrumbLd = breadcrumbs?.length ? breadcrumbList(breadcrumbs) : null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9QG5MXVL5"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-C9QG5MXVL5');
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {robots && <meta name="robots" content={robots} />}
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" />
+    {structuredData && (
+      <script type="application/ld+json" set:html={stringifyLd(structuredData)} />
+    )}
+    {breadcrumbLd && (
+      <script type="application/ld+json" set:html={stringifyLd(breadcrumbLd)} />
+    )}
+    <style is:global>
+      :root {
+        --accent: #C9493D;
+        --accent-fill: #F97B6D;
+        --accent-bg: #fef8f7;
+        --text: #2D2D2D;
+        --muted: #6B7280;
+        --border: #f0f0f0;
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        font-size: 0.95rem;
+        line-height: 1.55;
+        color: var(--text);
+        background: #fff;
+      }
+      a { color: var(--accent); text-decoration: none; font-weight: 600; }
+      a:hover { text-decoration: underline; }
+      code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+      pre {
+        background: #f8f8f8;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+      }
+      code:not(pre code) {
+        background: #f5f5f5;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.85em;
+      }
+      table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+      th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+      h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 16px; }
+      h2 { font-size: 1.4rem; font-weight: 700; margin: 32px 0 12px; }
+      h3 { font-size: 1.1rem; font-weight: 600; margin: 24px 0 8px; }
+      p, ul, ol { margin: 0 0 12px; }
+      blockquote {
+        border-left: 3px solid var(--accent-fill);
+        padding: 4px 16px;
+        margin: 16px 0;
+        color: var(--muted);
+      }
+      hr { border: 0; border-top: 1px solid var(--border); margin: 32px 0; }
+    </style>
+  </head>
+  <body>
+    <header style="border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; gap: 24px; align-items: center; max-width: 1100px; margin: 0 auto;">
+      <a href="/" style="color: var(--text); font-weight: 700; font-size: 1.05rem;">
+        <span style="color: var(--accent)">docx</span>-corpus
+      </a>
+      <nav style="display: flex; gap: 18px; font-size: 0.88rem; font-weight: 500;">
+        <a href="/dataset" style="color: var(--muted);">Dataset</a>
+        <a href="/classification" style="color: var(--muted);">Classification</a>
+        <a href="/quality" style="color: var(--muted);">Quality</a>
+        <a href="/download" style="color: var(--muted);">Download</a>
+        <a href="/types" style="color: var(--muted);">Types</a>
+        <a href="/topics" style="color: var(--muted);">Topics</a>
+      </nav>
+    </header>
+    <main style="max-width: 760px; margin: 0 auto; padding: 32px 24px 64px;">
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <nav style="font-size: 0.82rem; color: var(--muted); margin-bottom: 16px;">
+          {breadcrumbs.map((b, i) => (
+            <>
+              {i > 0 && <span> / </span>}
+              {i === breadcrumbs.length - 1
+                ? <span>{b.name}</span>
+                : <a href={b.path} style="color: var(--muted);">{b.name}</a>}
+            </>
+          ))}
+        </nav>
+      )}
+      <slot />
+    </main>
+    <footer style="border-top: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; max-width: 1100px; margin: 0 auto; font-size: 0.78rem; color: var(--muted);">
+      <span>
+        Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=footer" style="color: var(--muted); font-weight: 600;">SuperDoc</a> - DOCX editing and tooling.
+      </span>
+      <span>
+        Takedown: <a href="mailto:help@docxcorp.us" style="color: var(--muted); font-weight: 600;">help@docxcorp.us</a>
+      </span>
+    </footer>
+  </body>
+</html>
