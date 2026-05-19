@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/web/worker/**"
+      - "apps/api/**"
 
 jobs:
   deploy:
@@ -16,14 +16,14 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - run: bun install --cwd apps/web/worker
+      - run: bun install --cwd apps/api
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/web/worker
+          workingDirectory: apps/api
           secrets: |
             DATABASE_URL
         env:

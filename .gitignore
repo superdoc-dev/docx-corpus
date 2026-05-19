@@ -17,11 +17,11 @@ dist/
 corpus/
 dev/
 
-# Generated web data (local only)
-apps/web/data/
+# Generated site data (local only)
+apps/site/data/
 
 # Astro
-apps/web/.astro/
+apps/site/.astro/
 
 # Tests
 coverage/

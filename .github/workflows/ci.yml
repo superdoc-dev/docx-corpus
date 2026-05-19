@@ -36,10 +36,10 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Type check (web)
-        run: bun run --cwd apps/web typecheck
+      - name: Type check (site)
+        run: bun run --cwd apps/site typecheck
 
-      - name: Build (web)
+      - name: Build (site)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: bun run --cwd apps/web build
+        run: bun run --cwd apps/site build

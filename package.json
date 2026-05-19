@@ -2,7 +2,9 @@
   "name": "docx-corpus",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/cdx-filter",
+    "apps/cli",
+    "apps/site",
     "packages/*"
   ],
   "scripts": {
@@ -16,8 +18,10 @@
     "release:cli": "bun run --cwd apps/cli release",
     "setup:extractor": "bun run --cwd packages/extractor setup",
     "prepare": "lefthook install",
-    "dev:web": "bun run --cwd apps/web dev",
-    "build:web": "bun run --cwd apps/web build"
+    "dev:site": "bun run --cwd apps/site dev",
+    "build:site": "bun run --cwd apps/site build",
+    "dev:web": "bun run dev:site",
+    "build:web": "bun run build:site"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.6",

@@ -1,4 +1,4 @@
-# docxcorp.us web
+# docxcorp.us site
 
 Static site assets are deployed to Cloudflare R2 by `.github/workflows/deploy-site.yml`.
 
