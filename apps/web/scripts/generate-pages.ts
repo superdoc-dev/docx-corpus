@@ -294,6 +294,14 @@ function sharedStyles(): string {
 function sharedHead(title: string, description: string, canonicalPath: string, kind: string, id: string): string {
   const url = `${SITE}${canonicalPath}`;
   return `
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9QG5MXVL5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-C9QG5MXVL5');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${esc(title)}</title>
@@ -327,7 +335,7 @@ function sharedHeader(activeKind: "type" | "topic"): string {
       <a href="/types"${activeKind === "type" ? ' class="active"' : ""}>Types</a>
       <a href="/topics"${activeKind === "topic" ? ' class="active"' : ""}>Topics</a>
       <a href="https://github.com/superdoc-dev/docx-corpus" target="_blank">GitHub</a>
-      <a href="https://huggingface.co/datasets/superdoc/docx-corpus" target="_blank">HuggingFace</a>
+      <a href="https://huggingface.co/datasets/superdoc-dev/docx-corpus" target="_blank">HuggingFace</a>
     </nav>
   </header>`;
 }
@@ -495,10 +503,10 @@ function renderPage(data: PageData): string {
       "name": "docx-corpus",
       "description": "The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.",
       "url": "${SITE}",
-      "license": "https://github.com/superdoc-dev/docx-corpus/blob/main/LICENSE",
+      "license": "https://opendatacommons.org/licenses/by/1-0/",
       "creator": { "@type": "Organization", "name": "SuperDoc", "url": "https://superdoc.dev" }
     },
-    "license": "https://github.com/superdoc-dev/docx-corpus/blob/main/LICENSE",
+    "license": "https://opendatacommons.org/licenses/by/1-0/",
     "creator": { "@type": "Organization", "name": "SuperDoc", "url": "https://superdoc.dev" },
     "keywords": ["docx", "${label.toLowerCase()}", "word documents", "dataset", "NLP", "document processing"]
   }
@@ -589,7 +597,7 @@ function renderIndexPage(
       "name": "docx-corpus",
       "description": "The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.",
       "url": "${SITE}",
-      "license": "https://github.com/superdoc-dev/docx-corpus/blob/main/LICENSE",
+      "license": "https://opendatacommons.org/licenses/by/1-0/",
       "creator": { "@type": "Organization", "name": "SuperDoc", "url": "https://superdoc.dev" }
     }
   }
