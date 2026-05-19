@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const post = await import('../../content/quality.md');
+const { frontmatter, Content } = post;
+
+const breadcrumbs = [
+  { name: 'Home', path: '/' },
+  { name: 'Quality', path: '/quality' },
+];
+---
+
+<Layout
+  title={frontmatter.title}
+  description={frontmatter.description}
+  canonicalPath={frontmatter.canonicalPath}
+  breadcrumbs={breadcrumbs}
+>
+  <Content />
+</Layout>

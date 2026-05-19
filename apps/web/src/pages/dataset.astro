@@ -1,0 +1,44 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { canonicalUrl } from '../lib/seo';
+
+const post = await import('../../content/dataset.md');
+const { frontmatter, Content } = post;
+
+const breadcrumbs = [
+  { name: 'Home', path: '/' },
+  { name: 'Dataset', path: '/dataset' },
+];
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'docx-corpus',
+  description: frontmatter.description,
+  url: canonicalUrl('/dataset'),
+  license: 'https://opendatacommons.org/licenses/by/1-0/',
+  creator: {
+    '@type': 'Organization',
+    name: 'SuperDoc',
+    url: 'https://superdoc.dev',
+  },
+  distribution: [
+    {
+      '@type': 'DataDownload',
+      encodingFormat: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      contentUrl: 'https://docxcorp.us',
+    },
+  ],
+  measurementTechnique: 'Fine-tuned XLM-RoBERTa text classifiers',
+};
+---
+
+<Layout
+  title={frontmatter.title}
+  description={frontmatter.description}
+  canonicalPath={frontmatter.canonicalPath}
+  structuredData={structuredData}
+  breadcrumbs={breadcrumbs}
+>
+  <Content />
+</Layout>

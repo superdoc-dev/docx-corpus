@@ -1,0 +1,40 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getTypeFacets } from '../../lib/data';
+
+const types = await getTypeFacets();
+const totalTypes = types.length;
+const totalDocs = types.reduce((s, t) => s + t.count, 0);
+
+const breadcrumbs = [
+  { name: 'Home', path: '/' },
+  { name: 'Types', path: '/types' },
+];
+
+const title = `Document types in docx-corpus: ${totalTypes} categories, ${totalDocs.toLocaleString()} Word documents`;
+const description = `Browse docx-corpus by document type. ${totalTypes} categories covering ${totalDocs.toLocaleString()} classified Word documents from Common Crawl.`;
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalPath="/types"
+  breadcrumbs={breadcrumbs}
+>
+  <h1>Browse by document type</h1>
+  <p>{totalDocs.toLocaleString()} classified Word documents across {totalTypes} types. Each type label describes the document's form or structure; topics describe its subject domain. See <a href="/classification">/classification</a> for definitions and methodology.</p>
+
+  <table>
+    <thead>
+      <tr><th>Type</th><th style="text-align:right">Count</th></tr>
+    </thead>
+    <tbody>
+      {types.map(t => (
+        <tr>
+          <td><a href={`/types/${t.id}`}>{t.label}</a></td>
+          <td style="text-align:right; font-family: 'JetBrains Mono', monospace;">{t.count.toLocaleString()}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</Layout>
