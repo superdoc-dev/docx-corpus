@@ -33,7 +33,13 @@ The Cache Rule is set outside this repo:
 
 - Phase: `http_request_cache_settings`
 - Expression: `http.host eq "docxcorp.us" and (http.request.uri.path eq "/" or http.request.uri.path in {"/dataset" "/classification" "/quality" "/download" "/types" "/topics" "/sitemap.xml" "/robots.txt" "/llms.txt"} or starts_with(http.request.uri.path, "/types/") or starts_with(http.request.uri.path, "/topics/"))`
-- Action: `cache: true`, `edge_ttl.mode: bypass_by_default` (TTL driven by origin `Cache-Control`)
+- Action: `cache: true`, `edge_ttl.mode: bypass_by_default`, `browser_ttl.mode: respect_origin` (both TTLs driven by origin `Cache-Control`)
+
+The `browser_ttl: respect_origin` setting is required because Cloudflare's zone-level Browser
+Cache TTL default (4 hours) would otherwise override the origin's lower `max-age=300`. Without
+it, returning visitors would cache HTML for 4 hours after each deploy. `respect_origin` keeps
+the zone default in effect for paths NOT matched by this rule (favicons, og-image, raw .docx,
+extracted .txt), all of which legitimately want 4-hour browser caching.
 
 The matching upload-side `Cache-Control` header (`public, max-age=300, stale-while-revalidate=3600`)
 is set by `deploy-site.yml` on HTML uploads and on `sitemap.xml`/`robots.txt`/`llms.txt`. Keep the
