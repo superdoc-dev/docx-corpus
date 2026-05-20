@@ -1,5 +1,5 @@
 ---
-import DocPageLayout from '../layouts/DocPageLayout.astro';
+import WidePageLayout from '../layouts/WidePageLayout.astro';
 import MetaRows from '../components/MetaRows.astro';
 import SeeAlso from '../components/SeeAlso.astro';
 import { routes } from '../lib/routes';
@@ -30,7 +30,7 @@ const structuredData = {
 };
 ---
 
-<DocPageLayout
+<WidePageLayout
   title={title}
   description={description}
   canonicalPath={routes.dataset()}
@@ -58,7 +58,7 @@ const structuredData = {
         <tr><td>Failed (WARC or invalid .docx)</td><td class="right mono">117,862</td></tr>
       </tbody>
     </table>
-    <p>The classified subset is what the browser, API, and HuggingFace dataset expose by default. The pipeline-backlog buckets move into the classified set as extraction and classification catch up. Failed, duplicate, and empty-text rows stay in the database for accounting and do not reach the classified set under the current pipeline.</p>
+    <p class="prose">The classified subset is what the browser, API, and HuggingFace dataset expose by default. The pipeline-backlog buckets move into the classified set as extraction and classification catch up. Failed, duplicate, and empty-text rows stay in the database for accounting and do not reach the classified set under the current pipeline.</p>
   </section>
 
   <section>
@@ -76,7 +76,7 @@ const structuredData = {
         <tr><td class="mono">url</td><td class="mono">string</td><td><code>https://docxcorp.us/documents/&#123;id&#125;.docx</code></td></tr>
       </tbody>
     </table>
-    <p>Extracted text available at <code>https://docxcorp.us/extracted/&#123;id&#125;.txt</code>. Raw .docx and extracted text both return <code>X-Robots-Tag: noindex</code>.</p>
+    <p class="prose">Extracted text available at <code>https://docxcorp.us/extracted/&#123;id&#125;.txt</code>. Raw .docx and extracted text both return <code>X-Robots-Tag: noindex</code>.</p>
   </section>
 
   <section>
@@ -87,15 +87,15 @@ const structuredData = {
       { key: 'Manifest', href: 'https://api.docxcorp.us/manifest', label: 'api.docxcorp.us/manifest', suffix: ' · URL list for wget/curl', prose: true },
       { key: 'Per document', label: 'docxcorp.us/documents/{id}.docx' },
     ]} />
-    <p>See <a href={routes.download()}>/download</a> for code examples.</p>
+    <p class="prose">See <a href={routes.download()}>/download</a> for code examples.</p>
   </section>
 
-  <section>
+  <section class="prose">
     <div class="section-label">License</div>
     <p>Dataset metadata: <a href="https://opendatacommons.org/licenses/by/1-0/">ODC-BY 1.0</a>. Pipeline source: MIT. Individual document copyright remains with the original author. Takedown: <a href="mailto:help@docxcorp.us">help@docxcorp.us</a>.</p>
   </section>
 
-  <section>
+  <section class="prose">
     <div class="section-label">Citing</div>
     <p>docx-corpus (2026). Open corpus of classified Word documents from the public web. <a href={canonicalUrl(routes.home())}>https://docxcorp.us</a>. Built by SuperDoc.</p>
   </section>
@@ -105,4 +105,4 @@ const structuredData = {
     { label: '/quality', href: routes.quality() },
     { label: '/download', href: routes.download() },
   ]} />
-</DocPageLayout>
+</WidePageLayout>

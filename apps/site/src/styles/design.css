@@ -274,6 +274,13 @@ body.wide .grid-cell:nth-child(n) {
 body.wide .grid-cell:nth-child(5n) { border-right: none; padding-right: 0; }
 body.wide .grid-cell:nth-child(5n+1) { padding-left: 0; }
 
+/* Prose measure utility. Apply to a section/div that holds paragraphs, lists,
+   or other reading content. Constrains line length to ~640px (~70-80ch) for
+   readable rhythm, while the surrounding page shell stays 960px so tables,
+   grids, code blocks, and data surfaces can use the full shell width.
+   See brand.md > Layout: "Page shell 960px; prose measure 640px." */
+.prose { max-width: 640px; }
+
 /* Tables that don't compress well on narrow viewports get a min-width so
    their columns stay legible instead of collapsing into each other. The
    `section { overflow-x: auto }` mobile rule lets users scroll horizontally

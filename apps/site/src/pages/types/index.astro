@@ -1,5 +1,5 @@
 ---
-import DocPageLayout from '../../layouts/DocPageLayout.astro';
+import WidePageLayout from '../../layouts/WidePageLayout.astro';
 import SeeAlso from '../../components/SeeAlso.astro';
 import { routes } from '../../lib/routes';
 import { getTypeFacets } from '../../lib/data';
@@ -12,7 +12,7 @@ const title = `Document types in docx-corpus: ${totalTypes} categories, ${totalD
 const description = `Browse docx-corpus by document type. ${totalTypes} categories covering ${totalDocs.toLocaleString()} classified Word documents from Common Crawl.`;
 ---
 
-<DocPageLayout
+<WidePageLayout
   title={title}
   description={description}
   canonicalPath={routes.typesIndex()}
@@ -25,7 +25,7 @@ const description = `Browse docx-corpus by document type. ${totalTypes} categori
   </div>
 
   <section>
-    <p>Each classified row has one type label and one topic label. Click through to browse a slice: counts per topic and language, sample documents, and a manifest URL for bulk download.</p>
+    <p class="prose">Each classified row has one type label and one topic label. Click through to browse a slice: counts per topic and language, sample documents, and a manifest URL for bulk download.</p>
     <table>
       <thead><tr><th>Type</th><th class="right">Documents</th></tr></thead>
       <tbody>
@@ -44,4 +44,4 @@ const description = `Browse docx-corpus by document type. ${totalTypes} categori
     { label: '/classification', href: routes.classification() },
     { label: '/download', href: routes.download() },
   ]} />
-</DocPageLayout>
+</WidePageLayout>

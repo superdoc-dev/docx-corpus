@@ -1,5 +1,5 @@
 ---
-import DocPageLayout from '../layouts/DocPageLayout.astro';
+import WidePageLayout from '../layouts/WidePageLayout.astro';
 import SeeAlso from '../components/SeeAlso.astro';
 import { routes } from '../lib/routes';
 
@@ -7,7 +7,7 @@ const title = 'Classification · docx-corpus';
 const description = 'Two-dimensional taxonomy of 10 document types and 9 topics. Trained from a Claude-labeled sample using a fine-tuned XLM-RoBERTa text classifier.';
 ---
 
-<DocPageLayout
+<WidePageLayout
   title={title}
   description={description}
   canonicalPath={routes.classification()}
@@ -39,18 +39,18 @@ const description = 'Two-dimensional taxonomy of 10 document types and 9 topics.
     </table>
   </section>
 
-  <section>
+  <section class="prose">
     <div class="section-label">Topics <span class="count">· 9</span></div>
     <p><code>government</code> · <code>education</code> · <code>healthcare</code> · <code>finance</code> · <code>legal_judicial</code> · <code>technology</code> · <code>environment</code> · <code>nonprofit</code> · <code>general</code></p>
   </section>
 
-  <section>
+  <section class="prose">
     <div class="section-label">How labels are produced</div>
     <p>We follow the <a href="https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1">FineWeb-Edu</a> pattern: sample a small, stratified set of documents across the five most-common languages, label each with an LLM, then train a lightweight multilingual text classifier on those labels and apply it at scale.</p>
     <p>The classifier is a fine-tuned XLM-RoBERTa, trained on roughly 3,500 LLM-labeled examples. Two independent classifiers are trained, one per dimension. Code is open: see the <a href="https://github.com/superdoc-dev/docx-corpus/tree/main/scripts/classification">classification scripts</a> on GitHub.</p>
   </section>
 
-  <section>
+  <section class="prose">
     <div class="section-label">Known limitations</div>
     <ol class="limits">
       <li><strong>Labeler ceiling.</strong> Claude Haiku 4.5 is the upper bound. No human-annotated test set published.</li>
@@ -65,4 +65,4 @@ const description = 'Two-dimensional taxonomy of 10 document types and 9 topics.
     { label: '/quality', href: routes.quality() },
     { label: '/download', href: routes.download() },
   ]} />
-</DocPageLayout>
+</WidePageLayout>

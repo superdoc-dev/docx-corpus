@@ -263,7 +263,9 @@ Locked decisions for the web app. Reference: `mockups/design-system/option-a-res
 | `--text-h1` | 32px | 700 | Page headings (h1), letter-spacing -0.02em |
 
 **Layout**
-- Content width: **640px** max. One column. No side rails.
+- Page shell: **960px** max (header, footer, main alignment).
+- Prose measure inside the shell: **640px** max via `.prose` utility. Apply to sections or individual elements that hold paragraphs, lists, and other reading content.
+- Tables, grids, code blocks, histograms, and other data surfaces use the full shell width.
 - Page padding: 32px horizontal, 56px top / 80px bottom.
 - Section spacing: 56px between sections.
 

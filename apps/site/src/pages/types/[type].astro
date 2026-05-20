@@ -1,5 +1,5 @@
 ---
-import DocPageLayout from '../../layouts/DocPageLayout.astro';
+import WidePageLayout from '../../layouts/WidePageLayout.astro';
 import StatsRow from '../../components/StatsRow.astro';
 import SamplesTable from '../../components/SamplesTable.astro';
 import SeeAlso from '../../components/SeeAlso.astro';
@@ -56,7 +56,7 @@ const structuredData = {
 };
 ---
 
-<DocPageLayout
+<WidePageLayout
   title={title}
   description={description}
   canonicalPath={routes.type(type!)}
@@ -80,7 +80,7 @@ const structuredData = {
   </div>
 
   {copy && (
-    <section>
+    <section class="prose">
       <div class="section-label">What's in this slice</div>
       <p>{copy.description}</p>
       <p>{copy.useCases}</p>
@@ -119,7 +119,7 @@ const structuredData = {
         )}
       </tbody>
     </table>
-    <p style="font-size:12px;color:var(--muted);margin-top:8px;">
+    <p class="prose" style="font-size:12px;color:var(--muted);margin-top:8px;">
       Share is computed against the top 20 languages for this type ({langs.denominator.toLocaleString()} docs),
       matching what the API returns. A handful of documents fall outside the top 20 or have no detected language.
     </p>
@@ -141,7 +141,7 @@ const structuredData = {
     </section>
   )}
 
-  <section>
+  <section class="prose">
     <div class="section-label">Access</div>
     <pre><code>{accessExample}</code></pre>
     <p>See <a href={routes.download()}>/download</a> for full access patterns.</p>
@@ -152,4 +152,4 @@ const structuredData = {
     { label: 'All topics', href: routes.topicsIndex() },
     { label: '/classification', href: routes.classification() },
   ]} />
-</DocPageLayout>
+</WidePageLayout>

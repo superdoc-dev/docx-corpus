@@ -11,6 +11,9 @@ export interface Props {
   ogDescription?: string;
   twitterDescription?: string;
   structuredData?: object;
+  breadcrumbs?: { name: string; path: string }[];
+  active?: 'dataset' | 'classification' | 'quality' | 'download' | null;
+  crumb?: { name: string; path?: string }[];
 }
 
 const {
@@ -21,6 +24,9 @@ const {
   ogDescription,
   twitterDescription,
   structuredData,
+  breadcrumbs,
+  active = null,
+  crumb,
 } = Astro.props;
 ---
 
@@ -32,10 +38,23 @@ const {
   ogDescription={ogDescription}
   twitterDescription={twitterDescription}
   structuredData={structuredData}
+  breadcrumbs={breadcrumbs}
   bodyClass="wide"
 >
-  <Header />
+  <Header active={active} />
   <main>
+    {crumb && crumb.length > 0 && (
+      <nav class="crumb">
+        {crumb.map((c, i) => (
+          <>
+            {i > 0 && <span class="sep">/</span>}
+            {c.path && i < crumb.length - 1
+              ? <a href={c.path}>{c.name}</a>
+              : <span>{c.name}</span>}
+          </>
+        ))}
+      </nav>
+    )}
     <slot />
   </main>
   <Footer />

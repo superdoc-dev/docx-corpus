@@ -1,5 +1,5 @@
 ---
-import DocPageLayout from '../layouts/DocPageLayout.astro';
+import WidePageLayout from '../layouts/WidePageLayout.astro';
 import SeeAlso from '../components/SeeAlso.astro';
 import { routes } from '../lib/routes';
 
@@ -7,7 +7,7 @@ const title = 'Download · docx-corpus';
 const description = 'Two ways to access docx-corpus: HuggingFace Parquet for metadata, URL manifests for bulk .docx download from R2.';
 ---
 
-<DocPageLayout
+<WidePageLayout
   title={title}
   description={description}
   canonicalPath={routes.download()}
@@ -33,7 +33,7 @@ const description = 'Two ways to access docx-corpus: HuggingFace Parquet for met
     </table>
   </section>
 
-  <section id="hf">
+  <section id="hf" class="prose">
     <div class="section-label">HuggingFace</div>
     <p>The full classified set as a single Parquet dataset. One row per document, with the metadata you'd use for training or filtering. The <code>url</code> column points at the raw .docx on R2 if you want to pair metadata with the original file.</p>
     <pre is:raw>from datasets import load_dataset
@@ -47,7 +47,7 @@ print(ds[0])
     <p>License: <a href="https://opendatacommons.org/licenses/by/1-0/">ODC-BY 1.0</a>. Cite as <code>superdoc-dev/docx-corpus</code>.</p>
   </section>
 
-  <section id="manifest">
+  <section id="manifest" class="prose">
     <div class="section-label">Manifest + R2</div>
     <p>Files live on Cloudflare R2 at <code>docxcorp.us/documents/&#123;id&#125;.docx</code>, content-addressed by SHA-256. The manifest endpoint returns a newline-delimited list of those URLs, filtered by type/topic/language/confidence. Pipe it into <code>wget</code> or <code>curl</code> for bulk transfer.</p>
     <pre><span class="c"># Manifest of English legal documents at 0.8+ confidence</span>
@@ -62,7 +62,7 @@ curl <span class="c">"https://api.docxcorp.us/manifest"</span> -o all.txt</pre>
     <p>If you already have the HuggingFace dataset and just want files for a subset you've filtered in Python, skip the manifest and use the <code>url</code> column directly.</p>
   </section>
 
-  <section id="text">
+  <section id="text" class="prose">
     <div class="section-label">Extracted text</div>
     <p>Plain-text extraction lives alongside the raw files at <code>docxcorp.us/extracted/&#123;id&#125;.txt</code>. Useful when you only need the text and don't want to parse OOXML yourself.</p>
     <pre>import requests
@@ -71,7 +71,7 @@ text = requests.get(f<span class="c">"https://docxcorp.us/extracted/&#123;doc_id
     <p>Both raw .docx and extracted text return <code>X-Robots-Tag: noindex</code> so they don't compete with the corpus pages in search.</p>
   </section>
 
-  <section>
+  <section class="prose">
     <div class="section-label">Rate limits</div>
     <p>R2 fronting is unmetered for normal research workloads. For full-corpus pulls, prefer the HuggingFace Parquet (one download) over hitting R2 several hundred thousand times. For scheduled pipelines that fetch heavily, email <a href="mailto:help@docxcorp.us">help@docxcorp.us</a> first so we can plan capacity.</p>
     <p>For interactive browsing (clicking through types/topics/filters in your browser), use the <a href={routes.home()}>homepage explorer</a>, which is backed by the same data.</p>
@@ -82,4 +82,4 @@ text = requests.get(f<span class="c">"https://docxcorp.us/extracted/&#123;doc_id
     { label: '/classification', href: routes.classification() },
     { label: '/quality', href: routes.quality() },
   ]} />
-</DocPageLayout>
+</WidePageLayout>
