@@ -1,20 +1,68 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import DocPageLayout from '../layouts/DocPageLayout.astro';
+import SeeAlso from '../components/SeeAlso.astro';
+import { routes } from '../lib/routes';
 
-const post = await import('../../content/classification.md');
-const { frontmatter, Content } = post;
-
-const breadcrumbs = [
-  { name: 'Home', path: '/' },
-  { name: 'Classification', path: '/classification' },
-];
+const title = 'Classification · docx-corpus';
+const description = 'Two-dimensional taxonomy of 10 document types and 9 topics. Trained from a Claude-labeled sample using a fine-tuned XLM-RoBERTa text classifier.';
 ---
 
-<Layout
-  title={frontmatter.title}
-  description={frontmatter.description}
-  canonicalPath={frontmatter.canonicalPath}
-  breadcrumbs={breadcrumbs}
+<DocPageLayout
+  title={title}
+  description={description}
+  canonicalPath={routes.classification()}
+  active="classification"
+  crumb={[{ name: 'Home', path: routes.home() }, { name: 'Classification' }]}
 >
-  <Content />
-</Layout>
+  <div class="hero">
+    <div class="kicker">Methodology</div>
+    <h1>How docx-corpus classifies documents</h1>
+    <p class="sub">Two-dimensional taxonomy. Documents are labeled along document_type (form) and topic (subject) independently. 90 combinations possible.</p>
+  </div>
+
+  <section>
+    <div class="section-label">Document types <span class="count">· 10</span></div>
+    <table class="schema">
+      <thead><tr><th>ID</th><th>Label</th><th>Covers</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">legal</td><td>Legal</td><td>Contracts, NDAs, terms, regulations</td></tr>
+        <tr><td class="mono">forms</td><td>Forms &amp; Applications</td><td>Applications, surveys, ballots</td></tr>
+        <tr><td class="mono">reports</td><td>Reports &amp; Analysis</td><td>Annual reports, research papers, case studies</td></tr>
+        <tr><td class="mono">policies</td><td>Policies &amp; Procedures</td><td>Privacy policies, handbooks, SOPs</td></tr>
+        <tr><td class="mono">educational</td><td>Educational</td><td>Syllabi, lesson plans, theses</td></tr>
+        <tr><td class="mono">correspondence</td><td>Correspondence</td><td>Letters, memos, press releases</td></tr>
+        <tr><td class="mono">technical</td><td>Technical Docs</td><td>Manuals, API docs, specifications</td></tr>
+        <tr><td class="mono">administrative</td><td>Administrative</td><td>Meeting minutes, agendas</td></tr>
+        <tr><td class="mono">creative</td><td>Creative &amp; Marketing</td><td>Brochures, pitch decks</td></tr>
+        <tr><td class="mono">reference</td><td>Reference &amp; Catalogs</td><td>Catalogs, directories, FAQs</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="section-label">Topics <span class="count">· 9</span></div>
+    <p><code>government</code> · <code>education</code> · <code>healthcare</code> · <code>finance</code> · <code>legal_judicial</code> · <code>technology</code> · <code>environment</code> · <code>nonprofit</code> · <code>general</code></p>
+  </section>
+
+  <section>
+    <div class="section-label">How labels are produced</div>
+    <p>We follow the <a href="https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1">FineWeb-Edu</a> pattern: sample a small, stratified set of documents across the five most-common languages, label each with an LLM, then train a lightweight multilingual text classifier on those labels and apply it at scale.</p>
+    <p>The classifier is a fine-tuned XLM-RoBERTa, trained on roughly 3,500 LLM-labeled examples. Two independent classifiers are trained, one per dimension. Code is open: see the <a href="https://github.com/superdoc-dev/docx-corpus/tree/main/scripts/classification">classification scripts</a> on GitHub.</p>
+  </section>
+
+  <section>
+    <div class="section-label">Known limitations</div>
+    <ol class="limits">
+      <li><strong>Labeler ceiling.</strong> Claude Haiku 4.5 is the upper bound. No human-annotated test set published.</li>
+      <li><strong>English-trained, multilingual-applied.</strong> Sample drawn from 5 languages; classifier runs over 76. Accuracy on out-of-sample languages not measured.</li>
+      <li><strong>Topic skew.</strong> Government (33%) and education (25%) dominate. Reflects what's published on .gov and .edu, not a sampling choice.</li>
+      <li><strong>Hard cases get one label.</strong> Documents spanning types still pick a single label. Filter by <code>confidence</code> to remove ambiguous cases.</li>
+    </ol>
+  </section>
+
+  <SeeAlso links={[
+    { label: '/dataset', href: routes.dataset() },
+    { label: '/quality', href: routes.quality() },
+    { label: '/download', href: routes.download() },
+  ]} />
+</DocPageLayout>

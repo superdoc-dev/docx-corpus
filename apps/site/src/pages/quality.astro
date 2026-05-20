@@ -1,20 +1,71 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import DocPageLayout from '../layouts/DocPageLayout.astro';
+import ConfidenceHistogram from '../components/ConfidenceHistogram.astro';
+import SeeAlso from '../components/SeeAlso.astro';
+import { routes } from '../lib/routes';
+import { getConfidenceHistogram, getCorpusStats } from '../lib/data';
 
-const post = await import('../../content/quality.md');
-const { frontmatter, Content } = post;
+const [stats, histogram] = await Promise.all([
+  getCorpusStats(),
+  getConfidenceHistogram(),
+]);
 
-const breadcrumbs = [
-  { name: 'Home', path: '/' },
-  { name: 'Quality', path: '/quality' },
-];
+// ConfidenceHistogram expects bins with `range` + `pct`. Use widths
+// scaled to the maximum bin so the bar lengths read as relative.
+const bins = histogram.map(h => ({ range: h.range, pct: h.pct }));
+
+const title = 'Quality · docx-corpus';
+const description = 'Validation rules, deduplication, classification confidence distribution, and known limitations.';
 ---
 
-<Layout
-  title={frontmatter.title}
-  description={frontmatter.description}
-  canonicalPath={frontmatter.canonicalPath}
-  breadcrumbs={breadcrumbs}
+<DocPageLayout
+  title={title}
+  description={description}
+  canonicalPath={routes.quality()}
+  active="quality"
+  crumb={[{ name: 'Home', path: routes.home() }, { name: 'Quality' }]}
 >
-  <Content />
-</Layout>
+  <div class="hero">
+    <div class="kicker">Quality &amp; limits</div>
+    <h1>Validation, confidence, and what's known to be weak</h1>
+    <p class="sub">For researchers deciding whether docx-corpus is fit for their task.</p>
+  </div>
+
+  <section>
+    <div class="section-label">Validation gates</div>
+    <p>Every candidate file must be a real, openable DOCX before entering the corpus. We verify the ZIP container is well-formed and that the OOXML parts a Word document is required to have are present. Files that fail any check are recorded as failed (URL only, no stored bytes) so subsequent re-runs don't re-fetch them.</p>
+    <p>Current failed count: 117,862.</p>
+  </section>
+
+  <section>
+    <div class="section-label">Deduplication</div>
+    <p>Content-addressed by SHA-256 of the raw .docx bytes. Two URLs pointing at byte-identical files collapse to one storage record. Current dedup outcome: 241,993 duplicate records pointing at 1,101,537 unique-content uploads.</p>
+    <p><strong>Exact dedup only.</strong> Near-duplicates (same template with different filled-in values, or re-saved with metadata-only changes) are not detected.</p>
+  </section>
+
+  <section>
+    <div class="section-label">Confidence distribution <span class="count">· n={stats.totalClassified.toLocaleString()}</span></div>
+    <ConfidenceHistogram bins={bins} />
+    <p>Half the corpus is at 0.9+. For label-noise-sensitive tasks, filter on <code>min_confidence=0.7</code> (~76% of corpus) or <code>0.8</code> (~65%). The score is uncalibrated softmax; use as a relative ranking, not a probability of correctness.</p>
+  </section>
+
+  <section>
+    <div class="section-label">Known limitations</div>
+    <ol class="limits">
+      <li><strong>Common Crawl bias.</strong> Government and education domains over-publish .docx; intranets and login-walled content are absent.</li>
+      <li><strong>Topic skew.</strong> Government (33%) + education (25%) = 58% of classified.</li>
+      <li><strong>English-heavy.</strong> English is 33% of classified. Smaller languages present but small in share.</li>
+      <li><strong>No human evaluation set.</strong> Classification accuracy is bounded by the LLM labeler.</li>
+      <li><strong>Near-duplicates.</strong> Same template with different fields remain as distinct documents.</li>
+      <li><strong>Lang detection on short docs.</strong> Lingua is reliable on full text, less so on short/symbol-heavy content (the <code>unknown</code> bucket).</li>
+      <li><strong>Word counts cover extracted text only.</strong> Text in images is not counted.</li>
+      <li><strong>License covers metadata, not originals.</strong> Document copyright stays with the author.</li>
+    </ol>
+  </section>
+
+  <SeeAlso links={[
+    { label: '/dataset', href: routes.dataset() },
+    { label: '/classification', href: routes.classification() },
+    { label: '/download', href: routes.download() },
+  ]} />
+</DocPageLayout>

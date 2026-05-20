@@ -75,3 +75,39 @@ export async function getTopLanguages(limit = 20): Promise<LanguageFacet[]> {
   ` as { code: string; count: number }[];
   return rows.map(r => ({ code: r.code, name: r.code, count: r.count }));
 }
+
+// Confidence histogram: 8 ranges from below-0.3 to 0.9-1.0.
+// Counts are computed against the full classified set.
+export interface HistogramBin { range: string; count: number; pct: number; }
+
+export async function getConfidenceHistogram(): Promise<HistogramBin[]> {
+  const rows = await sql`
+    SELECT
+      CASE
+        WHEN classification_confidence >= 0.9 THEN '0.9-1.0'
+        WHEN classification_confidence >= 0.8 THEN '0.8-0.9'
+        WHEN classification_confidence >= 0.7 THEN '0.7-0.8'
+        WHEN classification_confidence >= 0.6 THEN '0.6-0.7'
+        WHEN classification_confidence >= 0.5 THEN '0.5-0.6'
+        WHEN classification_confidence >= 0.4 THEN '0.4-0.5'
+        WHEN classification_confidence >= 0.3 THEN '0.3-0.4'
+        ELSE 'below 0.3'
+      END AS bucket,
+      COUNT(*)::int AS count
+    FROM documents
+    WHERE document_type IS NOT NULL AND classification_confidence IS NOT NULL
+    GROUP BY bucket
+  ` as { bucket: string; count: number }[];
+
+  // Order high to low for display
+  const order = ['0.9-1.0', '0.8-0.9', '0.7-0.8', '0.6-0.7', '0.5-0.6', '0.4-0.5', '0.3-0.4', 'below 0.3'];
+  const byBucket = Object.fromEntries(rows.map(r => [r.bucket, r.count]));
+  const total = rows.reduce((s, r) => s + r.count, 0);
+  return order
+    .filter(b => byBucket[b] !== undefined)
+    .map(b => ({
+      range: b,
+      count: byBucket[b],
+      pct: Math.round((1000 * byBucket[b]) / total) / 10,
+    }));
+}
