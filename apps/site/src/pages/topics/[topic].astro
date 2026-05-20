@@ -1,10 +1,14 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { getTopicFacets, TYPE_LABELS } from '../../lib/data';
-import { neon } from '@neondatabase/serverless';
+import DocPageLayout from '../../layouts/DocPageLayout.astro';
+import StatsRow from '../../components/StatsRow.astro';
+import SamplesTable from '../../components/SamplesTable.astro';
+import SeeAlso from '../../components/SeeAlso.astro';
+import { routes } from '../../lib/routes';
 import { canonicalUrl } from '../../lib/seo';
-
-const sql = neon(import.meta.env.DATABASE_URL);
+import {
+  getTopicFacets, getTypesForTopic, getLanguagesForTopic, getSamplesByTopic,
+  TYPE_LABELS,
+} from '../../lib/data';
 
 export async function getStaticPaths() {
   const topics = await getTopicFacets();
@@ -14,47 +18,29 @@ export async function getStaticPaths() {
 const { topic } = Astro.params;
 const { topicFacet } = Astro.props;
 
-const langRows = await sql`
-  SELECT language AS code, COUNT(*)::int AS count
-  FROM documents
-  WHERE document_topic = ${topic} AND language IS NOT NULL
-  GROUP BY language
-  ORDER BY count DESC
-  LIMIT 10
-` as { code: string; count: number }[];
-
-const typeRows = await sql`
-  SELECT document_type AS id, COUNT(*)::int AS count
-  FROM documents
-  WHERE document_topic = ${topic} AND document_type IS NOT NULL
-  GROUP BY document_type
-  ORDER BY count DESC
-` as { id: string; count: number }[];
+const [types, langs, samples] = await Promise.all([
+  getTypesForTopic(topic!),
+  getLanguagesForTopic(topic!),
+  getSamplesByTopic(topic!, 5),
+]);
 
 const label = topicFacet.label;
 const count = topicFacet.count;
-const langCount = langRows.length;
-const topLangs = langRows.slice(0, 5).map(l => l.code).join(', ');
+const topLangCodes = langs.languages.slice(0, 5).map(l => l.code).join(', ');
 
 const title = `${label} Word documents: ${count.toLocaleString()} classified .docx files`;
-const description = `${count.toLocaleString()}+ ${label.toLowerCase()} Word documents from the public web, in ${langCount}+ languages including ${topLangs}. Free open dataset from docx-corpus.`;
-
-const breadcrumbs = [
-  { name: 'Home', path: '/' },
-  { name: 'Topics', path: '/topics' },
-  { name: label, path: `/topics/${topic}` },
-];
+const description = `${count.toLocaleString()}+ ${label.toLowerCase()} Word documents from the public web, in ${langs.distinct}+ languages including ${topLangCodes}. Free open dataset from docx-corpus.`;
 
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
   name: `docx-corpus - ${label} Documents`,
   description,
-  url: canonicalUrl(`/topics/${topic}`),
+  url: canonicalUrl(routes.topic(topic!)),
   isPartOf: {
     '@type': 'Dataset',
     name: 'docx-corpus',
-    url: canonicalUrl('/'),
+    url: canonicalUrl(routes.home()),
     license: 'https://opendatacommons.org/licenses/by/1-0/',
     creator: { '@type': 'Organization', name: 'SuperDoc', url: 'https://superdoc.dev' },
   },
@@ -63,44 +49,96 @@ const structuredData = {
 };
 ---
 
-<Layout
+<DocPageLayout
   title={title}
   description={description}
-  canonicalPath={`/topics/${topic}`}
+  canonicalPath={routes.topic(topic!)}
   structuredData={structuredData}
-  breadcrumbs={breadcrumbs}
+  crumb={[
+    { name: 'Home', path: routes.home() },
+    { name: 'Topics', path: routes.topicsIndex() },
+    { name: label },
+  ]}
 >
-  <h1>{label} Word documents</h1>
-  <p>{count.toLocaleString()} classified <code>{topic}</code> documents from the public web. See <a href="/classification">/classification</a> for what this label covers.</p>
+  <div class="hero">
+    <div class="kicker">Topic · {topic}</div>
+    <h1>{label} Word documents</h1>
+    <p class="sub">{count.toLocaleString()} documents across {langs.distinct} languages and {types.length} document types. See <a href={routes.classification()}>/classification</a> for what this label covers.</p>
 
-  <h2>Type breakdown</h2>
-  <table>
-    <thead><tr><th>Type</th><th style="text-align:right">Count</th></tr></thead>
-    <tbody>
-      {typeRows.map(r => (
-        <tr>
-          <td><a href={`/types/${r.id}`}>{TYPE_LABELS[r.id] ?? r.id}</a></td>
-          <td style="text-align:right; font-family: 'JetBrains Mono', monospace;">{r.count.toLocaleString()}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+    <StatsRow stats={[
+      { value: count.toLocaleString(), label: 'documents' },
+      { value: String(langs.distinct), label: 'languages' },
+      { value: String(types.length), label: 'types' },
+    ]} />
+  </div>
 
-  <h2>Top languages</h2>
-  <table>
-    <thead><tr><th>Language</th><th style="text-align:right">Count</th></tr></thead>
-    <tbody>
-      {langRows.map(l => (
-        <tr>
-          <td><code>{l.code}</code></td>
-          <td style="text-align:right; font-family: 'JetBrains Mono', monospace;">{l.count.toLocaleString()}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+  <section>
+    <div class="section-label">By type</div>
+    <table>
+      <thead><tr><th>Type</th><th class="right">Count</th></tr></thead>
+      <tbody>
+        {types.map(r => (
+          <tr>
+            <td><a href={routes.type(r.id)}>{r.label}</a></td>
+            <td class="right mono">{r.count.toLocaleString()}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
 
-  <h2>Access</h2>
-  <p>Filter the API by this topic:</p>
-  <pre><code>curl &quot;https://api.docxcorp.us/manifest?topic={topic}&quot; -o {topic}-manifest.txt</code></pre>
-  <p>See <a href="/download">/download</a> for full access patterns.</p>
-</Layout>
+  <section>
+    <div class="section-label">Top languages</div>
+    <table>
+      <thead><tr><th>Lang</th><th class="right">Count</th><th class="right">Share</th></tr></thead>
+      <tbody>
+        {langs.languages.slice(0, 6).map(l => (
+          <tr>
+            <td class="mono">{l.code}</td>
+            <td class="right mono">{l.count.toLocaleString()}</td>
+            <td class="right mono">{l.percentage.toFixed(1)}%</td>
+          </tr>
+        ))}
+        {langs.distinct > 6 && (
+          <tr><td colspan="3" style="color: var(--muted); font-style: italic;">+ {langs.distinct - 6} more</td></tr>
+        )}
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;">
+      Share is computed against the top 20 languages for this topic ({langs.denominator.toLocaleString()} docs),
+      matching what the API returns. A handful of documents fall outside the top 20 or have no detected language.
+    </p>
+  </section>
+
+  {samples.length > 0 && (
+    <section>
+      <div class="section-label">Sample documents <span class="count">· real rows from the corpus</span></div>
+      <SamplesTable
+        otherHeader="Type"
+        rows={samples.map(s => ({
+          id: s.id,
+          filename: s.filename ?? 'unknown',
+          otherLabel: TYPE_LABELS[s.type] ?? s.type,
+          language: s.language ?? '',
+          confidence: s.confidence,
+        }))}
+      />
+    </section>
+  )}
+
+  <section>
+    <div class="section-label">Access</div>
+    <pre is:raw><span class="c"># All {label.toLowerCase()} documents</span>
+curl <span class="c">"https://api.docxcorp.us/manifest?topic={topic}"</span> -o {topic}-manifest.txt
+
+<span class="c"># High-confidence English subset</span>
+curl <span class="c">"https://api.docxcorp.us/manifest?topic={topic}&lang=en&min_confidence=0.8"</span></pre>
+    <p>See <a href={routes.download()}>/download</a> for full access patterns.</p>
+  </section>
+
+  <SeeAlso links={[
+    { label: 'All topics', href: routes.topicsIndex() },
+    { label: 'All types', href: routes.typesIndex() },
+    { label: '/classification', href: routes.classification() },
+  ]} />
+</DocPageLayout>

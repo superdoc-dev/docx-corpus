@@ -1,40 +1,47 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import DocPageLayout from '../../layouts/DocPageLayout.astro';
+import SeeAlso from '../../components/SeeAlso.astro';
+import { routes } from '../../lib/routes';
 import { getTopicFacets } from '../../lib/data';
 
 const topics = await getTopicFacets();
 const totalTopics = topics.length;
 const totalDocs = topics.reduce((s, t) => s + t.count, 0);
 
-const breadcrumbs = [
-  { name: 'Home', path: '/' },
-  { name: 'Topics', path: '/topics' },
-];
-
 const title = `Topics in docx-corpus: ${totalTopics} subject areas, ${totalDocs.toLocaleString()} Word documents`;
 const description = `Browse docx-corpus by topic. ${totalTopics} subject areas covering ${totalDocs.toLocaleString()} classified Word documents from Common Crawl.`;
 ---
 
-<Layout
+<DocPageLayout
   title={title}
   description={description}
-  canonicalPath="/topics"
-  breadcrumbs={breadcrumbs}
+  canonicalPath={routes.topicsIndex()}
+  crumb={[{ name: 'Home', path: routes.home() }, { name: 'Topics' }]}
 >
-  <h1>Browse by topic</h1>
-  <p>{totalDocs.toLocaleString()} classified Word documents across {totalTopics} topics. Each topic label describes the document's subject domain; types describe its form or structure. See <a href="/classification">/classification</a> for definitions and methodology.</p>
+  <div class="hero">
+    <div class="kicker">Browse · {totalTopics} topics</div>
+    <h1>Topics</h1>
+    <p class="sub">Each topic describes a document's subject domain (government, healthcare, finance, etc.). Topics are independent from types, which describe form. See <a href={routes.classification()}>/classification</a> for label definitions and the taxonomy.</p>
+  </div>
 
-  <table>
-    <thead>
-      <tr><th>Topic</th><th style="text-align:right">Count</th></tr>
-    </thead>
-    <tbody>
-      {topics.map(t => (
-        <tr>
-          <td><a href={`/topics/${t.id}`}>{t.label}</a></td>
-          <td style="text-align:right; font-family: 'JetBrains Mono', monospace;">{t.count.toLocaleString()}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</Layout>
+  <section>
+    <p>Each classified row has one type label and one topic label. Click through to browse a slice: counts per type and language, sample documents, and a manifest URL for bulk download.</p>
+    <table>
+      <thead><tr><th>Topic</th><th class="right">Documents</th></tr></thead>
+      <tbody>
+        {topics.map(t => (
+          <tr>
+            <td><a href={routes.topic(t.id)}>{t.label}</a></td>
+            <td class="right mono">{t.count.toLocaleString()}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <SeeAlso links={[
+    { label: 'Browse by type', href: routes.typesIndex() },
+    { label: '/classification', href: routes.classification() },
+    { label: '/download', href: routes.download() },
+  ]} />
+</DocPageLayout>
