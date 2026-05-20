@@ -63,7 +63,7 @@ const structuredData = {
     .hero-kicker {
       font-size: 0.72rem;
       font-weight: 600;
-      color: #C9493D;
+      color: var(--coral-text);
       text-transform: uppercase;
       letter-spacing: 0.1em;
       margin-bottom: 12px;
@@ -80,7 +80,7 @@ const structuredData = {
 
     .hero-sub {
       font-size: 1.05rem;
-      color: #6B7280;
+      color: var(--muted);
       line-height: 1.6;
       max-width: 560px;
       margin-bottom: 12px;
@@ -88,12 +88,12 @@ const structuredData = {
 
     .hero-by {
       font-size: 0.85rem;
-      color: #6B7280;
+      color: var(--muted);
       margin-bottom: 36px;
     }
 
     .hero-by a {
-      color: #C9493D;
+      color: var(--coral-text);
       text-decoration: none;
       font-weight: 600;
     }
@@ -113,14 +113,14 @@ const structuredData = {
       font-size: 2rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      color: #2D2D2D;
+      color: var(--text);
       min-height: 2rem;
       line-height: 2rem;
     }
 
     .num-label {
       font-size: 0.72rem;
-      color: #6B7280;
+      color: var(--muted);
       letter-spacing: 0.02em;
     }
 
@@ -143,7 +143,7 @@ const structuredData = {
     }
 
     .about-prose a {
-      color: #C9493D;
+      color: var(--coral-text);
       text-decoration: none;
       font-weight: 600;
     }
@@ -162,7 +162,7 @@ const structuredData = {
     .about-browse-label {
       font-size: 0.72rem;
       font-weight: 600;
-      color: #6B7280;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 10px;
@@ -185,7 +185,7 @@ const structuredData = {
     }
 
     .about-browse-list a:hover {
-      color: #C9493D;
+      color: var(--coral-text);
       text-decoration: underline;
     }
 
@@ -207,7 +207,7 @@ const structuredData = {
     .section-label {
       font-size: 0.72rem;
       font-weight: 600;
-      color: #6B7280;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 20px;
@@ -231,11 +231,11 @@ const structuredData = {
     }
 
     .tax-cell:hover {
-      border-color: #F97B6D;
+      border-color: var(--coral);
     }
 
     .tax-cell.active {
-      border-color: #F97B6D;
+      border-color: var(--coral);
       background: #fef8f7;
     }
 
@@ -248,7 +248,7 @@ const structuredData = {
     .tax-count {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.7rem;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .tax-bar {
@@ -260,7 +260,7 @@ const structuredData = {
 
     .tax-bar-fill {
       height: 100%;
-      background: #F97B6D;
+      background: var(--coral);
       border-radius: 2px;
     }
 
@@ -298,7 +298,7 @@ const structuredData = {
     }
 
     .lang-bar.lang-active {
-      outline: 2px solid #2D2D2D;
+      outline: 2px solid var(--text);
       outline-offset: -2px;
     }
 
@@ -308,7 +308,7 @@ const structuredData = {
       gap: 12px;
       margin-top: 12px;
       font-size: 0.72rem;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .lang-legend-item {
@@ -319,11 +319,11 @@ const structuredData = {
     }
 
     .lang-legend-item:hover {
-      color: #2D2D2D;
+      color: var(--text);
     }
 
     .lang-legend-active {
-      color: #C9493D;
+      color: var(--coral-text);
       font-weight: 600;
     }
 
@@ -348,7 +348,7 @@ const structuredData = {
 
     .explore-count {
       font-size: 0.72rem;
-      color: #6B7280;
+      color: var(--muted);
       font-family: 'JetBrains Mono', monospace;
     }
 
@@ -367,13 +367,13 @@ const structuredData = {
       font-size: 0.72rem;
       font-weight: 600;
       background: #fef0ee;
-      color: #C9493D;
+      color: var(--coral-text);
     }
 
     .filter-pill button {
       background: none;
       border: none;
-      color: #C9493D;
+      color: var(--coral-text);
       cursor: pointer;
       font-size: 0.8rem;
       line-height: 1;
@@ -387,12 +387,12 @@ const structuredData = {
       gap: 10px;
       margin-bottom: 16px;
       font-size: 0.78rem;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .conf-filter input[type="range"] {
       width: 180px;
-      accent-color: #F97B6D;
+      accent-color: var(--coral);
     }
 
     .download-guide {
@@ -403,7 +403,7 @@ const structuredData = {
 
     .download-guide summary {
       cursor: pointer;
-      color: #6B7280;
+      color: var(--muted);
       font-size: 0.72rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -411,7 +411,7 @@ const structuredData = {
     }
 
     .download-guide summary:hover {
-      color: #2D2D2D;
+      color: var(--text);
     }
 
     .guide-content {
@@ -432,7 +432,7 @@ const structuredData = {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.75rem;
       line-height: 1.6;
-      color: #2D2D2D;
+      color: var(--text);
     }
 
     .manifest-btn {
@@ -441,16 +441,16 @@ const structuredData = {
       font-weight: 600;
       padding: 6px 14px;
       border-radius: 6px;
-      border: 1px solid #F97B6D;
+      border: 1px solid var(--coral);
       background: #fff;
-      color: #C9493D;
+      color: var(--coral-text);
       cursor: pointer;
       transition: all 0.15s;
       white-space: nowrap;
     }
 
     .manifest-btn:hover:not(:disabled) {
-      background: #F97B6D;
+      background: var(--coral);
       color: #fff;
     }
 
@@ -469,7 +469,7 @@ const structuredData = {
       text-align: left;
       font-size: 0.68rem;
       font-weight: 600;
-      color: #6B7280;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.06em;
       padding: 8px 0;
@@ -498,7 +498,7 @@ const structuredData = {
     .dtable .fhash {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.68rem;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .doc-link {
@@ -508,7 +508,7 @@ const structuredData = {
     }
 
     .doc-link:hover .fname {
-      color: #C9493D;
+      color: var(--coral-text);
     }
 
     .dtable td:last-child {
@@ -536,7 +536,7 @@ const structuredData = {
     .mono {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.78rem;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .conf-g {
@@ -596,7 +596,7 @@ const structuredData = {
     /* Loading state */
     .loading-row td {
       text-align: center;
-      color: #6B7280;
+      color: var(--muted);
       padding: 24px 0;
     }
 
@@ -612,7 +612,7 @@ const structuredData = {
     .pagination-info {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.72rem;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .pagination-btns {
@@ -623,7 +623,7 @@ const structuredData = {
     .pg-btn {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.78rem;
-      color: #6B7280;
+      color: var(--muted);
       padding: 6px 12px;
       border-radius: 4px;
       border: 1px solid #e5e5e5;
@@ -633,8 +633,8 @@ const structuredData = {
     }
 
     .pg-btn:hover {
-      border-color: #F97B6D;
-      color: #C9493D;
+      border-color: var(--coral);
+      color: var(--coral-text);
     }
 
     .pg-btn:disabled {
@@ -644,13 +644,13 @@ const structuredData = {
 
     .pg-btn:disabled:hover {
       border-color: #e5e5e5;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .pg-btn.active {
-      background: #F97B6D;
+      background: var(--coral);
       color: #fff;
-      border-color: #F97B6D;
+      border-color: var(--coral);
     }
 
     /* Footer */
@@ -719,25 +719,25 @@ const structuredData = {
     }
 
     .preview-dl {
-      border: 1px solid #F97B6D;
+      border: 1px solid var(--coral);
       background: #fff;
-      color: #C9493D;
+      color: var(--coral-text);
     }
 
     .preview-dl:hover {
-      background: #F97B6D;
+      background: var(--coral);
       color: #fff;
     }
 
     .preview-close {
       border: 1px solid #e5e5e5;
       background: #fff;
-      color: #6B7280;
+      color: var(--muted);
     }
 
     .preview-close:hover {
-      border-color: #2D2D2D;
-      color: #2D2D2D;
+      border-color: var(--text);
+      color: var(--text);
     }
 
     .preview-body {
@@ -753,18 +753,18 @@ const structuredData = {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #6B7280;
+      color: var(--muted);
       font-size: 0.85rem;
     }
 
     .preview-badge {
       font-size: 0.68rem;
-      color: #6B7280;
+      color: var(--muted);
       font-weight: 500;
     }
 
     .preview-badge a {
-      color: #C9493D;
+      color: var(--coral-text);
       text-decoration: none;
     }
 
@@ -1001,7 +1001,7 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
       const API = location.hostname === 'localhost' ? 'http://localhost:8787' : 'https://api.docxcorp.us';
 
       // ---------- color palettes ----------
-      const CORAL_SHADES = ['#C9493D', '#b84136', '#a73a30', '#96322a', '#852b24'];
+      const CORAL_SHADES = ['#F97B6D', '#E55546', '#C13D2E', '#923226', '#67241C'];
       const GRAY_SHADES = ['#4B5563', '#434b57', '#3b424c', '#333a41', '#2b3137'];
 
       // ---------- helpers ----------

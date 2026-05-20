@@ -1,8 +1,8 @@
 /* docx-corpus design system - Option A (Restrained) - locked per brand.md */
 
 :root {
-  --coral: #F97B6D;
-  --coral-text: #C9493D;
+  --coral: #F97B6D;        /* Decorative accent: bar fills, badge backgrounds, decorative borders. */
+  --coral-text: #C9493D;   /* Coral text: links, kickers, byline, wordmark - anything text-shaped. */
   --text: #2D2D2D;
   --muted: #6B7280;
   --border: #E5E7EB;
@@ -32,12 +32,7 @@ code, pre { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
   border-bottom: 1px solid var(--border);
 }
 .brand { font-size: 15px; font-weight: 600; color: var(--text); }
-/* Wordmark exception: the `docx` half of the brand mark uses the brighter
-   decorative coral (--coral / #F97B6D) instead of the WCAG-compliant text
-   coral (--coral-text / #C9493D). Accepted accessibility trade-off on the
-   wordmark only - body links and inline text still use --coral-text.
-   See brand.md > Visual > Colors. */
-.brand .accent { color: var(--coral); }
+.brand .accent { color: var(--coral-text); }
 .brand a { color: var(--text); font-weight: 600; }
 .site-nav { display: flex; gap: 20px; font-size: 13px; }
 .site-nav a { color: var(--muted); font-weight: 500; }
