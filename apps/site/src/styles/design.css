@@ -32,7 +32,12 @@ code, pre { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
   border-bottom: 1px solid var(--border);
 }
 .brand { font-size: 15px; font-weight: 600; color: var(--text); }
-.brand .accent { color: var(--coral-text); }
+/* Wordmark exception: the `docx` half of the brand mark uses the brighter
+   decorative coral (--coral / #F97B6D) instead of the WCAG-compliant text
+   coral (--coral-text / #C9493D). Accepted accessibility trade-off on the
+   wordmark only - body links and inline text still use --coral-text.
+   See brand.md > Visual > Colors. */
+.brand .accent { color: var(--coral); }
 .brand a { color: var(--text); font-weight: 600; }
 .site-nav { display: flex; gap: 20px; font-size: 13px; }
 .site-nav a { color: var(--muted); font-weight: 500; }

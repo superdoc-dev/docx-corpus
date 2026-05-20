@@ -207,8 +207,10 @@ _Use on homepage hero, GitHub README, HuggingFace dataset card._
 ### Colors
 
 **Primary — Coral**
-`#F97B6D` — Decorative accent. Bar fills, badge backgrounds, hover states, borders, active indicators.
-`#C9493D` — Coral text. Links, brand accent text, kicker labels — use whenever coral appears as text on a white background (WCAG AA 5.2:1).
+`#F97B6D` — Decorative accent and the `docx` half of the wordmark. Bar fills, badge backgrounds, hover states, borders, active indicators.
+`#C9493D` — Coral text. Links, kicker labels, and any coral text that is not the wordmark — use whenever coral appears as content text on a white background (WCAG AA 5.2:1).
+
+**Wordmark exception.** The `docx` half of the brand mark uses `#F97B6D` (brighter, decorative coral) instead of `#C9493D`, even though it sits on a white background. This is a deliberate accessibility trade-off on the wordmark only: the mark is a stylized identifier rather than reading content, the size is small (~15px), and the contrast hit (~2.85:1) does not extend to body text, links, or anything users need to read to use the site. If a future wordmark refresh moves to a larger or bolder treatment, revisit.
 
 **Text — Charcoal**
 `#2D2D2D` — Headings, body copy, the "corpus" half of the wordmark.
@@ -266,8 +268,8 @@ Locked decisions for the web app. Reference: `mockups/design-system/option-a-res
 - Section spacing: 56px between sections.
 
 **Coral usage rules**
-- Brand mark `docx`: coral text (`#C9493D`).
-- Inline links: coral text.
+- Brand mark `docx`: brighter decorative coral (`#F97B6D`). Wordmark exception, see Colors above.
+- Inline links: coral text (`#C9493D`, WCAG-compliant).
 - **Nothing else.** No coral kickers, no coral numbers, no coral hover states. Coral punctuates rare elements; muted gray (`#6B7280`) carries the rest.
 
 **Dividers and surfaces**
