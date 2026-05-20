@@ -1,153 +1,58 @@
 ---
-// Homepage. Ported from the legacy static file so it participates in the
-// Astro build pipeline. Inline CSS and JS are preserved
-// verbatim under `is:global is:inline` and `is:inline` respectively; the
-// explorer JS still fetches live data from api.docxcorp.us at runtime, same
-// as before.
-//
-// This page intentionally doesn't use the shared Layout.astro because its
-// header/footer chrome and SEO metadata (custom og:title brand tagline,
-// twitter:description with "The missing dataset" copy, full Dataset JSON-LD
-// with variableMeasured/inLanguage/measurementTechnique) differ from the
-// shared one. The other Astro pages still go through Layout.
+import WidePageLayout from '../layouts/WidePageLayout.astro';
+import { canonicalUrl } from '../lib/seo';
+import { routes } from '../lib/routes';
+
+const title = 'docx-corpus: 736K classified Word documents. Open DOCX dataset.';
+const description = '736K+ real Word .docx files from Common Crawl, classified by type, topic, and language. Open dataset for document AI, NLP, and parsing research.';
+const ogTitle = 'docx-corpus — Every Word document on the public web. Classified and open.';
+const ogDescription = '736K+ real .docx files. 10 document types, 9 topics, 46+ languages. Open dataset for document processing research.';
+const twitterDescription = '736K+ real .docx files. 10 document types, 9 topics, 46+ languages. The missing dataset for document processing research.';
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'docx-corpus',
+  description: 'The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.',
+  url: canonicalUrl(routes.home()),
+  license: 'https://opendatacommons.org/licenses/by/1-0/',
+  creator: { '@type': 'Organization', name: 'SuperDoc', url: 'https://superdoc.dev' },
+  distribution: [
+    {
+      '@type': 'DataDownload',
+      encodingFormat: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      contentUrl: 'https://docxcorp.us',
+    },
+  ],
+  keywords: ['docx', 'word documents', 'NLP', 'document processing', 'corpus', 'dataset', 'OOXML'],
+  inLanguage: ['en', 'de', 'fr', 'es', 'pt', 'zh', 'ja', 'ko', 'ar'],
+  measurementTechnique: 'Fine-tuned XLM-RoBERTa text classifiers',
+  variableMeasured: [
+    {
+      '@type': 'PropertyValue',
+      'name': 'document_type',
+      'description': 'Document type classification (e.g., report, letter, resume)',
+    },
+    {
+      '@type': 'PropertyValue',
+      'name': 'document_topic',
+      'description': 'Document topic classification (e.g., business, education, legal)',
+    },
+  ],
+};
 ---
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C9QG5MXVL5"></script>
-  <script is:inline>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-C9QG5MXVL5');
-  </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>docx-corpus: 736K classified Word documents. Open DOCX dataset.</title>
-  <meta name="description"
-    content="736K+ real Word .docx files from Common Crawl, classified by type, topic, and language. Open dataset for document AI, NLP, and parsing research.">
-  <link rel="canonical" href="https://docxcorp.us">
-  <meta property="og:title" content="docx-corpus — Every Word document on the public web. Classified and open.">
-  <meta property="og:description"
-    content="736K+ real .docx files. 10 document types, 9 topics, 46+ languages. Open dataset for document processing research.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://docxcorp.us">
-  <meta property="og:image" content="https://docxcorp.us/og-image.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="docx-corpus — Every Word document on the public web. Classified and open.">
-  <meta name="twitter:description"
-    content="736K+ real .docx files. 10 document types, 9 topics, 46+ languages. The missing dataset for document processing research.">
-  <meta name="twitter:image" content="https://docxcorp.us/og-image.png">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Dataset",
-    "name": "docx-corpus",
-    "description": "The largest open corpus of classified Word documents. 736K+ real .docx files from the public web, classified into 10 document types and 9 topics across 46+ languages.",
-    "url": "https://docxcorp.us",
-    "license": "https://opendatacommons.org/licenses/by/1-0/",
-    "creator": {
-      "@type": "Organization",
-      "name": "SuperDoc",
-      "url": "https://superdoc.dev"
-    },
-    "distribution": [
-      {
-        "@type": "DataDownload",
-        "encodingFormat": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "contentUrl": "https://docxcorp.us"
-      }
-    ],
-    "keywords": ["docx", "word documents", "NLP", "document processing", "corpus", "dataset", "OOXML"],
-    "inLanguage": ["en", "de", "fr", "es", "pt", "zh", "ja", "ko", "ar"],
-    "measurementTechnique": "Fine-tuned XLM-RoBERTa text classifiers",
-    "variableMeasured": [
-      {
-        "@type": "PropertyValue",
-        "name": "document_type",
-        "description": "Document type classification (e.g., report, letter, resume)"
-      },
-      {
-        "@type": "PropertyValue",
-        "name": "document_topic",
-        "description": "Document topic classification (e.g., business, education, legal)"
-      }
-    ]
-  }
-  </script>
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-    as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
-  <style is:global is:inline>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: #FFFFFF;
-      color: #2D2D2D;
-      min-height: 100vh;
-    }
-
+<WidePageLayout
+  title={title}
+  description={description}
+  canonicalPath={routes.home()}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+  twitterDescription={twitterDescription}
+  structuredData={structuredData}
+>
+  <style is:inline>
     /* Header */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 48px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .brand {
-      font-size: 0.95rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .brand .accent {
-      color: #C9493D;
-    }
-
-    .links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .links a {
-      text-decoration: none;
-      color: #6B7280;
-      font-size: 0.82rem;
-      font-weight: 500;
-      transition: color 0.15s;
-    }
-
-    .links a:hover {
-      color: #2D2D2D;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 48px;
-    }
-
     /* Hero */
     .hero {
       padding: 64px 0 48px;
@@ -749,29 +654,6 @@
     }
 
     /* Footer */
-    .site-footer {
-      border-top: 1px solid #f0f0f0;
-      padding: 24px 0;
-      margin-top: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.78rem;
-      color: #6B7280;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px 48px;
-    }
-
-    .site-footer a {
-      color: #6B7280;
-      text-decoration: none;
-    }
-
-    .site-footer a:hover {
-      text-decoration: underline;
-    }
-
     /* Preview modal */
     .preview-overlay {
       position: fixed;
@@ -894,11 +776,6 @@
 
       header,
       .container,
-      .site-footer {
-        padding-left: 20px;
-        padding-right: 20px;
-      }
-
       .hero h1 {
         font-size: 2rem;
       }
@@ -922,10 +799,6 @@
 
       .dtable .fname {
         max-width: 160px;
-      }
-
-      .links {
-        gap: 16px;
       }
 
       .preview-overlay {
@@ -960,30 +833,16 @@
       }
     }
   </style>
-</head>
-
-<body>
-
-  <header>
-    <div class="brand"><span class="accent">docx</span>-corpus</div>
-    <div class="links">
-      <a href="#explore">Explore</a>
-      <a href="/types">Types</a>
-      <a href="/topics">Topics</a>
-      <a href="https://github.com/superdoc-dev/docx-corpus">GitHub</a>
-      <a href="https://huggingface.co/datasets/superdoc-dev/docx-corpus">HuggingFace</a>
-    </div>
-  </header>
+  </style>
 
   <main class="container">
 
     <!-- Hero -->
     <div class="hero">
       <div class="hero-kicker">Open Research Dataset</div>
-      <h1>The largest open DOCX dataset and document corpus. 736K classified Word documents.</h1>
-      <p class="hero-sub">Real .docx files from the public web, classified into 10 document types and 9 topics across
-        46+ languages.</p>
-      <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a> — DOCX editing and tooling.</p>
+      <h1>The largest open DOCX dataset and document corpus.</h1>
+      <p class="hero-sub">Real .docx files from the public web, validated, deduplicated, and labeled by type, topic, and language.</p>
+      <p class="hero-by">Built by <a href="https://superdoc.dev/?utm_source=docxcorp.us&utm_medium=referral&utm_campaign=hero">SuperDoc</a>.</p>
       <div class="numbers">
         <div>
           <div class="num-val" id="stat-docs"><span class="skeleton skeleton-num"></span></div>
@@ -1562,6 +1421,4 @@ curl "https://api.docxcorp.us/manifest?type=legal&amp;lang=en&amp;min_confidence
     })();
   </script>
 
-</body>
-
-</html>
+</WidePageLayout>
