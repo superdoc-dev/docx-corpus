@@ -7,7 +7,7 @@ import { routes } from '../../lib/routes';
 import { canonicalUrl } from '../../lib/seo';
 import {
   getTopicFacets, getTypesForTopic, getLanguagesForTopic, getSamplesByTopic,
-  TYPE_LABELS,
+  TYPE_LABELS, TOPIC_COPY,
 } from '../../lib/data';
 
 export async function getStaticPaths() {
@@ -27,9 +27,16 @@ const [types, langs, samples] = await Promise.all([
 const label = topicFacet.label;
 const count = topicFacet.count;
 const topLangCodes = langs.languages.slice(0, 5).map(l => l.code).join(', ');
+const copy = TOPIC_COPY[topic!];
 
 const title = `${label} Word documents: ${count.toLocaleString()} classified .docx files`;
 const description = `${count.toLocaleString()}+ ${label.toLowerCase()} Word documents from the public web, in ${langs.distinct}+ languages including ${topLangCodes}. Free open dataset from docx-corpus.`;
+
+const accessExample = `# All ${label.toLowerCase()} documents
+curl "https://api.docxcorp.us/manifest?topic=${topic}" -o ${topic}-manifest.txt
+
+# High-confidence English subset
+curl "https://api.docxcorp.us/manifest?topic=${topic}&lang=en&min_confidence=0.8"`;
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -71,6 +78,14 @@ const structuredData = {
       { value: String(types.length), label: 'types' },
     ]} />
   </div>
+
+  {copy && (
+    <section>
+      <div class="section-label">What's in this slice</div>
+      <p>{copy.description}</p>
+      <p>{copy.useCases}</p>
+    </section>
+  )}
 
   <section>
     <div class="section-label">By type</div>
@@ -128,11 +143,7 @@ const structuredData = {
 
   <section>
     <div class="section-label">Access</div>
-    <pre is:raw><span class="c"># All {label.toLowerCase()} documents</span>
-curl <span class="c">"https://api.docxcorp.us/manifest?topic={topic}"</span> -o {topic}-manifest.txt
-
-<span class="c"># High-confidence English subset</span>
-curl <span class="c">"https://api.docxcorp.us/manifest?topic={topic}&lang=en&min_confidence=0.8"</span></pre>
+    <pre><code>{accessExample}</code></pre>
     <p>See <a href={routes.download()}>/download</a> for full access patterns.</p>
   </section>
 

@@ -286,7 +286,21 @@ body.wide .grid-cell:nth-child(5n+1) { padding-left: 0; }
    - `table.schema` - field/type/description schemas (3 cols, wide description)
    - `table.sample` - id/filename/other/lang/conf sample documents (5 cols) */
 table.schema { min-width: 620px; }
-table.sample { min-width: 520px; }
+table.sample { min-width: 720px; table-layout: fixed; }
+table.sample th:nth-child(1), table.sample td:nth-child(1) { width: 110px; }
+table.sample th:nth-child(2), table.sample td:nth-child(2) { width: auto; }
+table.sample th:nth-child(3), table.sample td:nth-child(3) { width: 130px; }
+table.sample th:nth-child(4), table.sample td:nth-child(4) { width: 56px; }
+table.sample th:nth-child(5), table.sample td:nth-child(5) { width: 64px; }
+table.sample td.filename {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+table.sample td.nowrap, table.sample th { white-space: nowrap; }
+
+.table-scroll { overflow-x: auto; }
 
 /* Mobile rules. The 640px max-width fits 320px viewports because of
    the 32px page padding. These rules tighten the chrome and let

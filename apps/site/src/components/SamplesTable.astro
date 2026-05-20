@@ -15,28 +15,30 @@ export interface Props {
 const { rows, otherHeader } = Astro.props;
 ---
 
-<table class="sample">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Filename</th>
-      <th>{otherHeader}</th>
-      <th>Lang</th>
-      <th class="right">Conf</th>
-    </tr>
-  </thead>
-  <tbody>
-    {rows.map(r => (
+<div class="table-scroll">
+  <table class="sample">
+    <thead>
       <tr>
-        <td class="mono">{r.id.slice(0, 12)}</td>
-        <td>{r.filename}</td>
-        <td>{r.otherLabel}</td>
-        <td class="mono">{r.language}</td>
-        <td class="right mono">{r.confidence.toFixed(2)}</td>
+        <th>ID</th>
+        <th>Filename</th>
+        <th>{otherHeader}</th>
+        <th>Lang</th>
+        <th class="right">Conf</th>
       </tr>
-    ))}
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      {rows.map(r => (
+        <tr>
+          <td class="mono nowrap">{r.id.slice(0, 12)}</td>
+          <td class="filename" title={r.filename}>{r.filename}</td>
+          <td class="nowrap">{r.otherLabel}</td>
+          <td class="mono nowrap">{r.language}</td>
+          <td class="right mono nowrap">{r.confidence.toFixed(2)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 <p style="font-size:12px;color:var(--muted);margin-top:8px;">
   ID column shows the first 12 characters of the SHA-256 content hash; the full hash is the stable reference.
   Real public-web filenames vary widely: descriptive, numeric, or URL-fragment shaped.
